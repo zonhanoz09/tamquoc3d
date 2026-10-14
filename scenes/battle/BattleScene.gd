@@ -1,5 +1,8 @@
 extends Node2D
-## BattleScene - Màn hình chiến đấu Pixel Art hoàn chỉnh (Giai đoạn 2)
+## BattleScene - Màn hình chiến đấu Tam Quốc chuẩn Formation:
+## - 1 Tiền quân tiên phong (Frontline)
+## - Tối đa 3 Trung quân (Midline)
+## - Tối đa 3 Hậu quân (Backline)
 
 var battle_manager: BattleManager
 var sound_manager: SoundManager
@@ -25,21 +28,6 @@ var result_banner: Control
 var _log_lines: Array = []
 const MAX_LOG_LINES = 12
 
-# Bố cục toạ độ chiến trường 3 hàng chuẩn Tam Quốc (1280x720)
-# Cân đối hoàn hảo hai bên qua trục giữa x = 640
-# Hàng trên (Col 0) y: 440 -> 480, Hàng dưới (Col 1) y: 560 -> 600
-const PLAYER_SLOTS = [
-	Vector2(520, 480), Vector2(540, 600), # Tiền quân: Front 0, 1
-	Vector2(360, 460), Vector2(380, 580), # Trung quân: Mid 0, 1
-	Vector2(200, 440), Vector2(220, 560), # Hậu quân:  Back 0, 1
-]
-
-const ENEMY_SLOTS = [
-	Vector2(760, 480), Vector2(740, 600), # Tiền quân: Front 0, 1
-	Vector2(920, 460), Vector2(900, 580), # Trung quân: Mid 0, 1
-	Vector2(1080, 440), Vector2(1060, 560),# Hậu quân:  Back 0, 1
-]
-
 func _get_hero(id: String) -> HeroData:
 	var db = get_node_or_null("/root/HeroDatabase")
 	if db:
@@ -54,7 +42,6 @@ func _ready() -> void:
 	_setup_battle()
 
 func _process(delta: float) -> void:
-	# Camera Screen Shake decay
 	if _shake_amount > 0:
 		_shake_amount = maxf(0.0, _shake_amount - delta * 25.0)
 		camera.offset = Vector2(
@@ -165,7 +152,7 @@ func _setup_ui() -> void:
 	log_label.add_theme_color_override("font_color", Color(0.9, 0.9, 0.95))
 	log_vbox.add_child(log_label)
 
-	# 4. Result Banner (Hidden initially)
+	# 4. Result Banner
 	result_banner = Control.new()
 	result_banner.position = Vector2(0, 0)
 	result_banner.size = Vector2(1280, 720)
@@ -192,6 +179,44 @@ func _setup_ui() -> void:
 	restart_btn.pressed.connect(_on_restart_pressed)
 	result_banner.add_child(restart_btn)
 
+## ──────────────────────────────────────────────────────────
+## BỐ CỤC VỊ TRÍ ĐỨNG CHUẨN TAM QUỐC
+## - Tiền quân: DUY NHẤT 1 VỊ TRÍ (nhô lên hàng đầu ở giữa)
+## - Trung quân: Tối đa 3 vị trí (Trên, Giữa, Dưới)
+## - Hậu quân: Tối đa 3 vị trí (Trên, Giữa, Dưới)
+## ──────────────────────────────────────────────────────────
+func get_slot_position(team: int, row: int, col: int) -> Vector2:
+	if team == 0:
+		# Player (Bên trái)
+		match row:
+			0: # Tiền quân (1 ô chính giữa)
+				return Vector2(530, 520)
+			1: # Trung quân (3 ô: Trên, Giữa, Dưới)
+				match col:
+					0: return Vector2(370, 420)
+					1: return Vector2(340, 520)
+					_: return Vector2(370, 620)
+			_: # Hậu quân (3 ô: Trên, Giữa, Dưới)
+				match col:
+					0: return Vector2(190, 390)
+					1: return Vector2(160, 490)
+					_: return Vector2(190, 590)
+	else:
+		# Enemy (Bên phải đối xứng)
+		match row:
+			0: # Tiền quân (1 ô chính giữa)
+				return Vector2(750, 520)
+			1: # Trung quân (3 ô: Trên, Giữa, Dưới)
+				match col:
+					0: return Vector2(910, 420)
+					1: return Vector2(940, 520)
+					_: return Vector2(910, 620)
+			_: # Hậu quân (3 ô: Trên, Giữa, Dưới)
+				match col:
+					0: return Vector2(1090, 390)
+					1: return Vector2(1120, 490)
+					_: return Vector2(1090, 590)
+
 func _setup_battle() -> void:
 	battle_manager = BattleManager.new()
 	add_child(battle_manager)
@@ -213,27 +238,30 @@ func _start_battle_with_roster() -> void:
 	_player_visuals.clear()
 	_enemy_visuals.clear()
 
-	# Player Team: Triệu Vân (Front), Quan Vũ (Mid), Gia Cát Lượng (Back)
+	# Player Team: 1 Tiền quân (Tào Nhân), 2 Trung quân (Quan Vũ, Triệu Vân), 2 Hậu quân (Gia Cát Lượng, Tiểu Kiều)
 	var player_party: Array = [
-		_get_hero("trieu_van"),
+		_get_hero("tao_nhan"),
 		_get_hero("quan_vu"),
+		_get_hero("trieu_van"),
 		_get_hero("gia_cat_luong"),
+		_get_hero("tieu_kieu"),
 	]
-	# Enemy Team: Điển Vi (Front), Lữ Bố (Mid), Tiểu Kiều (Back)
+
+	# Enemy Team: 1 Tiền quân (Điển Vi), 2 Trung quân (Lữ Bố, Hoàng Trung), 2 Hậu quân (Bàng Thống, Sái Văn Cơ)
 	var enemy_party: Array = [
 		_get_hero("dien_vi"),
 		_get_hero("lu_bo"),
-		_get_hero("tieu_kieu"),
+		_get_hero("hoang_trung"),
+		_get_hero("bang_thong"),
+		_get_hero("sai_van_co"),
 	]
 
 	battle_manager.setup_battle(player_party, enemy_party)
 
 	# Spawn Player Visuals
-	for i in range(battle_manager.team0.size()):
-		var bh: BattleHero = battle_manager.team0[i]
+	for bh in battle_manager.team0:
 		var vis = HeroVisual.new()
-		var slot_idx = bh.slot_row * 2 + bh.slot_col
-		vis.position = PLAYER_SLOTS[mini(slot_idx, PLAYER_SLOTS.size() - 1)]
+		vis.position = get_slot_position(0, bh.slot_row, bh.slot_col)
 		vis.home_position = vis.position
 		vis.z_index = int(vis.position.y / 10.0)
 		add_child(vis)
@@ -241,11 +269,9 @@ func _start_battle_with_roster() -> void:
 		_player_visuals.append(vis)
 
 	# Spawn Enemy Visuals
-	for i in range(battle_manager.team1.size()):
-		var bh: BattleHero = battle_manager.team1[i]
+	for bh in battle_manager.team1:
 		var vis = HeroVisual.new()
-		var slot_idx = bh.slot_row * 2 + bh.slot_col
-		vis.position = ENEMY_SLOTS[mini(slot_idx, ENEMY_SLOTS.size() - 1)]
+		vis.position = get_slot_position(1, bh.slot_row, bh.slot_col)
 		vis.home_position = vis.position
 		vis.z_index = int(vis.position.y / 10.0)
 		add_child(vis)

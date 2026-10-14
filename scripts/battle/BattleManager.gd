@@ -22,28 +22,61 @@ var is_battle_active: bool = false
 var battle_speed: float = 1.0  ## 1.0 = x1, 2.0 = x2, 4.0 = x4
 var is_paused: bool = false
 
-## Setup trận đấu với 2 danh sách HeroData
+## Setup trận đấu với 2 danh sách HeroData theo Layout chuẩn Tam Quốc:
+## - Tiền quân: DUY NHẤT 1 VỊ TRÍ (row 0, col 0)
+## - Trung quân: Tối đa 3 vị trí (row 1, col 0, 1, 2)
+## - Hậu quân: Tối đa 3 vị trí (row 2, col 0, 1, 2)
 func setup_battle(
 	player_heroes: Array,
 	enemy_heroes: Array
 ) -> void:
-	team0.clear()
-	team1.clear()
-
-	# Assign heroes vào slot theo thứ tự [Front0, Front1, Mid0, Mid1, Back0, Back1]
-	var rows = [0, 0, 1, 1, 2, 2]
-	var cols = [0, 1, 0, 1, 0, 1]
-
-	for i in range(mini(player_heroes.size(), 6)):
-		var bh = BattleHero.new(player_heroes[i], 0, rows[i], cols[i])
-		team0.append(bh)
-
-	for i in range(mini(enemy_heroes.size(), 6)):
-		var bh = BattleHero.new(enemy_heroes[i], 1, rows[i], cols[i])
-		team1.append(bh)
+	team0 = _assign_team_slots(player_heroes, 0)
+	team1 = _assign_team_slots(enemy_heroes, 1)
 
 	turn_manager = TurnManager.new()
 	turn_manager.setup(team0, team1)
+
+func _assign_team_slots(heroes: Array, team_id: int) -> Array:
+	var result: Array = []
+	var front_assigned: bool = false
+	var mid_count: int = 0
+	var back_count: int = 0
+
+	# Pass 1: Gán tướng theo đúng vai trò vị trí ưu tiên (Front, Mid, Back)
+	for h_data in heroes:
+		if h_data == null:
+			continue
+		var assigned = false
+		match h_data.position:
+			HeroData.Position.FRONT:
+				if not front_assigned:
+					result.append(BattleHero.new(h_data, team_id, 0, 0))
+					front_assigned = true
+					assigned = true
+			HeroData.Position.MID:
+				if mid_count < 3:
+					result.append(BattleHero.new(h_data, team_id, 1, mid_count))
+					mid_count += 1
+					assigned = true
+			HeroData.Position.BACK:
+				if back_count < 3:
+					result.append(BattleHero.new(h_data, team_id, 2, back_count))
+					back_count += 1
+					assigned = true
+
+		if not assigned:
+			# Fallback: Điền vào slot còn trống (ưu tiên Mid -> Back -> Front)
+			if mid_count < 3:
+				result.append(BattleHero.new(h_data, team_id, 1, mid_count))
+				mid_count += 1
+			elif back_count < 3:
+				result.append(BattleHero.new(h_data, team_id, 2, back_count))
+				back_count += 1
+			elif not front_assigned:
+				result.append(BattleHero.new(h_data, team_id, 0, 0))
+				front_assigned = true
+
+	return result
 
 func start_battle() -> void:
 	if team0.is_empty() or team1.is_empty():
@@ -166,7 +199,8 @@ func _get_normal_attack(hero: BattleHero) -> SkillData:
 	basic.damage_multiplier = 1.0
 	return basic
 
-## Targeting Rules theo GDD
+## Targeting Rules theo GDD:
+## - Melee: Phải đánh Tiền quân trước (duy nhất 1 Tanker). Khi Tiền quân ngã mới tới Trung quân, rồi Hậu quân.
 func _resolve_targets(attacker: BattleHero, skill: SkillData) -> Array:
 	var enemy_team = team1 if attacker.team == 0 else team0
 	var ally_team  = team0 if attacker.team == 0 else team1
@@ -190,6 +224,7 @@ func _resolve_targets(attacker: BattleHero, skill: SkillData) -> Array:
 			targets = [back[0]] if not back.is_empty() else []
 
 		SkillData.SkillType.PIERCE:
+			# Đánh xuyên từ Tiền -> Trung -> Hậu cùng hàng hoặc toàn bộ đường xuyên
 			var col = attacker.slot_col
 			targets = alive_enemies.filter(func(h): return h.slot_col == col)
 			if targets.is_empty():
