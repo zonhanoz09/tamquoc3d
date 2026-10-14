@@ -1,9 +1,9 @@
 78098b89c88a74ebe8c20117b8754620
-::res://::1791997502
+::res://::1791999171
 ::res://assets/::1791995244
 ::res://assets/sprites/::1791996514
-::res://assets/sprites/backgrounds/::1791997784
-battlefield.png::CompressedTexture2D::5664744852853323939::1791998226::1791998469::1::::<><><>0<>0<>868e34ddc296f77b54696fb9c1bb5269<>res://.godot/imported/battlefield.png-e4e5c25410fb4b8714b45098880e1a42.ctex::
+::res://assets/sprites/backgrounds/::1791999399
+battlefield.png::CompressedTexture2D::5664744852853323939::1791999171::1791999399::1::::<><><>0<>0<>868e34ddc296f77b54696fb9c1bb5269<>res://.godot/imported/battlefield.png-e4e5c25410fb4b8714b45098880e1a42.ctex::
 center_floor.png::CompressedTexture2D::218457142264639111::1791997313::1791997382::1::::<><><>0<>0<>3ec78c580c0238a84bf2b7ff45005586<>res://.godot/imported/center_floor.png-9092521fee23645311ad890edcc8e8b5.ctex::
 ::res://assets/sprites/heroes/::1791997654
 bang_thong.png::CompressedTexture2D::2090969197787062814::1791997509::1791997654::1::::<><><>0<>0<>97507b54a68f1c76207e7bce2079d978<>res://.godot/imported/bang_thong.png-7691700854c9d3bd7dcf64d1662a1a3b.ctex::
@@ -37,7 +37,7 @@ tao_nhan.png::CompressedTexture2D::8538258206522733301::1791997509::1791997654::
 tieu_kieu.png::CompressedTexture2D::7396205453534576114::1791997509::1791997654::1::::<><><>0<>0<>8c04469d78d20b47e6e3f807581ffce2<>res://.godot/imported/tieu_kieu.png-7d5a0267ddb0f3cfc6a7ff3a6b67c697.ctex::
 trieu_van.png::CompressedTexture2D::2826803718205844032::1791997509::1791997654::1::::<><><>0<>0<>98505a8879adc29943e1858ebb36dded<>res://.godot/imported/trieu_van.png-5e6e2348344b40f4c62cfed083aed889.ctex::
 truong_phi.png::CompressedTexture2D::4703399355557066198::1791997509::1791997654::1::::<><><>0<>0<>c0da8ce6c520d8ed849634cd632f3698<>res://.godot/imported/truong_phi.png-42ba9cfc77e6d08dbee084ba0fd2a60c.ctex::
-::res://assets/sprites/ui/::1791997867
+::res://assets/sprites/ui/::1791999788
 elem_dark.png::CompressedTexture2D::1481360859174559458::1791996605::1791996615::1::::<><><>0<>0<>00c29b162fe8b632a4318311fe61d1c9<>res://.godot/imported/elem_dark.png-b87e39bf9cba9113920e46f17a419158.ctex::
 elem_fire.png::CompressedTexture2D::5230991275276850318::1791996605::1791996615::1::::<><><>0<>0<>44ee05b65acf73db68bf06e9a0a184be<>res://.godot/imported/elem_fire.png-2fb304093732ca3435eaed692d912d4d.ctex::
 elem_light.png::CompressedTexture2D::4015787828180015727::1791996605::1791996615::1::::<><><>0<>0<>0cbb63b58443dcf39d5a1bb04788d6db<>res://.godot/imported/elem_light.png-c2bcff4c749c28d486577315eed7dfba.ctex::
@@ -47,6 +47,7 @@ elem_wind.png::CompressedTexture2D::606812273710676050::1791996605::1791996615::
 pedestal_active.png::CompressedTexture2D::5843943757817268075::1791997792::1791997867::1::::<><><>0<>0<>9b76ec883bdb5b5b1cebee4f8c002dcc<>res://.godot/imported/pedestal_active.png-505b835775cc02cdb53215f99a356ad0.ctex::
 pedestal_enemy.png::CompressedTexture2D::5694707347667915605::1791997792::1791997867::1::::<><><>0<>0<>e008f3b130c31a444d0f79017644d15a<>res://.godot/imported/pedestal_enemy.png-71eaffe78ee5215bdad00c81958c6066.ctex::
 pedestal_player.png::CompressedTexture2D::1834301345034797772::1791997792::1791997867::1::::<><><>0<>0<>881674433cedaf629943a6d243ac8704<>res://.godot/imported/pedestal_player.png-a1ca595bcdd17b2ec8e37c4b2d2991e8.ctex::
+pedestal_skill_ready.png::CompressedTexture2D::5263356677534935146::1791999788::1791999842::1::::<><><>0<>0<>d4070ba119f6f311665e993ae550fa6d<>res://.godot/imported/pedestal_skill_ready.png-19f9b785b01b9a8c21e8dd772de2ffd1.ctex::
 status_buff_atk.png::CompressedTexture2D::2247748686862809950::1791996605::1791996615::1::::<><><>0<>0<>3093932649c7779d5578e97c56e983a8<>res://.godot/imported/status_buff_atk.png-a5ac419ee491cfb2412c18f7197f65a2.ctex::
 status_buff_def.png::CompressedTexture2D::3634754596553084613::1791996605::1791996615::1::::<><><>0<>0<>606099984c5b7c8c30b943fb1c132408<>res://.godot/imported/status_buff_def.png-18e396517316cb01e05c98106198ebe1.ctex::
 status_buff_spd.png::CompressedTexture2D::6281391662565408390::1791996605::1791996615::1::::<><><>0<>0<>8fce1bbf32e5d9c96e9bf9e29e5d5df6<>res://.godot/imported/status_buff_spd.png-9b5656d23f868152a4c39b7aaa04f1b9.ctex::
@@ -76,7 +77,7 @@ Game Design Document (GDD) - 2D Pixel Turn-Based S.md::TextFile::-1::1791968542:
 ::res://resources/skills/::1791995244
 ::res://scenes/::1791995244
 ::res://scenes/battle/::1791995540
-BattleScene.gd::GDScript::7529937886708448527::1791998456::0::1::::<>Node2D<><>0<>0<><>::
+BattleScene.gd::GDScript::7529937886708448527::1791999288::0::1::::<>Node2D<><>0<>0<><>::
 BattleScene.tscn::PackedScene::-1::1791996797::0::1::::<><><>0<>0<><>::
 ::res://scenes/hero/::1791995244
 ::res://scenes/ui/::1791995244

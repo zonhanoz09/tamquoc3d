@@ -8,6 +8,7 @@ var home_position: Vector2 = Vector2.ZERO
 
 # Child Nodes
 var pedestal: Sprite2D
+var skill_ready_aura: Sprite2D
 var active_pedestal: Sprite2D
 var sprite: Sprite2D
 
@@ -15,9 +16,6 @@ var sprite: Sprite2D
 var hp_ghost_bar: ProgressBar
 var hp_bar: ProgressBar
 var hp_label: Label
-var morale_bar: ProgressBar
-var morale_glow: ColorRect
-var rage_badge: Label
 var name_label: Label
 var elem_icon: Sprite2D
 var status_row: HBoxContainer
@@ -26,8 +24,8 @@ var status_row: HBoxContainer
 var _idle_tween: Tween
 var _hp_tween: Tween
 var _ghost_tween: Tween
-var _morale_tween: Tween
 var _active_tween: Tween
+var _skill_ready_tween: Tween
 var _is_dead: bool = false
 
 func setup(bh: BattleHero, enemy: bool) -> void:
@@ -50,7 +48,18 @@ func _build_visuals() -> void:
 	pedestal.z_index = 0
 	add_child(pedestal)
 
-	# 2. Vòng sáng bệ đứng khi tới lượt hành động (Active Turn Glow)
+	# 2. Hiệu ứng dưới chân khi tích đầy Nộ/Kỹ năng (Skill Ready Blazing Aura)
+	skill_ready_aura = Sprite2D.new()
+	var sr_tex = load("res://assets/sprites/ui/pedestal_skill_ready.png")
+	if sr_tex:
+		skill_ready_aura.texture = sr_tex
+	skill_ready_aura.position = Vector2(0, 0)
+	skill_ready_aura.scale = Vector2(1.15, 1.15)
+	skill_ready_aura.visible = false
+	skill_ready_aura.z_index = 1
+	add_child(skill_ready_aura)
+
+	# 3. Vòng sáng bệ đứng khi tới lượt hành động (Active Turn Glow)
 	active_pedestal = Sprite2D.new()
 	var a_tex = load("res://assets/sprites/ui/pedestal_active.png")
 	if a_tex:
@@ -58,10 +67,10 @@ func _build_visuals() -> void:
 	active_pedestal.position = Vector2(0, 0)
 	active_pedestal.scale = Vector2(1.15, 1.15)
 	active_pedestal.visible = false
-	active_pedestal.z_index = 1
+	active_pedestal.z_index = 2
 	add_child(active_pedestal)
 
-	# 3. Hero Sprite (64x64 HD Spritesheet)
+	# 4. Hero Sprite (64x64 HD Spritesheet)
 	# Căn chỉnh để gót chân (y = 56 trong frame 64x64) đặt chuẩn xác tại y = 0 trên bệ đứng
 	sprite = Sprite2D.new()
 	var spr_path = "res://assets/sprites/heroes/%s.png" % battle_hero.data.hero_id
@@ -73,10 +82,10 @@ func _build_visuals() -> void:
 	sprite.position = Vector2(0, -48) # Đưa gót chân về chính xác y = 0
 	sprite.scale = Vector2(2.0, 2.0)
 	sprite.flip_h = is_enemy
-	sprite.z_index = 2
+	sprite.z_index = 3
 	add_child(sprite)
 
-	# 4. Overhead UI (Đặt cao hơn đỉnh đầu nhân vật và lông trĩ)
+	# 5. Overhead UI (Thanh máu dài & tên tướng)
 	_build_overhead_ui()
 
 func _build_overhead_ui() -> void:
@@ -98,15 +107,15 @@ func _build_overhead_ui() -> void:
 	if e_tex:
 		elem_icon.texture = e_tex
 	elem_icon.scale = Vector2(0.9, 0.9)
-	elem_icon.position = Vector2(-54, -2)
+	elem_icon.position = Vector2(-70, 4)
 	overhead.add_child(elem_icon)
 
 	# Name Label
 	name_label = Label.new()
 	name_label.text = battle_hero.data.hero_name
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	name_label.position = Vector2(-50, -20)
-	name_label.size = Vector2(100, 18)
+	name_label.position = Vector2(-60, -22)
+	name_label.size = Vector2(120, 18)
 	name_label.add_theme_font_size_override("font_size", 13)
 	name_label.add_theme_color_override("font_shadow_color", Color.BLACK)
 	name_label.add_theme_constant_override("shadow_offset_x", 1)
@@ -121,10 +130,10 @@ func _build_overhead_ui() -> void:
 	name_label.add_theme_color_override("font_color", rarity_color)
 	overhead.add_child(name_label)
 
-	# ── HP GHOST BAR (Vạch tụt máu trễ) ──
+	# ── HP GHOST BAR (Vạch tụt máu trễ - dài 116px) ──
 	hp_ghost_bar = ProgressBar.new()
-	hp_ghost_bar.position = Vector2(-42, 0)
-	hp_ghost_bar.size = Vector2(84, 8)
+	hp_ghost_bar.position = Vector2(-58, 0)
+	hp_ghost_bar.size = Vector2(116, 9)
 	hp_ghost_bar.show_percentage = false
 	hp_ghost_bar.max_value = battle_hero.stats.hp_max
 	hp_ghost_bar.value = battle_hero.stats.hp_current
@@ -133,17 +142,19 @@ func _build_overhead_ui() -> void:
 	sb_ghost_bg.bg_color = Color(0.12, 0.1, 0.15, 0.9)
 	sb_ghost_bg.set_border_width_all(1)
 	sb_ghost_bg.border_color = Color(0.05, 0.05, 0.08)
+	sb_ghost_bg.set_corner_radius_all(2)
 	hp_ghost_bar.add_theme_stylebox_override("background", sb_ghost_bg)
 
 	var sb_ghost_fill = StyleBoxFlat.new()
 	sb_ghost_fill.bg_color = Color(0.95, 0.85, 0.3, 0.85)
+	sb_ghost_fill.set_corner_radius_all(2)
 	hp_ghost_bar.add_theme_stylebox_override("fill", sb_ghost_fill)
 	overhead.add_child(hp_ghost_bar)
 
-	# ── HP MAIN BAR ──
+	# ── HP MAIN BAR (Thanh máu chính - dài 116px) ──
 	hp_bar = ProgressBar.new()
-	hp_bar.position = Vector2(-42, 0)
-	hp_bar.size = Vector2(84, 8)
+	hp_bar.position = Vector2(-58, 0)
+	hp_bar.size = Vector2(116, 9)
 	hp_bar.show_percentage = false
 	hp_bar.max_value = battle_hero.stats.hp_max
 	hp_bar.value = battle_hero.stats.hp_current
@@ -155,6 +166,7 @@ func _build_overhead_ui() -> void:
 	sb_fill.bg_color = Color(0.2, 0.88, 0.35)
 	sb_fill.set_border_width_all(1)
 	sb_fill.border_color = Color(0.1, 0.45, 0.2)
+	sb_fill.set_corner_radius_all(2)
 	hp_bar.add_theme_stylebox_override("fill", sb_fill)
 	overhead.add_child(hp_bar)
 
@@ -162,55 +174,18 @@ func _build_overhead_ui() -> void:
 	hp_label = Label.new()
 	hp_label.text = "%d/%d" % [battle_hero.stats.hp_current, battle_hero.stats.hp_max]
 	hp_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	hp_label.position = Vector2(-42, -1)
-	hp_label.size = Vector2(84, 10)
+	hp_label.position = Vector2(-58, -1)
+	hp_label.size = Vector2(116, 11)
 	hp_label.add_theme_font_size_override("font_size", 9)
 	hp_label.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0, 0.95))
 	hp_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
 	hp_label.add_theme_constant_override("shadow_outline_size", 1)
 	overhead.add_child(hp_label)
 
-	# ── MORALE / ENERGY BAR (Thanh Sĩ Khí) ──
-	morale_bar = ProgressBar.new()
-	morale_bar.position = Vector2(-42, 10)
-	morale_bar.size = Vector2(84, 5)
-	morale_bar.show_percentage = false
-	morale_bar.max_value = 100
-	morale_bar.value = battle_hero.stats.morale_current
-
-	var sb_m_bg = StyleBoxFlat.new()
-	sb_m_bg.bg_color = Color(0.08, 0.08, 0.12, 0.9)
-	sb_m_bg.set_border_width_all(1)
-	sb_m_bg.border_color = Color(0.04, 0.04, 0.06)
-	morale_bar.add_theme_stylebox_override("background", sb_m_bg)
-
-	var sb_m_fill = StyleBoxFlat.new()
-	sb_m_fill.bg_color = Color(1.0, 0.65, 0.1)
-	morale_bar.add_theme_stylebox_override("fill", sb_m_fill)
-	overhead.add_child(morale_bar)
-
-	# Morale Glow Border (Phát sáng khi đầy 100 Sĩ khí)
-	morale_glow = ColorRect.new()
-	morale_glow.position = Vector2(-44, 9)
-	morale_glow.size = Vector2(88, 7)
-	morale_glow.color = Color(1.0, 0.85, 0.2, 0.0)
-	overhead.add_child(morale_glow)
-
-	rage_badge = Label.new()
-	rage_badge.text = "⚡ RAGE READY!"
-	rage_badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	rage_badge.position = Vector2(-44, 16)
-	rage_badge.size = Vector2(88, 12)
-	rage_badge.add_theme_font_size_override("font_size", 9)
-	rage_badge.add_theme_color_override("font_color", Color(1.0, 0.9, 0.3))
-	rage_badge.add_theme_color_override("font_shadow_color", Color.BLACK)
-	rage_badge.visible = false
-	overhead.add_child(rage_badge)
-
 	# Status Icons Row
 	status_row = HBoxContainer.new()
-	status_row.position = Vector2(-42, -34)
-	status_row.size = Vector2(84, 14)
+	status_row.position = Vector2(-58, -36)
+	status_row.size = Vector2(116, 14)
 	status_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	overhead.add_child(status_row)
 
@@ -226,6 +201,25 @@ func set_active_turn(active: bool) -> void:
 		if _active_tween:
 			_active_tween.kill()
 		active_pedestal.modulate.a = 1.0
+
+func set_skill_ready(ready: bool) -> void:
+	if _is_dead or not is_instance_valid(skill_ready_aura):
+		return
+	if ready:
+		if not skill_ready_aura.visible or _skill_ready_tween == null:
+			skill_ready_aura.visible = true
+			if _skill_ready_tween:
+				_skill_ready_tween.kill()
+			_skill_ready_tween = create_tween().set_loops()
+			_skill_ready_tween.tween_property(skill_ready_aura, "scale", Vector2(1.25, 1.25), 0.4).set_trans(Tween.TRANS_SINE)
+			_skill_ready_tween.parallel().tween_property(skill_ready_aura, "modulate", Color(1.1, 1.05, 0.7, 1.0), 0.4)
+			_skill_ready_tween.tween_property(skill_ready_aura, "scale", Vector2(1.10, 1.10), 0.4).set_trans(Tween.TRANS_SINE)
+			_skill_ready_tween.parallel().tween_property(skill_ready_aura, "modulate", Color(1.0, 0.8, 0.4, 0.65), 0.4)
+	else:
+		skill_ready_aura.visible = false
+		if _skill_ready_tween:
+			_skill_ready_tween.kill()
+			_skill_ready_tween = null
 
 func update_bars(animate: bool = true) -> void:
 	if _is_dead:
@@ -263,27 +257,10 @@ func update_bars(animate: bool = true) -> void:
 		hp_bar.value = current_hp
 		hp_ghost_bar.value = current_hp
 
-	# Smooth Morale transition
+	# Hiệu ứng chân khi tích đầy Nộ chiêu / Kỹ năng (100 Sĩ khí)
 	var current_morale = battle_hero.stats.morale_current
-	if animate:
-		if _morale_tween:
-			_morale_tween.kill()
-		_morale_tween = create_tween()
-		_morale_tween.tween_property(morale_bar, "value", float(current_morale), 0.25).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	else:
-		morale_bar.value = current_morale
-
-	# Morale Max Full Glow
 	var is_max_rage = (current_morale >= 100)
-	rage_badge.visible = is_max_rage
-	var m_fill = morale_bar.get_theme_stylebox("fill") as StyleBoxFlat
-	if m_fill:
-		if is_max_rage:
-			m_fill.bg_color = Color(1.0, 0.95, 0.3)
-			morale_glow.color = Color(1.0, 0.85, 0.2, 0.45)
-		else:
-			m_fill.bg_color = Color(1.0, 0.65, 0.1)
-			morale_glow.color = Color(1.0, 0.85, 0.2, 0.0)
+	set_skill_ready(is_max_rage)
 
 func update_status_icons() -> void:
 	for child in status_row.get_children():
@@ -417,6 +394,8 @@ func animate_hurt(is_dodge: bool, _is_block: bool, speed_mult: float = 1.0) -> v
 
 func animate_death(speed_mult: float = 1.0) -> void:
 	_is_dead = true
+	set_skill_ready(false)
+	set_active_turn(false)
 	if _idle_tween:
 		_idle_tween.kill()
 
