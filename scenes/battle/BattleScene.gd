@@ -25,19 +25,19 @@ var result_banner: Control
 var _log_lines: Array = []
 const MAX_LOG_LINES = 12
 
-# Bố cục toạ độ chiến trường 3 hàng chuẩn (1280x720)
-# Player: Back -> Mid -> Front (Left)
-# Enemy: Front -> Mid -> Back (Right)
+# Bố cục toạ độ chiến trường 3 hàng chuẩn Tam Quốc (1280x720)
+# Cân đối hoàn hảo hai bên qua trục giữa x = 640
+# Hàng trên (Col 0) y: 440 -> 480, Hàng dưới (Col 1) y: 560 -> 600
 const PLAYER_SLOTS = [
-	Vector2(510, 470), Vector2(510, 570), # Front 0, 1
-	Vector2(360, 440), Vector2(360, 540), # Mid 0, 1
-	Vector2(210, 410), Vector2(210, 510), # Back 0, 1
+	Vector2(520, 480), Vector2(540, 600), # Tiền quân: Front 0, 1
+	Vector2(360, 460), Vector2(380, 580), # Trung quân: Mid 0, 1
+	Vector2(200, 440), Vector2(220, 560), # Hậu quân:  Back 0, 1
 ]
 
 const ENEMY_SLOTS = [
-	Vector2(770, 470), Vector2(770, 570), # Front 0, 1
-	Vector2(920, 440), Vector2(920, 540), # Mid 0, 1
-	Vector2(1070, 410), Vector2(1070, 510),# Back 0, 1
+	Vector2(760, 480), Vector2(740, 600), # Tiền quân: Front 0, 1
+	Vector2(920, 460), Vector2(900, 580), # Trung quân: Mid 0, 1
+	Vector2(1080, 440), Vector2(1060, 560),# Hậu quân:  Back 0, 1
 ]
 
 func _get_hero(id: String) -> HeroData:
@@ -207,7 +207,6 @@ func _setup_battle() -> void:
 	_start_battle_with_roster()
 
 func _start_battle_with_roster() -> void:
-	# Clear old visuals if any
 	for v in _player_visuals + _enemy_visuals:
 		if is_instance_valid(v):
 			v.queue_free()
@@ -273,7 +272,6 @@ func _update_timeline() -> void:
 			avatar_rect.texture = p_tex
 		avatar_rect.custom_minimum_size = Vector2(32, 32)
 		avatar_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		# Border by team
 		var border = Color(0.2, 0.8, 1.0) if bh.team == 0 else Color(1.0, 0.3, 0.3)
 		avatar_rect.modulate = border
 		timeline_container.add_child(avatar_rect)
@@ -322,11 +320,9 @@ func _on_hero_acted(hero: BattleHero, action_data: Dictionary) -> void:
 	var target_pos = primary_node.position if primary_node else attacker_node.position
 
 	var on_impact = func():
-		# Spawn VFX & âm thanh tương ứng hệ và loại chiêu
 		_apply_action_effects(hero, skill, results)
 
 	var on_complete = func():
-		# Cập nhật thanh máu & trạng thái sau đòn đánh
 		for res in results:
 			var t_hero: BattleHero = res["target"]
 			if t_hero.node and t_hero.node.has_method("update_bars"):
@@ -351,7 +347,7 @@ func _apply_action_effects(attacker: BattleHero, _skill: SkillData, results: Arr
 
 		# Support / Heal
 		if res["is_support"]:
-			CombatVFX.spawn_water(self, pos)
+			CombatVFX.spawn_water(self, pos + Vector2(0, -30))
 			sound_manager.play_heal()
 			t_node.show_floating_text("+%d HP" % res["heal_amount"], Color(0.2, 0.9, 0.3))
 			continue
@@ -368,7 +364,7 @@ func _apply_action_effects(attacker: BattleHero, _skill: SkillData, results: Arr
 			sound_manager.play_block()
 			t_node.animate_hurt(false, true, battle_manager.battle_speed)
 			t_node.show_floating_text("ĐỠ ĐÒN! -%d" % res["damage"], Color(0.4, 0.8, 1.0))
-			CombatVFX.spawn_impact(self, pos, false)
+			CombatVFX.spawn_impact(self, pos + Vector2(0, -30), false)
 			continue
 
 		# Trúng đòn bình thường hoặc Bạo kích
@@ -376,18 +372,18 @@ func _apply_action_effects(attacker: BattleHero, _skill: SkillData, results: Arr
 		if is_crit:
 			sound_manager.play_crit()
 			trigger_screen_shake(9.0)
-			CombatVFX.spawn_impact(self, pos, true)
+			CombatVFX.spawn_impact(self, pos + Vector2(0, -30), true)
 			t_node.show_floating_text("BẠO KÍCH! -%d" % res["damage"], Color(1.0, 0.2, 0.2), true)
 		else:
 			sound_manager.play_hit()
-			CombatVFX.spawn_slash(self, pos, attacker.team == 1)
+			CombatVFX.spawn_slash(self, pos + Vector2(0, -30), attacker.team == 1)
 			t_node.show_floating_text("-%d" % res["damage"], Color(1.0, 0.9, 0.3))
 
 		# Elemental VFX
 		match attacker.data.element:
-			HeroData.Element.FIRE: CombatVFX.spawn_fire(self, pos)
-			HeroData.Element.WIND: CombatVFX.spawn_wind(self, pos)
-			HeroData.Element.WATER: CombatVFX.spawn_water(self, pos)
+			HeroData.Element.FIRE: CombatVFX.spawn_fire(self, pos + Vector2(0, -30))
+			HeroData.Element.WIND: CombatVFX.spawn_wind(self, pos + Vector2(0, -30))
+			HeroData.Element.WATER: CombatVFX.spawn_water(self, pos + Vector2(0, -30))
 
 		t_node.animate_hurt(false, false, battle_manager.battle_speed)
 

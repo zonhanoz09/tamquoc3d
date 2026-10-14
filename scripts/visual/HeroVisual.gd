@@ -7,9 +7,9 @@ var is_enemy: bool = false
 var home_position: Vector2 = Vector2.ZERO
 
 # Child Nodes
+var pedestal: Sprite2D
+var active_pedestal: Sprite2D
 var sprite: Sprite2D
-var shadow: Sprite2D
-var active_ring: Sprite2D
 
 # Smooth Overhead Bars
 var hp_ghost_bar: ProgressBar
@@ -27,6 +27,7 @@ var _idle_tween: Tween
 var _hp_tween: Tween
 var _ghost_tween: Tween
 var _morale_tween: Tween
+var _active_tween: Tween
 var _is_dead: bool = false
 
 func setup(bh: BattleHero, enemy: bool) -> void:
@@ -38,35 +39,30 @@ func setup(bh: BattleHero, enemy: bool) -> void:
 	play_idle()
 
 func _build_visuals() -> void:
-	# 1. Shadow dưới chân
-	shadow = Sprite2D.new()
-	var shadow_img = Image.create(48, 18, false, Image.FORMAT_RGBA8)
-	for y in range(18):
-		for x in range(48):
-			var dx = (x - 24) / 24.0
-			var dy = (y - 9) / 9.0
-			if dx * dx + dy * dy <= 1.0:
-				shadow_img.set_pixel(x, y, Color(0, 0, 0, 0.45))
-	shadow.texture = ImageTexture.create_from_image(shadow_img)
-	shadow.position = Vector2(0, 28)
-	add_child(shadow)
+	# 1. Bệ đứng võ đài chiến thuật (Tactical Pedestal)
+	pedestal = Sprite2D.new()
+	var p_name = "pedestal_enemy" if is_enemy else "pedestal_player"
+	var p_tex = load("res://assets/sprites/ui/%s.png" % p_name)
+	if p_tex:
+		pedestal.texture = p_tex
+	pedestal.position = Vector2(0, 0)
+	pedestal.scale = Vector2(1.15, 1.15)
+	pedestal.z_index = 0
+	add_child(pedestal)
 
-	# 2. Active Turn Selection Ring (Vòng sáng dưới chân khi tới lượt)
-	active_ring = Sprite2D.new()
-	var ring_img = Image.create(54, 22, false, Image.FORMAT_RGBA8)
-	for y in range(22):
-		for x in range(54):
-			var dx = (x - 27) / 27.0
-			var dy = (y - 11) / 11.0
-			var d = dx * dx + dy * dy
-			if d <= 1.0 and d >= 0.6:
-				ring_img.set_pixel(x, y, Color(1.0, 0.88, 0.25, 0.95))
-	active_ring.texture = ImageTexture.create_from_image(ring_img)
-	active_ring.position = Vector2(0, 28)
-	active_ring.visible = false
-	add_child(active_ring)
+	# 2. Vòng sáng bệ đứng khi tới lượt hành động (Active Turn Glow)
+	active_pedestal = Sprite2D.new()
+	var a_tex = load("res://assets/sprites/ui/pedestal_active.png")
+	if a_tex:
+		active_pedestal.texture = a_tex
+	active_pedestal.position = Vector2(0, 0)
+	active_pedestal.scale = Vector2(1.15, 1.15)
+	active_pedestal.visible = false
+	active_pedestal.z_index = 1
+	add_child(active_pedestal)
 
-	# 3. Hero Sprite (64x64 HD Spritesheet: 4 frames)
+	# 3. Hero Sprite (64x64 HD Spritesheet)
+	# Căn chỉnh để gót chân (y = 56 trong frame 64x64) đặt chuẩn xác tại y = 0 trên bệ đứng
 	sprite = Sprite2D.new()
 	var spr_path = "res://assets/sprites/heroes/%s.png" % battle_hero.data.hero_id
 	var tex = load(spr_path)
@@ -74,16 +70,18 @@ func _build_visuals() -> void:
 		sprite.texture = tex
 		sprite.hframes = 4
 		sprite.frame = 0
+	sprite.position = Vector2(0, -48) # Đưa gót chân về chính xác y = 0
 	sprite.scale = Vector2(2.0, 2.0)
 	sprite.flip_h = is_enemy
+	sprite.z_index = 2
 	add_child(sprite)
 
-	# 4. Overhead UI
+	# 4. Overhead UI (Đặt cao hơn đỉnh đầu nhân vật và lông trĩ)
 	_build_overhead_ui()
 
 func _build_overhead_ui() -> void:
 	var overhead = Node2D.new()
-	overhead.position = Vector2(0, -68)
+	overhead.position = Vector2(0, -114)
 	overhead.z_index = 35
 	add_child(overhead)
 
@@ -123,7 +121,7 @@ func _build_overhead_ui() -> void:
 	name_label.add_theme_color_override("font_color", rarity_color)
 	overhead.add_child(name_label)
 
-	# ── HP GHOST BAR (Vạch tụt máu trễ phong cách game đối kháng) ──
+	# ── HP GHOST BAR (Vạch tụt máu trễ) ──
 	hp_ghost_bar = ProgressBar.new()
 	hp_ghost_bar.position = Vector2(-42, 0)
 	hp_ghost_bar.size = Vector2(84, 8)
@@ -138,7 +136,7 @@ func _build_overhead_ui() -> void:
 	hp_ghost_bar.add_theme_stylebox_override("background", sb_ghost_bg)
 
 	var sb_ghost_fill = StyleBoxFlat.new()
-	sb_ghost_fill.bg_color = Color(0.95, 0.85, 0.3, 0.85) # Vàng cam mờ
+	sb_ghost_fill.bg_color = Color(0.95, 0.85, 0.3, 0.85)
 	hp_ghost_bar.add_theme_stylebox_override("fill", sb_ghost_fill)
 	overhead.add_child(hp_ghost_bar)
 
@@ -187,7 +185,7 @@ func _build_overhead_ui() -> void:
 	morale_bar.add_theme_stylebox_override("background", sb_m_bg)
 
 	var sb_m_fill = StyleBoxFlat.new()
-	sb_m_fill.bg_color = Color(1.0, 0.65, 0.1) # Cam vàng năng lượng
+	sb_m_fill.bg_color = Color(1.0, 0.65, 0.1)
 	morale_bar.add_theme_stylebox_override("fill", sb_m_fill)
 	overhead.add_child(morale_bar)
 
@@ -217,13 +215,17 @@ func _build_overhead_ui() -> void:
 	overhead.add_child(status_row)
 
 func set_active_turn(active: bool) -> void:
-	active_ring.visible = active
+	active_pedestal.visible = active
 	if active:
-		var tw = active_ring.create_tween().set_loops()
-		tw.tween_property(active_ring, "scale", Vector2(1.15, 1.15), 0.3)
-		tw.tween_property(active_ring, "scale", Vector2(0.95, 0.95), 0.3)
+		if _active_tween:
+			_active_tween.kill()
+		_active_tween = create_tween().set_loops()
+		_active_tween.tween_property(active_pedestal, "modulate:a", 1.0, 0.3)
+		_active_tween.tween_property(active_pedestal, "modulate:a", 0.4, 0.3)
 	else:
-		active_ring.scale = Vector2.ONE
+		if _active_tween:
+			_active_tween.kill()
+		active_pedestal.modulate.a = 1.0
 
 func update_bars(animate: bool = true) -> void:
 	if _is_dead:
@@ -239,11 +241,11 @@ func update_bars(animate: bool = true) -> void:
 	var fill_style = hp_bar.get_theme_stylebox("fill") as StyleBoxFlat
 	if fill_style:
 		if hp_ratio > 0.5:
-			fill_style.bg_color = Color(0.2, 0.88, 0.35) # Xanh lục khỏe mạnh
+			fill_style.bg_color = Color(0.2, 0.88, 0.35)
 		elif hp_ratio > 0.25:
-			fill_style.bg_color = Color(0.95, 0.75, 0.15) # Vàng cảnh báo
+			fill_style.bg_color = Color(0.95, 0.75, 0.15)
 		else:
-			fill_style.bg_color = Color(0.95, 0.22, 0.22) # Đỏ nguy cấp
+			fill_style.bg_color = Color(0.95, 0.22, 0.22)
 
 	# Smooth HP transition with Trailing Ghost Bar
 	if animate:
@@ -255,7 +257,7 @@ func update_bars(animate: bool = true) -> void:
 		if _ghost_tween:
 			_ghost_tween.kill()
 		_ghost_tween = create_tween()
-		_ghost_tween.tween_interval(0.2) # Trễ 0.2s rồi tụt dần
+		_ghost_tween.tween_interval(0.2)
 		_ghost_tween.tween_property(hp_ghost_bar, "value", float(current_hp), 0.45).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	else:
 		hp_bar.value = current_hp
@@ -271,7 +273,7 @@ func update_bars(animate: bool = true) -> void:
 	else:
 		morale_bar.value = current_morale
 
-	# Morale Max Full Glow (Sĩ khí đạt 100)
+	# Morale Max Full Glow
 	var is_max_rage = (current_morale >= 100)
 	rage_badge.visible = is_max_rage
 	var m_fill = morale_bar.get_theme_stylebox("fill") as StyleBoxFlat
@@ -327,7 +329,7 @@ func animate_attack(target_pos: Vector2, on_impact: Callable, on_complete: Calla
 		_idle_tween.kill()
 
 	var tw = create_tween()
-	var attack_dest = target_pos + (Vector2(45, 0) if is_enemy else Vector2(-45, 0))
+	var attack_dest = target_pos + (Vector2(55, 0) if is_enemy else Vector2(-55, 0))
 	var dur_dash = 0.16 / speed_mult
 	var dur_hold = 0.12 / speed_mult
 	var dur_back = 0.18 / speed_mult
@@ -335,9 +337,9 @@ func animate_attack(target_pos: Vector2, on_impact: Callable, on_complete: Calla
 	# 1. Dash to target
 	tw.tween_property(self, "position", attack_dest, dur_dash).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	tw.tween_callback(func():
-		sprite.frame = 2 # Attack pose
+		sprite.frame = 2
 		if SoundManager.instance:
-			SoundManager.instance.play_slash()
+			sound_attack()
 		on_impact.call()
 	)
 
@@ -352,6 +354,10 @@ func animate_attack(target_pos: Vector2, on_impact: Callable, on_complete: Calla
 		on_complete.call()
 	)
 
+func sound_attack() -> void:
+	if SoundManager.instance:
+		SoundManager.instance.play_slash()
+
 func animate_ranged_attack(_target_pos: Vector2, on_impact: Callable, on_complete: Callable, speed_mult: float = 1.0) -> void:
 	if _idle_tween:
 		_idle_tween.kill()
@@ -361,7 +367,7 @@ func animate_ranged_attack(_target_pos: Vector2, on_impact: Callable, on_complet
 	var dur_hold = 0.15 / speed_mult
 
 	# Step slightly forward
-	var step_forward = home_position + (Vector2(-15, 0) if is_enemy else Vector2(15, 0))
+	var step_forward = home_position + (Vector2(-18, 0) if is_enemy else Vector2(18, 0))
 	tw.tween_property(self, "position", step_forward, 0.1 / speed_mult)
 	tw.tween_callback(func():
 		sprite.frame = 2
@@ -388,7 +394,7 @@ func animate_hurt(is_dodge: bool, _is_block: bool, speed_mult: float = 1.0) -> v
 
 	if is_dodge:
 		# Lướt lùi né tránh
-		var dodge_off = Vector2(25, 0) if is_enemy else Vector2(-25, 0)
+		var dodge_off = Vector2(28, 0) if is_enemy else Vector2(-28, 0)
 		tw.tween_property(self, "position", home_position + dodge_off, dur * 0.5)
 		tw.tween_property(self, "modulate:a", 0.5, dur * 0.5)
 		tw.tween_property(self, "position", home_position, dur * 0.5)
@@ -417,7 +423,6 @@ func animate_death(speed_mult: float = 1.0) -> void:
 	sprite.frame = 3
 	var tw = create_tween()
 	var dur = 0.45 / speed_mult
-	# Chìm dần và tan biến
 	tw.tween_property(self, "position:y", position.y + 12, dur)
 	tw.parallel().tween_property(self, "modulate", Color(0.2, 0.2, 0.2, 0.0), dur)
 	tw.tween_callback(func(): visible = false)
@@ -427,5 +432,5 @@ func show_floating_text(txt: String, color: Color, is_crit: bool = false) -> voi
 	ft.text = txt
 	ft.text_color = color
 	ft.is_crit = is_crit
-	ft.position = position + Vector2(0, -45)
+	ft.position = position + Vector2(0, -75)
 	get_parent().add_child(ft)
