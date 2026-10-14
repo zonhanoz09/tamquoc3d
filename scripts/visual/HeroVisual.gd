@@ -6,6 +6,10 @@ var battle_hero: BattleHero
 var is_enemy: bool = false
 var home_position: Vector2 = Vector2.ZERO
 
+# Kích thước thanh máu thanh mảnh chuẩn xác
+const HP_WIDTH: float = 90.0
+const HP_HEIGHT: float = 2.0
+
 # Child Nodes
 var pedestal: Sprite2D
 var skill_ready_aura: Sprite2D
@@ -13,8 +17,9 @@ var active_pedestal: Sprite2D
 var sprite: Sprite2D
 
 # Smooth Overhead Bars
-var hp_ghost_bar: ProgressBar
-var hp_bar: ProgressBar
+var hp_bg: Panel
+var hp_ghost_bar: Panel
+var hp_bar: Panel
 var name_label: Label
 var elem_icon: Sprite2D
 var status_row: HBoxContainer
@@ -84,7 +89,7 @@ func _build_visuals() -> void:
 	sprite.z_index = 3
 	add_child(sprite)
 
-	# 5. Overhead UI (Thanh máu dài 90px cao 5px bo góc nhẹ 4 góc)
+	# 5. Overhead UI (Thanh máu thanh mảnh mỏng gọn 2px & tên tướng)
 	_build_overhead_ui()
 
 func _build_overhead_ui() -> void:
@@ -114,8 +119,8 @@ func _build_overhead_ui() -> void:
 	name_label = Label.new()
 	name_label.text = battle_hero.data.hero_name
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	name_label.position = Vector2(-45, -18)
-	name_label.size = Vector2(90, 16)
+	name_label.position = Vector2(-HP_WIDTH / 2.0, -18)
+	name_label.size = Vector2(HP_WIDTH, 16)
 	name_label.add_theme_font_size_override("font_size", 11)
 	name_label.add_theme_color_override("font_shadow_color", Color.BLACK)
 	name_label.add_theme_constant_override("shadow_offset_x", 1)
@@ -130,51 +135,41 @@ func _build_overhead_ui() -> void:
 	name_label.add_theme_color_override("font_color", rarity_color)
 	overhead.add_child(name_label)
 
-	# ── LINE 2: THANH MÁU DÀI 90PX, CAO 5PX, BO GÓC NHẸ 4 GÓC (RADIUS 2PX) ──
-	# HP Ghost Bar (Vạch tụt máu trễ màu vàng sáng, bo 4 góc nhẹ radius 2px)
-	hp_ghost_bar = ProgressBar.new()
-	hp_ghost_bar.position = Vector2(-45, 0)
-	hp_ghost_bar.size = Vector2(90, 5)
-	hp_ghost_bar.custom_minimum_size = Vector2(90, 5)
-	hp_ghost_bar.show_percentage = false
-	hp_ghost_bar.max_value = battle_hero.stats.hp_max
-	hp_ghost_bar.value = battle_hero.stats.hp_current
+	# ── LINE 2: THANH MÁU MỎNG GỌN 2PX (Dài 90px, cao 2px, bo góc nhẹ radius 1px) ──
+	# HP Background Track
+	hp_bg = Panel.new()
+	hp_bg.position = Vector2(-HP_WIDTH / 2.0, 0)
+	hp_bg.size = Vector2(HP_WIDTH, HP_HEIGHT)
+	var sb_bg = StyleBoxFlat.new()
+	sb_bg.bg_color = Color(0.08, 0.08, 0.1, 0.95)
+	sb_bg.set_corner_radius_all(1)
+	hp_bg.add_theme_stylebox_override("panel", sb_bg)
+	overhead.add_child(hp_bg)
 
-	var sb_ghost_bg = StyleBoxFlat.new()
-	sb_ghost_bg.bg_color = Color(0.08, 0.08, 0.1, 0.95)
-	sb_ghost_bg.set_border_width_all(1)
-	sb_ghost_bg.border_color = Color(0.02, 0.02, 0.04, 0.9)
-	sb_ghost_bg.set_corner_radius_all(2)
-	hp_ghost_bar.add_theme_stylebox_override("background", sb_ghost_bg)
-
-	var sb_ghost_fill = StyleBoxFlat.new()
-	sb_ghost_fill.bg_color = Color(0.98, 0.88, 0.38, 0.9)
-	sb_ghost_fill.set_corner_radius_all(2)
-	hp_ghost_bar.add_theme_stylebox_override("fill", sb_ghost_fill)
+	# HP Ghost Bar (Vạch tụt máu trễ màu vàng sáng)
+	hp_ghost_bar = Panel.new()
+	hp_ghost_bar.position = Vector2(-HP_WIDTH / 2.0, 0)
+	hp_ghost_bar.size = Vector2(HP_WIDTH, HP_HEIGHT)
+	var sb_ghost = StyleBoxFlat.new()
+	sb_ghost.bg_color = Color(0.98, 0.88, 0.38, 0.9)
+	sb_ghost.set_corner_radius_all(1)
+	hp_ghost_bar.add_theme_stylebox_override("panel", sb_ghost)
 	overhead.add_child(hp_ghost_bar)
 
-	# HP Main Bar (Thanh máu chính màu xanh ngọc, bo 4 góc nhẹ radius 2px)
-	hp_bar = ProgressBar.new()
-	hp_bar.position = Vector2(-45, 0)
-	hp_bar.size = Vector2(90, 5)
-	hp_bar.custom_minimum_size = Vector2(90, 5)
-	hp_bar.show_percentage = false
-	hp_bar.max_value = battle_hero.stats.hp_max
-	hp_bar.value = battle_hero.stats.hp_current
-
-	var sb_empty = StyleBoxEmpty.new()
-	hp_bar.add_theme_stylebox_override("background", sb_empty)
-
+	# HP Main Bar (Thanh máu chính màu xanh ngọc tươi sáng)
+	hp_bar = Panel.new()
+	hp_bar.position = Vector2(-HP_WIDTH / 2.0, 0)
+	hp_bar.size = Vector2(HP_WIDTH, HP_HEIGHT)
 	var sb_fill = StyleBoxFlat.new()
 	sb_fill.bg_color = Color(0.22, 0.88, 0.42)
-	sb_fill.set_corner_radius_all(2)
-	hp_bar.add_theme_stylebox_override("fill", sb_fill)
+	sb_fill.set_corner_radius_all(1)
+	hp_bar.add_theme_stylebox_override("panel", sb_fill)
 	overhead.add_child(hp_bar)
 
 	# ── LINE 0: STATUS ICONS ROW ──
 	status_row = HBoxContainer.new()
-	status_row.position = Vector2(-45, -32)
-	status_row.size = Vector2(90, 12)
+	status_row.position = Vector2(-HP_WIDTH / 2.0, -32)
+	status_row.size = Vector2(HP_WIDTH, 12)
 	status_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	overhead.add_child(status_row)
 
@@ -217,9 +212,10 @@ func update_bars(animate: bool = true) -> void:
 	var current_hp = battle_hero.stats.hp_current
 	var max_hp = battle_hero.stats.hp_max
 	var hp_ratio = clampf(float(current_hp) / float(max_hp), 0.0, 1.0)
+	var target_w = clampf(HP_WIDTH * hp_ratio, 0.0, HP_WIDTH)
 
 	# Dynamic HP Color
-	var fill_style = hp_bar.get_theme_stylebox("fill") as StyleBoxFlat
+	var fill_style = hp_bar.get_theme_stylebox("panel") as StyleBoxFlat
 	if fill_style:
 		if hp_ratio > 0.5:
 			fill_style.bg_color = Color(0.22, 0.88, 0.42) # Xanh ngọc tươi sáng
@@ -228,21 +224,25 @@ func update_bars(animate: bool = true) -> void:
 		else:
 			fill_style.bg_color = Color(0.96, 0.24, 0.24) # Đỏ thẫm nguy cấp
 
-	# Smooth HP transition with Trailing Ghost Bar (Chuẩn 90x5px có bo góc)
+	# Ẩn hiện khi cạn máu
+	hp_bar.visible = target_w > 0.0
+	hp_ghost_bar.visible = target_w > 0.0
+
+	# Smooth HP transition with Trailing Ghost Bar (Chuẩn 2px siêu mảnh)
 	if animate:
 		if _hp_tween:
 			_hp_tween.kill()
 		_hp_tween = create_tween()
-		_hp_tween.tween_property(hp_bar, "value", float(current_hp), 0.18).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		_hp_tween.tween_property(hp_bar, "size:x", target_w, 0.18).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 
 		if _ghost_tween:
 			_ghost_tween.kill()
 		_ghost_tween = create_tween()
 		_ghost_tween.tween_interval(0.2)
-		_ghost_tween.tween_property(hp_ghost_bar, "value", float(current_hp), 0.45).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		_ghost_tween.tween_property(hp_ghost_bar, "size:x", target_w, 0.45).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	else:
-		hp_bar.value = current_hp
-		hp_ghost_bar.value = current_hp
+		hp_bar.size.x = target_w
+		hp_ghost_bar.size.x = target_w
 
 	# Hiệu ứng chân khi tích đầy Nộ chiêu / Kỹ năng (100 Sĩ khí)
 	var current_morale = battle_hero.stats.morale_current
