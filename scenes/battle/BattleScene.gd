@@ -99,17 +99,24 @@ func _setup_ui() -> void:
 	top_hbox.add_child(round_label)
 
 	var sep = VSeparator.new()
-	sep.custom_minimum_size = Vector2(20, 0)
+	sep.custom_minimum_size = Vector2(20, 30)
 	top_hbox.add_child(sep)
 
+	var tl_lbl = Label.new()
+	tl_lbl.text = "THỨ TỰ HÀNH ĐỘNG:"
+	tl_lbl.add_theme_font_size_override("font_size", 13)
+	tl_lbl.add_theme_color_override("font_color", Color(0.7, 0.8, 0.9))
+	top_hbox.add_child(tl_lbl)
+
 	timeline_container = HBoxContainer.new()
-	timeline_container.alignment = BoxContainer.ALIGNMENT_CENTER
+	timeline_container.add_theme_constant_override("separation", 6)
 	top_hbox.add_child(timeline_container)
 
 	# 2. Control Buttons (Top Right)
 	var ctrl_box = HBoxContainer.new()
-	ctrl_box.position = Vector2(1060, 14)
+	ctrl_box.position = Vector2(1060, 16)
 	ctrl_box.size = Vector2(200, 36)
+	ctrl_box.add_theme_constant_override("separation", 8)
 	ui_layer.add_child(ctrl_box)
 
 	speed_btn = Button.new()
@@ -124,14 +131,14 @@ func _setup_ui() -> void:
 	pause_btn.pressed.connect(_on_pause_toggle)
 	ctrl_box.add_child(pause_btn)
 
-	# 3. Combat Log (Bottom Left)
+	# 3. Combat Log (Bottom Left, gọn gàng trong suốt không che tướng)
 	log_panel = PanelContainer.new()
-	log_panel.position = Vector2(16, 540)
-	log_panel.size = Vector2(360, 165)
+	log_panel.position = Vector2(16, 580)
+	log_panel.size = Vector2(240, 125)
 	var sb_log = StyleBoxFlat.new()
-	sb_log.bg_color = Color(0.05, 0.05, 0.08, 0.75)
+	sb_log.bg_color = Color(0.05, 0.05, 0.08, 0.65)
 	sb_log.set_border_width_all(1)
-	sb_log.border_color = Color(0.4, 0.4, 0.5, 0.6)
+	sb_log.border_color = Color(0.4, 0.4, 0.5, 0.5)
 	sb_log.set_corner_radius_all(4)
 	log_panel.add_theme_stylebox_override("panel", sb_log)
 	ui_layer.add_child(log_panel)
@@ -148,7 +155,7 @@ func _setup_ui() -> void:
 	log_label = Label.new()
 	log_label.text = "Khởi tạo trận đánh..."
 	log_label.autowrap_mode = TextServer.AUTOWRAP_WORD
-	log_label.add_theme_font_size_override("font_size", 11)
+	log_label.add_theme_font_size_override("font_size", 10)
 	log_label.add_theme_color_override("font_color", Color(0.9, 0.9, 0.95))
 	log_vbox.add_child(log_label)
 
@@ -161,7 +168,7 @@ func _setup_ui() -> void:
 
 	var res_bg = ColorRect.new()
 	res_bg.size = Vector2(1280, 720)
-	res_bg.color = Color(0, 0, 0, 0.7)
+	res_bg.color = Color(0, 0, 0, 0.65)
 	result_banner.add_child(res_bg)
 
 	var res_lbl = Label.new()
@@ -180,42 +187,43 @@ func _setup_ui() -> void:
 	result_banner.add_child(restart_btn)
 
 ## ──────────────────────────────────────────────────────────
-## BỐ CỤC VỊ TRÍ ĐỨNG CHUẨN TAM QUỐC
-## - Tiền quân: DUY NHẤT 1 VỊ TRÍ (nhô lên hàng đầu ở giữa)
-## - Trung quân: Tối đa 3 vị trí (Trên, Giữa, Dưới)
-## - Hậu quân: Tối đa 3 vị trí (Trên, Giữa, Dưới)
+## BỐ CỤC VỊ TRÍ ĐỨNG CHUẨN TAM QUỐC ĐỐI XỨNG TUYỆT ĐỐI
+## Tâm sân đấu: x = 640, y = 520
+## - Tiền quân: DUY NHẤT 1 VỊ TRÍ (cách tâm 120px)
+## - Trung quân: Tối đa 3 vị trí (Trên y=410, Giữa y=520, Dưới y=630)
+## - Hậu quân: Tối đa 3 vị trí (Trên y=410, Giữa y=520, Dưới y=630)
 ## ──────────────────────────────────────────────────────────
 func get_slot_position(team: int, row: int, col: int) -> Vector2:
 	if team == 0:
-		# Player (Bên trái)
+		# Player (Bên trái sân đấu)
 		match row:
 			0: # Tiền quân (1 ô chính giữa)
-				return Vector2(530, 520)
+				return Vector2(520, 520)
 			1: # Trung quân (3 ô: Trên, Giữa, Dưới)
 				match col:
-					0: return Vector2(370, 420)
-					1: return Vector2(340, 520)
-					_: return Vector2(370, 620)
+					0: return Vector2(350, 410)
+					1: return Vector2(350, 520)
+					_: return Vector2(350, 630)
 			_: # Hậu quân (3 ô: Trên, Giữa, Dưới)
 				match col:
-					0: return Vector2(190, 390)
-					1: return Vector2(160, 490)
-					_: return Vector2(190, 590)
+					0: return Vector2(180, 410)
+					1: return Vector2(180, 520)
+					_: return Vector2(180, 630)
 	else:
-		# Enemy (Bên phải đối xứng)
+		# Enemy (Bên phải đối xứng hoàn hảo qua x = 640)
 		match row:
 			0: # Tiền quân (1 ô chính giữa)
-				return Vector2(750, 520)
+				return Vector2(760, 520)
 			1: # Trung quân (3 ô: Trên, Giữa, Dưới)
 				match col:
-					0: return Vector2(910, 420)
-					1: return Vector2(940, 520)
-					_: return Vector2(910, 620)
+					0: return Vector2(930, 410)
+					1: return Vector2(930, 520)
+					_: return Vector2(930, 630)
 			_: # Hậu quân (3 ô: Trên, Giữa, Dưới)
 				match col:
-					0: return Vector2(1090, 390)
-					1: return Vector2(1120, 490)
-					_: return Vector2(1090, 590)
+					0: return Vector2(1100, 410)
+					1: return Vector2(1100, 520)
+					_: return Vector2(1100, 630)
 
 func _setup_battle() -> void:
 	battle_manager = BattleManager.new()
