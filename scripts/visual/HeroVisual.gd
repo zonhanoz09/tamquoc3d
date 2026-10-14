@@ -6,9 +6,9 @@ var battle_hero: BattleHero
 var is_enemy: bool = false
 var home_position: Vector2 = Vector2.ZERO
 
-# Kích thước thanh máu thanh mảnh chuẩn xác
+# Kích thước thanh máu: tăng độ dày lên gấp đôi (4px) thanh mảnh chuẩn sắc nét
 const HP_WIDTH: float = 90.0
-const HP_HEIGHT: float = 2.0
+const HP_HEIGHT: float = 4.0
 
 # Child Nodes
 var pedestal: Sprite2D
@@ -52,13 +52,16 @@ func _build_visuals() -> void:
 	pedestal.z_index = 0
 	add_child(pedestal)
 
-	# 2. Hiệu ứng dưới chân khi tích đầy Nộ/Kỹ năng (Skill Ready Blazing Aura)
+	# 2. Hiệu ứng dưới chân khi tích đầy Nộ/Kỹ năng (Skill Ready Blazing Aura to lớn & rực rỡ)
 	skill_ready_aura = Sprite2D.new()
 	var sr_tex = load("res://assets/sprites/ui/pedestal_skill_ready.png")
 	if sr_tex:
 		skill_ready_aura.texture = sr_tex
 	skill_ready_aura.position = Vector2(0, 0)
 	skill_ready_aura.scale = Vector2(1.15, 1.15)
+	var sr_mat = CanvasItemMaterial.new()
+	sr_mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	skill_ready_aura.material = sr_mat
 	skill_ready_aura.visible = false
 	skill_ready_aura.z_index = 1
 	add_child(skill_ready_aura)
@@ -89,7 +92,7 @@ func _build_visuals() -> void:
 	sprite.z_index = 3
 	add_child(sprite)
 
-	# 5. Overhead UI (Thanh máu thanh mảnh mỏng gọn 2px & tên tướng)
+	# 5. Overhead UI (Thanh máu mỏng gọn 4px & tên tướng)
 	_build_overhead_ui()
 
 func _build_overhead_ui() -> void:
@@ -135,14 +138,14 @@ func _build_overhead_ui() -> void:
 	name_label.add_theme_color_override("font_color", rarity_color)
 	overhead.add_child(name_label)
 
-	# ── LINE 2: THANH MÁU MỎNG GỌN 2PX (Dài 90px, cao 2px, bo góc nhẹ radius 1px) ──
+	# ── LINE 2: THANH MÁU MỎNG GỌN 4PX (Dài 90px, cao 4px, bo góc nhẹ radius 2px) ──
 	# HP Background Track
 	hp_bg = Panel.new()
 	hp_bg.position = Vector2(-HP_WIDTH / 2.0, 0)
 	hp_bg.size = Vector2(HP_WIDTH, HP_HEIGHT)
 	var sb_bg = StyleBoxFlat.new()
 	sb_bg.bg_color = Color(0.08, 0.08, 0.1, 0.95)
-	sb_bg.set_corner_radius_all(1)
+	sb_bg.set_corner_radius_all(2)
 	hp_bg.add_theme_stylebox_override("panel", sb_bg)
 	overhead.add_child(hp_bg)
 
@@ -152,7 +155,7 @@ func _build_overhead_ui() -> void:
 	hp_ghost_bar.size = Vector2(HP_WIDTH, HP_HEIGHT)
 	var sb_ghost = StyleBoxFlat.new()
 	sb_ghost.bg_color = Color(0.98, 0.88, 0.38, 0.9)
-	sb_ghost.set_corner_radius_all(1)
+	sb_ghost.set_corner_radius_all(2)
 	hp_ghost_bar.add_theme_stylebox_override("panel", sb_ghost)
 	overhead.add_child(hp_ghost_bar)
 
@@ -162,7 +165,7 @@ func _build_overhead_ui() -> void:
 	hp_bar.size = Vector2(HP_WIDTH, HP_HEIGHT)
 	var sb_fill = StyleBoxFlat.new()
 	sb_fill.bg_color = Color(0.22, 0.88, 0.42)
-	sb_fill.set_corner_radius_all(1)
+	sb_fill.set_corner_radius_all(2)
 	hp_bar.add_theme_stylebox_override("panel", sb_fill)
 	overhead.add_child(hp_bar)
 
@@ -195,10 +198,10 @@ func set_skill_ready(ready: bool) -> void:
 			if _skill_ready_tween:
 				_skill_ready_tween.kill()
 			_skill_ready_tween = create_tween().set_loops()
-			_skill_ready_tween.tween_property(skill_ready_aura, "scale", Vector2(1.25, 1.25), 0.4).set_trans(Tween.TRANS_SINE)
-			_skill_ready_tween.parallel().tween_property(skill_ready_aura, "modulate", Color(1.1, 1.05, 0.7, 1.0), 0.4)
-			_skill_ready_tween.tween_property(skill_ready_aura, "scale", Vector2(1.10, 1.10), 0.4).set_trans(Tween.TRANS_SINE)
-			_skill_ready_tween.parallel().tween_property(skill_ready_aura, "modulate", Color(1.0, 0.8, 0.4, 0.65), 0.4)
+			_skill_ready_tween.tween_property(skill_ready_aura, "scale", Vector2(1.22, 1.22), 0.45).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+			_skill_ready_tween.parallel().tween_property(skill_ready_aura, "modulate", Color(1.2, 1.15, 0.9, 1.0), 0.45)
+			_skill_ready_tween.tween_property(skill_ready_aura, "scale", Vector2(1.08, 1.08), 0.45).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+			_skill_ready_tween.parallel().tween_property(skill_ready_aura, "modulate", Color(0.95, 0.8, 0.45, 0.75), 0.45)
 	else:
 		skill_ready_aura.visible = false
 		if _skill_ready_tween:
@@ -228,7 +231,7 @@ func update_bars(animate: bool = true) -> void:
 	hp_bar.visible = target_w > 0.0
 	hp_ghost_bar.visible = target_w > 0.0
 
-	# Smooth HP transition with Trailing Ghost Bar (Chuẩn 2px siêu mảnh)
+	# Smooth HP transition with Trailing Ghost Bar (Chuẩn 4px mỏng gọn)
 	if animate:
 		if _hp_tween:
 			_hp_tween.kill()
