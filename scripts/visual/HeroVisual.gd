@@ -84,7 +84,7 @@ func _build_visuals() -> void:
 	sprite.z_index = 3
 	add_child(sprite)
 
-	# 5. Overhead UI (Thanh máu dài 90px cao 4px bo góc nhẹ 4 góc)
+	# 5. Overhead UI (Thanh máu dài 90px cao 5px bo góc nhẹ 4 góc)
 	_build_overhead_ui()
 
 func _build_overhead_ui() -> void:
@@ -130,12 +130,12 @@ func _build_overhead_ui() -> void:
 	name_label.add_theme_color_override("font_color", rarity_color)
 	overhead.add_child(name_label)
 
-	# ── LINE 2: THANH MÁU DÀI 90PX, CAO 4PX, BO GÓC NHẸ 4 GÓC (RADIUS 2PX) ──
+	# ── LINE 2: THANH MÁU DÀI 90PX, CAO 5PX, BO GÓC NHẸ 4 GÓC (RADIUS 2PX) ──
 	# HP Ghost Bar (Vạch tụt máu trễ màu vàng sáng, bo 4 góc nhẹ radius 2px)
 	hp_ghost_bar = ProgressBar.new()
 	hp_ghost_bar.position = Vector2(-45, 0)
-	hp_ghost_bar.size = Vector2(90, 4)
-	hp_ghost_bar.custom_minimum_size = Vector2(90, 4)
+	hp_ghost_bar.size = Vector2(90, 5)
+	hp_ghost_bar.custom_minimum_size = Vector2(90, 5)
 	hp_ghost_bar.show_percentage = false
 	hp_ghost_bar.max_value = battle_hero.stats.hp_max
 	hp_ghost_bar.value = battle_hero.stats.hp_current
@@ -156,8 +156,8 @@ func _build_overhead_ui() -> void:
 	# HP Main Bar (Thanh máu chính màu xanh ngọc, bo 4 góc nhẹ radius 2px)
 	hp_bar = ProgressBar.new()
 	hp_bar.position = Vector2(-45, 0)
-	hp_bar.size = Vector2(90, 4)
-	hp_bar.custom_minimum_size = Vector2(90, 4)
+	hp_bar.size = Vector2(90, 5)
+	hp_bar.custom_minimum_size = Vector2(90, 5)
 	hp_bar.show_percentage = false
 	hp_bar.max_value = battle_hero.stats.hp_max
 	hp_bar.value = battle_hero.stats.hp_current
@@ -228,7 +228,7 @@ func update_bars(animate: bool = true) -> void:
 		else:
 			fill_style.bg_color = Color(0.96, 0.24, 0.24) # Đỏ thẫm nguy cấp
 
-	# Smooth HP transition with Trailing Ghost Bar (Chuẩn 90x4px có bo góc)
+	# Smooth HP transition with Trailing Ghost Bar (Chuẩn 90x5px có bo góc)
 	if animate:
 		if _hp_tween:
 			_hp_tween.kill()
