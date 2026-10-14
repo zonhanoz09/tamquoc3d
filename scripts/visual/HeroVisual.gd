@@ -85,7 +85,7 @@ func _build_visuals() -> void:
 	sprite.z_index = 3
 	add_child(sprite)
 
-	# 5. Overhead UI (Thanh máu siêu mảnh 1px & tên tướng tinh tế)
+	# 5. Overhead UI (Thanh máu dài thanh mảnh 4px & tên tướng tinh tế)
 	_build_overhead_ui()
 
 func _build_overhead_ui() -> void:
@@ -131,25 +131,32 @@ func _build_overhead_ui() -> void:
 	name_label.add_theme_color_override("font_color", rarity_color)
 	overhead.add_child(name_label)
 
-	# ── LINE 2: THANH MÁU DÀI SIÊU MẢNH CHUẨN 1PX (Dài 108px, cao chính xác 1px) ──
-	# Nền thanh máu 1px
+	# ── LINE 2: THANH MÁU DÀI THANH MẢNH CHUẨN 4PX (Dài 108px, cao 4px) ──
+	# Viền tối bên ngoài thanh máu 4px
+	var hp_border = ColorRect.new()
+	hp_border.position = Vector2(-55, -1)
+	hp_border.size = Vector2(110, 6)
+	hp_border.color = Color(0.02, 0.02, 0.04, 0.95)
+	overhead.add_child(hp_border)
+
+	# Nền lòng trong thanh máu 4px
 	hp_bg = ColorRect.new()
 	hp_bg.position = Vector2(-54, 0)
-	hp_bg.size = Vector2(108, 1)
-	hp_bg.color = Color(0.1, 0.08, 0.12, 0.85)
+	hp_bg.size = Vector2(108, 4)
+	hp_bg.color = Color(0.1, 0.08, 0.12, 0.9)
 	overhead.add_child(hp_bg)
 
-	# Vạch tụt máu trễ 1px (Màu vàng sáng)
+	# Vạch tụt máu trễ 4px (Màu vàng sáng)
 	hp_ghost_bar = ColorRect.new()
 	hp_ghost_bar.position = Vector2(-54, 0)
-	hp_ghost_bar.size = Vector2(108, 1)
+	hp_ghost_bar.size = Vector2(108, 4)
 	hp_ghost_bar.color = Color(0.98, 0.88, 0.38, 0.9)
 	overhead.add_child(hp_ghost_bar)
 
-	# Thanh máu chính 1px (Màu xanh ngọc tươi sáng)
+	# Thanh máu chính 4px (Màu xanh ngọc tươi sáng)
 	hp_bar = ColorRect.new()
 	hp_bar.position = Vector2(-54, 0)
-	hp_bar.size = Vector2(108, 1)
+	hp_bar.size = Vector2(108, 4)
 	hp_bar.color = Color(0.22, 0.88, 0.42)
 	overhead.add_child(hp_bar)
 
@@ -209,7 +216,7 @@ func update_bars(animate: bool = true) -> void:
 	else:
 		hp_bar.color = Color(0.96, 0.24, 0.24) # Đỏ thẫm nguy cấp
 
-	# Smooth HP transition with Trailing Ghost Bar (Chuẩn 1px)
+	# Smooth HP transition with Trailing Ghost Bar (Chuẩn 4px)
 	if animate:
 		if _hp_tween:
 			_hp_tween.kill()
