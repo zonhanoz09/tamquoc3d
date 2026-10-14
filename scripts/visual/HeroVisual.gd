@@ -2,6 +2,8 @@ class_name HeroVisual
 extends Node2D
 ## HeroVisual - Thực thể đồ họa & hoạt họa HD-2D của vị tướng trong trận đấu
 
+signal skill_banner_finished
+
 var battle_hero: BattleHero
 var is_enemy: bool = false
 var home_position: Vector2 = Vector2.ZERO
@@ -97,6 +99,7 @@ func _build_visuals() -> void:
 
 func _build_overhead_ui() -> void:
 	var overhead = Node2D.new()
+	overhead.name = "OverheadUI"
 	overhead.position = Vector2(0, -112)
 	overhead.z_index = 35
 	add_child(overhead)
@@ -176,6 +179,80 @@ func _build_overhead_ui() -> void:
 	status_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	overhead.add_child(status_row)
 
+## Hiển thị Banner tên kĩ năng ngay trên đầu tướng (Không popup tràn màn hình)
+func show_skill_banner(skill_name: String, speed_mult: float = 1.0) -> void:
+	var banner = PanelContainer.new()
+	banner.position = Vector2(-80, -152)
+	banner.size = Vector2(160, 26)
+	banner.z_index = 60
+	banner.pivot_offset = Vector2(80, 13)
+
+	var sb = StyleBoxFlat.new()
+	sb.bg_color = Color(0.06, 0.06, 0.1, 0.95)
+	sb.set_border_width_all(2)
+
+	# Border màu theo nguyên tố của tướng
+	var border_col = Color(1.0, 0.85, 0.3)
+	var icon_sym = "⚔️"
+	match battle_hero.data.element:
+		HeroData.Element.FIRE:
+			border_col = Color(1.0, 0.35, 0.2)
+			icon_sym = "🔥"
+		HeroData.Element.WATER:
+			border_col = Color(0.25, 0.8, 1.0)
+			icon_sym = "💧"
+		HeroData.Element.WIND:
+			border_col = Color(0.3, 0.95, 0.6)
+			icon_sym = "🌪️"
+		HeroData.Element.DARK:
+			border_col = Color(0.85, 0.45, 1.0)
+			icon_sym = "🌙"
+		HeroData.Element.LIGHT:
+			border_col = Color(1.0, 0.95, 0.4)
+			icon_sym = "⚡"
+
+	sb.border_color = border_col
+	sb.set_corner_radius_all(13) # Hình viên thuốc (pill badge)
+	sb.content_margin_left = 12
+	sb.content_margin_right = 12
+	sb.content_margin_top = 4
+	sb.content_margin_bottom = 4
+	banner.add_theme_stylebox_override("panel", sb)
+
+	var lbl = Label.new()
+	lbl.text = "%s %s" % [icon_sym, skill_name]
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	lbl.add_theme_font_size_override("font_size", 12)
+	lbl.add_theme_color_override("font_color", Color(1.0, 0.95, 0.85))
+	lbl.add_theme_color_override("font_shadow_color", Color.BLACK)
+	lbl.add_theme_constant_override("shadow_offset_x", 1)
+	lbl.add_theme_constant_override("shadow_offset_y", 1)
+	lbl.add_theme_constant_override("shadow_outline_size", 2)
+	banner.add_child(lbl)
+
+	add_child(banner)
+
+	# Hoạt họa: Nảy bật vào, giữ nhịp hiển thị rõ ràng, sau đó bay nhẹ lên và tan biến
+	banner.scale = Vector2(0.3, 0.3)
+	banner.modulate.a = 0.0
+
+	var dur_in = 0.25 / speed_mult
+	var dur_stay = 0.70 / speed_mult
+	var dur_out = 0.25 / speed_mult
+
+	var tw = banner.create_tween()
+	tw.tween_property(banner, "scale", Vector2(1.15, 1.15), dur_in * 0.7).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(banner, "modulate:a", 1.0, dur_in * 0.5)
+	tw.tween_property(banner, "scale", Vector2(1.0, 1.0), dur_in * 0.3)
+	tw.tween_interval(dur_stay)
+	tw.tween_property(banner, "position:y", -172, dur_out).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tw.parallel().tween_property(banner, "modulate:a", 0.0, dur_out)
+	tw.tween_callback(func():
+		banner.queue_free()
+		skill_banner_finished.emit()
+	)
+
 func set_active_turn(active: bool) -> void:
 	active_pedestal.visible = active
 	if active:
@@ -236,13 +313,13 @@ func update_bars(animate: bool = true) -> void:
 		if _hp_tween:
 			_hp_tween.kill()
 		_hp_tween = create_tween()
-		_hp_tween.tween_property(hp_bar, "size:x", target_w, 0.18).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		_hp_tween.tween_property(hp_bar, "size:x", target_w, 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 
 		if _ghost_tween:
 			_ghost_tween.kill()
 		_ghost_tween = create_tween()
-		_ghost_tween.tween_interval(0.2)
-		_ghost_tween.tween_property(hp_ghost_bar, "size:x", target_w, 0.45).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		_ghost_tween.tween_interval(0.25)
+		_ghost_tween.tween_property(hp_ghost_bar, "size:x", target_w, 0.5).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	else:
 		hp_bar.size.x = target_w
 		hp_ghost_bar.size.x = target_w
@@ -276,7 +353,7 @@ func update_status_icons() -> void:
 			status_row.add_child(tex_rect)
 
 ## ──────────────────────────────────────────────────────────
-## ANIMATION METHODS
+## ANIMATION METHODS (ĐƯỢC ĐIỀU CHỈNH CHẬM RÃI, RÕ RÀNG, UY LỰC)
 ## ──────────────────────────────────────────────────────────
 
 func play_idle() -> void:
@@ -297,11 +374,11 @@ func animate_attack(target_pos: Vector2, on_impact: Callable, on_complete: Calla
 
 	var tw = create_tween()
 	var attack_dest = target_pos + (Vector2(55, 0) if is_enemy else Vector2(-55, 0))
-	var dur_dash = 0.16 / speed_mult
-	var dur_hold = 0.12 / speed_mult
-	var dur_back = 0.18 / speed_mult
+	var dur_dash = 0.28 / speed_mult
+	var dur_hold = 0.24 / speed_mult
+	var dur_back = 0.28 / speed_mult
 
-	# 1. Dash to target
+	# 1. Dash to target (Lướt tới uy lực có độ trễ quan sát được)
 	tw.tween_property(self, "position", attack_dest, dur_dash).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	tw.tween_callback(func():
 		sprite.frame = 2
@@ -310,10 +387,10 @@ func animate_attack(target_pos: Vector2, on_impact: Callable, on_complete: Calla
 		on_impact.call()
 	)
 
-	# 2. Hold attack pose
+	# 2. Hold attack pose (Giữ tư thế trảm/đâm để thấy rõ va chạm và hiệu ứng đòn đánh)
 	tw.tween_interval(dur_hold)
 
-	# 3. Return home
+	# 3. Return home (Rút về vị trí xuất phát nhịp nhàng)
 	tw.tween_callback(func(): sprite.frame = 0)
 	tw.tween_property(self, "position", home_position, dur_back).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	tw.tween_callback(func():
@@ -330,20 +407,21 @@ func animate_ranged_attack(_target_pos: Vector2, on_impact: Callable, on_complet
 		_idle_tween.kill()
 
 	var tw = create_tween()
-	var dur_cast = 0.2 / speed_mult
-	var dur_hold = 0.15 / speed_mult
+	var dur_forward = 0.22 / speed_mult
+	var dur_hold = 0.42 / speed_mult
+	var dur_back = 0.22 / speed_mult
 
-	# Step slightly forward
+	# Tiến nhẹ lên trước niệm chú/bắn cung
 	var step_forward = home_position + (Vector2(-18, 0) if is_enemy else Vector2(18, 0))
-	tw.tween_property(self, "position", step_forward, 0.1 / speed_mult)
+	tw.tween_property(self, "position", step_forward, dur_forward)
 	tw.tween_callback(func():
 		sprite.frame = 2
 		if SoundManager.instance:
 			SoundManager.instance.play_magic()
 		on_impact.call()
 	)
-	tw.tween_interval(dur_cast + dur_hold)
-	tw.tween_property(self, "position", home_position, 0.1 / speed_mult)
+	tw.tween_interval(dur_hold)
+	tw.tween_property(self, "position", home_position, dur_back)
 	tw.tween_callback(func():
 		sprite.frame = 0
 		play_idle()
@@ -357,7 +435,7 @@ func animate_hurt(is_dodge: bool, _is_block: bool, speed_mult: float = 1.0) -> v
 		_idle_tween.kill()
 
 	var tw = create_tween()
-	var dur = 0.15 / speed_mult
+	var dur = 0.28 / speed_mult
 
 	if is_dodge:
 		# Lướt lùi né tránh
@@ -391,7 +469,7 @@ func animate_death(speed_mult: float = 1.0) -> void:
 
 	sprite.frame = 3
 	var tw = create_tween()
-	var dur = 0.45 / speed_mult
+	var dur = 0.65 / speed_mult
 	tw.tween_property(self, "position:y", position.y + 12, dur)
 	tw.parallel().tween_property(self, "modulate", Color(0.2, 0.2, 0.2, 0.0), dur)
 	tw.tween_callback(func(): visible = false)

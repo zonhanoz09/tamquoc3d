@@ -113,7 +113,7 @@ func _run_battle() -> void:
 				_log("  🌀 %s bị CHOÁNG, bỏ lượt!" % hero.get_display_name())
 				if hero.node and hero.node.has_method("show_floating_text"):
 					hero.node.show_floating_text("CHOÁNG!", Color(1.0, 0.8, 0.2))
-				await get_tree().create_timer(0.3 / battle_speed).timeout
+				await get_tree().create_timer(0.6 / battle_speed).timeout
 				continue
 
 			hero_turn_started.emit(hero)
@@ -131,7 +131,7 @@ func _run_battle() -> void:
 				_log("🏆 Đội %d CHIẾN THẮNG!" % winner)
 				return
 
-		await get_tree().create_timer(0.2 / battle_speed).timeout
+		await get_tree().create_timer(0.55 / battle_speed).timeout
 
 ## Thực hiện lượt của 1 tướng
 func _execute_hero_turn(hero: BattleHero) -> void:
@@ -183,9 +183,9 @@ func _execute_hero_turn(hero: BattleHero) -> void:
 	hero_acted.emit(hero, action_data)
 
 	# Chờ animation hoàn tất qua delegate/timer
-	var anim_dur = 0.55 / battle_speed
+	var anim_dur = 1.05 / battle_speed
 	if is_rage:
-		anim_dur = 0.95 / battle_speed
+		anim_dur = 1.95 / battle_speed
 	await get_tree().create_timer(anim_dur).timeout
 
 func _get_normal_attack(hero: BattleHero) -> SkillData:

@@ -9,3 +9,4 @@ res://scripts/battle/TurnManager.gd
 res://scripts/visual/FloatingText.gd
 res://scripts/visual/HeroVisual.gd
 res://scripts/autoload/GameManager.gd
+res://scripts/visual/CombatVFX.gd

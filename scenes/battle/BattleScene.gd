@@ -336,14 +336,12 @@ func _on_hero_acted(hero: BattleHero, action_data: Dictionary) -> void:
 	if not attacker_node:
 		return
 
-	# 1. Nếu là Nộ chiêu -> Hiển thị Cut-in Banner & Aura
+	# 1. Nếu là Nộ chiêu -> Hiển thị Banner tên kĩ năng ngay trên đầu nhân vật (Không popup tràn màn hình)
 	if is_rage:
-		var cutin = SkillCutIn.new()
-		add_child(cutin)
-		cutin.show_cut_in(hero.data, skill.skill_name, battle_manager.battle_speed)
-		CombatVFX.spawn_rage_aura(self, attacker_node.position)
-		trigger_screen_shake(10.0)
-		await cutin.finished
+		sound_manager.play_rage()
+		trigger_screen_shake(6.0)
+		attacker_node.show_skill_banner(skill.skill_name, battle_manager.battle_speed)
+		await attacker_node.skill_banner_finished
 
 	# 2. Thực hiện Animation Tấn công
 	if targets.is_empty():
@@ -354,7 +352,7 @@ func _on_hero_acted(hero: BattleHero, action_data: Dictionary) -> void:
 	var target_pos = primary_node.position if primary_node else attacker_node.position
 
 	var on_impact = func():
-		_apply_action_effects(hero, skill, results)
+		_apply_action_effects(hero, skill, is_rage, results)
 
 	var on_complete = func():
 		for res in results:
@@ -370,7 +368,20 @@ func _on_hero_acted(hero: BattleHero, action_data: Dictionary) -> void:
 	else:
 		attacker_node.animate_ranged_attack(target_pos, on_impact, on_complete, battle_manager.battle_speed)
 
-func _apply_action_effects(attacker: BattleHero, _skill: SkillData, results: Array) -> void:
+func _apply_action_effects(attacker: BattleHero, skill: SkillData, is_rage: bool, results: Array) -> void:
+	var attacker_pos = attacker.node.position if attacker.node else Vector2.ZERO
+	var all_target_positions: Array = []
+	for res in results:
+		var t_hero: BattleHero = res["target"]
+		if t_hero.node:
+			all_target_positions.append(t_hero.node.position)
+
+	# 1. Nếu là Kỹ năng Nộ: Gọi hiệu ứng kĩ năng chuyên biệt của từng nhân vật!
+	if is_rage:
+		var pri_pos = all_target_positions[0] if not all_target_positions.is_empty() else attacker_pos
+		CombatVFX.spawn_hero_skill_vfx(self, attacker.data.hero_id, pri_pos, attacker_pos, all_target_positions, attacker.team == 1)
+
+	# 2. Áp dụng kết quả lên từng mục tiêu
 	for res in results:
 		var t_hero: BattleHero = res["target"]
 		var t_node: HeroVisual = t_hero.node as HeroVisual
@@ -381,7 +392,8 @@ func _apply_action_effects(attacker: BattleHero, _skill: SkillData, results: Arr
 
 		# Support / Heal
 		if res["is_support"]:
-			CombatVFX.spawn_water(self, pos + Vector2(0, -30))
+			if not is_rage:
+				CombatVFX.spawn_water(self, pos + Vector2(0, -30))
 			sound_manager.play_heal()
 			t_node.show_floating_text("+%d HP" % res["heal_amount"], Color(0.2, 0.9, 0.3))
 			continue
@@ -405,19 +417,15 @@ func _apply_action_effects(attacker: BattleHero, _skill: SkillData, results: Arr
 		var is_crit: bool = res["is_crit"]
 		if is_crit:
 			sound_manager.play_crit()
-			trigger_screen_shake(9.0)
-			CombatVFX.spawn_impact(self, pos + Vector2(0, -30), true)
-			t_node.show_floating_text("BẠO KÍCH! -%d" % res["damage"], Color(1.0, 0.2, 0.2), true)
+			trigger_screen_shake(8.0)
+			t_node.show_floating_text("BẠO KÍCH! -%d" % res["damage"], Color(1.0, 0.25, 0.25), true)
 		else:
 			sound_manager.play_hit()
-			CombatVFX.spawn_slash(self, pos + Vector2(0, -30), attacker.team == 1)
-			t_node.show_floating_text("-%d" % res["damage"], Color(1.0, 0.9, 0.3))
+			t_node.show_floating_text("-%d" % res["damage"], Color(1.0, 0.95, 0.8))
 
-		# Elemental VFX
-		match attacker.data.element:
-			HeroData.Element.FIRE: CombatVFX.spawn_fire(self, pos + Vector2(0, -30))
-			HeroData.Element.WIND: CombatVFX.spawn_wind(self, pos + Vector2(0, -30))
-			HeroData.Element.WATER: CombatVFX.spawn_water(self, pos + Vector2(0, -30))
+		# Hiệu ứng đòn đánh thường chuyên biệt cho từng nhân vật (nếu không phải Nộ chiêu)
+		if not is_rage:
+			CombatVFX.spawn_hero_attack_vfx(self, attacker.data.hero_id, pos, attacker_pos, attacker.team == 1, is_crit)
 
 		t_node.animate_hurt(false, false, battle_manager.battle_speed)
 
@@ -448,11 +456,11 @@ func _on_battle_ended(winner_team: int) -> void:
 
 func _on_speed_toggle() -> void:
 	if battle_manager.battle_speed == 1.0:
+		battle_manager.battle_speed = 1.5
+		speed_btn.text = "Tốc độ: x1.5"
+	elif battle_manager.battle_speed == 1.5:
 		battle_manager.battle_speed = 2.0
 		speed_btn.text = "Tốc độ: x2"
-	elif battle_manager.battle_speed == 2.0:
-		battle_manager.battle_speed = 4.0
-		speed_btn.text = "Tốc độ: x4"
 	else:
 		battle_manager.battle_speed = 1.0
 		speed_btn.text = "Tốc độ: x1"
