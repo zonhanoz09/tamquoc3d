@@ -1,0 +1,61 @@
+[gd_resource type="Resource" script_class="HeroData" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://data/resources/HeroStats.cs" id="1_11fvm"]
+[ext_resource type="Script" path="res://data/resources/SkillData.cs" id="2_6n2r8"]
+[ext_resource type="Script" path="res://data/resources/HeroData.cs" id="3_uwj3g"]
+
+[sub_resource type="Resource" id="Resource_1woxp"]
+script = ExtResource("1_11fvm")
+HpMax = 1650
+HpCurrent = 1650
+AtkPhys = 230
+AtkMag = 0
+DefPhys = 80
+DefMag = 80
+Speed = 106
+CritRate = 0.28
+CritDmg = 1.9
+DodgeRate = 0.05
+BlockRate = 0.05
+CounterRate = 0.0
+MoraleCurrent = 50
+MoraleMax = 100
+
+[sub_resource type="Resource" id="Resource_xclre"]
+script = ExtResource("2_6n2r8")
+SkillId = "ht_atk"
+SkillName = "Tiễn Tiệt Không"
+Description = ""
+Type = 1
+MoraleCost = 0
+DamageMultiplier = 1.05
+IsMagic = false
+TargetCount = 1
+Effects = []
+
+[sub_resource type="Resource" id="Resource_iyw3b"]
+script = ExtResource("2_6n2r8")
+SkillId = "ht_rage"
+SkillName = "Bách Bộ Xuyên Dương"
+Description = ""
+Type = 5
+MoraleCost = 100
+DamageMultiplier = 2.6
+IsMagic = false
+TargetCount = 1
+Effects = [{
+"duration": 2,
+"type": 10,
+"val": 30
+}]
+
+[resource]
+script = ExtResource("3_uwj3g")
+HeroId = "hoang_trung"
+HeroName = "Hoàng Trung"
+Title = "Lão Tướng Thần Xạ"
+Element = 4
+Position = 1
+Rarity = 2
+BaseStats = SubResource("Resource_1woxp")
+Skills = [SubResource("Resource_xclre"), SubResource("Resource_iyw3b")]

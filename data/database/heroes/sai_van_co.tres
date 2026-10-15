@@ -1,0 +1,61 @@
+[gd_resource type="Resource" script_class="HeroData" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://data/resources/HeroStats.cs" id="1_hs7lj"]
+[ext_resource type="Script" path="res://data/resources/SkillData.cs" id="2_i6e2x"]
+[ext_resource type="Script" path="res://data/resources/HeroData.cs" id="3_f7a0a"]
+
+[sub_resource type="Resource" id="Resource_04hkl"]
+script = ExtResource("1_hs7lj")
+HpMax = 1450
+HpCurrent = 1450
+AtkPhys = 40
+AtkMag = 175
+DefPhys = 65
+DefMag = 115
+Speed = 104
+CritRate = 0.05
+CritDmg = 1.5
+DodgeRate = 0.05
+BlockRate = 0.05
+CounterRate = 0.0
+MoraleCurrent = 50
+MoraleMax = 100
+
+[sub_resource type="Resource" id="Resource_1j4qo"]
+script = ExtResource("2_i6e2x")
+SkillId = "svc_atk"
+SkillName = "Hồ Gia Khúc"
+Description = ""
+Type = 7
+MoraleCost = 0
+DamageMultiplier = 0.95
+IsMagic = true
+TargetCount = 1
+Effects = []
+
+[sub_resource type="Resource" id="Resource_y1gl3"]
+script = ExtResource("2_i6e2x")
+SkillId = "svc_rage"
+SkillName = "Thập Bát Phách Linh"
+Description = ""
+Type = 7
+MoraleCost = 100
+DamageMultiplier = 1.5
+IsMagic = true
+TargetCount = 5
+Effects = [{
+"duration": 2,
+"type": 7,
+"val": 25
+}]
+
+[resource]
+script = ExtResource("3_f7a0a")
+HeroId = "sai_van_co"
+HeroName = "Sái Văn Cơ"
+Title = "Tài Nữ Thi Ca"
+Element = 4
+Position = 2
+Rarity = 1
+BaseStats = SubResource("Resource_04hkl")
+Skills = [SubResource("Resource_1j4qo"), SubResource("Resource_y1gl3")]

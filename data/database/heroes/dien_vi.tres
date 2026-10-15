@@ -1,0 +1,61 @@
+[gd_resource type="Resource" script_class="HeroData" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://data/resources/HeroStats.cs" id="1_rctr7"]
+[ext_resource type="Script" path="res://data/resources/SkillData.cs" id="2_45nmq"]
+[ext_resource type="Script" path="res://data/resources/HeroData.cs" id="3_tdajn"]
+
+[sub_resource type="Resource" id="Resource_ih5io"]
+script = ExtResource("1_rctr7")
+HpMax = 2600
+HpCurrent = 2600
+AtkPhys = 175
+AtkMag = 0
+DefPhys = 145
+DefMag = 75
+Speed = 92
+CritRate = 0.05
+CritDmg = 1.5
+DodgeRate = 0.05
+BlockRate = 0.15
+CounterRate = 0.25
+MoraleCurrent = 50
+MoraleMax = 100
+
+[sub_resource type="Resource" id="Resource_138aa"]
+script = ExtResource("2_45nmq")
+SkillId = "dv_atk"
+SkillName = "Song Kích Trọng Kích"
+Description = ""
+Type = 0
+MoraleCost = 0
+DamageMultiplier = 1.0
+IsMagic = false
+TargetCount = 1
+Effects = []
+
+[sub_resource type="Resource" id="Resource_glr3r"]
+script = ExtResource("2_45nmq")
+SkillId = "dv_rage"
+SkillName = "Hộ Chủ Quyết Tử"
+Description = ""
+Type = 0
+MoraleCost = 100
+DamageMultiplier = 2.2
+IsMagic = false
+TargetCount = 1
+Effects = [{
+"duration": 2,
+"type": 7,
+"val": 40
+}]
+
+[resource]
+script = ExtResource("3_tdajn")
+HeroId = "dien_vi"
+HeroName = "Điển Vi"
+Title = "Cổ Chi Ác Lai"
+Element = 1
+Position = 0
+Rarity = 2
+BaseStats = SubResource("Resource_ih5io")
+Skills = [SubResource("Resource_138aa"), SubResource("Resource_glr3r")]

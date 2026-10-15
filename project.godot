@@ -18,8 +18,9 @@ config/icon="res://assets/common/icons/icon.png"
 
 [autoload]
 
-GameManager="*res://src/Autoload/GameManager.cs"
-HeroDatabase="*res://src/Data/HeroDatabase.cs"
+EventBus="*res://core/autoload/EventBus.cs"
+GameManager="*res://core/autoload/GameManager.cs"
+HeroDatabase="*res://data/database/HeroDatabase.cs"
 
 [display]
 

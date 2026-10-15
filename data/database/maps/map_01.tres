@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="MapConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/resources/MapConfig.cs" id="1_map"]
+
+[resource]
+script = ExtResource("1_map")
+MapId = "map_01"
+MapName = "Chiến Trường Xích Bích"
+Description = "Đại chiến hỏa công trên sông Trường Giang lịch sử."
+BackgroundPath = "res://assets/environments/battlefields/xich_bich/battlefield.png"
+BgmPath = "res://assets/environments/battlefields/xich_bich/bgm_battle.ogg"
+GridRows = 3
+GridCols = 3

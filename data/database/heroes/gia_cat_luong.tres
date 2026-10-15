@@ -1,0 +1,61 @@
+[gd_resource type="Resource" script_class="HeroData" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://data/resources/HeroStats.cs" id="1_d2uay"]
+[ext_resource type="Script" path="res://data/resources/SkillData.cs" id="2_etwo6"]
+[ext_resource type="Script" path="res://data/resources/HeroData.cs" id="3_1f1rx"]
+
+[sub_resource type="Resource" id="Resource_u128b"]
+script = ExtResource("1_d2uay")
+HpMax = 1650
+HpCurrent = 1650
+AtkPhys = 50
+AtkMag = 250
+DefPhys = 80
+DefMag = 140
+Speed = 112
+CritRate = 0.15
+CritDmg = 1.5
+DodgeRate = 0.05
+BlockRate = 0.05
+CounterRate = 0.0
+MoraleCurrent = 50
+MoraleMax = 100
+
+[sub_resource type="Resource" id="Resource_0lp51"]
+script = ExtResource("2_etwo6")
+SkillId = "gcl_atk"
+SkillName = "Bát Trận Đồ"
+Description = ""
+Type = 1
+MoraleCost = 0
+DamageMultiplier = 1.0
+IsMagic = true
+TargetCount = 1
+Effects = []
+
+[sub_resource type="Resource" id="Resource_55uuu"]
+script = ExtResource("2_etwo6")
+SkillId = "gcl_rage"
+SkillName = "Đông Phong Bát Trận"
+Description = ""
+Type = 2
+MoraleCost = 100
+DamageMultiplier = 1.65
+IsMagic = true
+TargetCount = 1
+Effects = [{
+"chance": 0.4,
+"duration": 1,
+"type": 1
+}]
+
+[resource]
+script = ExtResource("3_1f1rx")
+HeroId = "gia_cat_luong"
+HeroName = "Gia Cát Lượng"
+Title = "Ngọa Long Tiên Sinh"
+Element = 3
+Position = 2
+Rarity = 3
+BaseStats = SubResource("Resource_u128b")
+Skills = [SubResource("Resource_0lp51"), SubResource("Resource_55uuu")]

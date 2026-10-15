@@ -1,0 +1,61 @@
+[gd_resource type="Resource" script_class="HeroData" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://data/resources/HeroStats.cs" id="1_klbrv"]
+[ext_resource type="Script" path="res://data/resources/SkillData.cs" id="2_xnsbc"]
+[ext_resource type="Script" path="res://data/resources/HeroData.cs" id="3_8oir1"]
+
+[sub_resource type="Resource" id="Resource_yxihf"]
+script = ExtResource("1_klbrv")
+HpMax = 1550
+HpCurrent = 1550
+AtkPhys = 50
+AtkMag = 200
+DefPhys = 70
+DefMag = 115
+Speed = 116
+CritRate = 0.05
+CritDmg = 1.5
+DodgeRate = 0.16
+BlockRate = 0.05
+CounterRate = 0.0
+MoraleCurrent = 50
+MoraleMax = 100
+
+[sub_resource type="Resource" id="Resource_6khlq"]
+script = ExtResource("2_xnsbc")
+SkillId = "dt_atk"
+SkillName = "Lụa Hồng Mê Hoặc"
+Description = ""
+Type = 1
+MoraleCost = 0
+DamageMultiplier = 1.0
+IsMagic = true
+TargetCount = 1
+Effects = []
+
+[sub_resource type="Resource" id="Resource_2einw"]
+script = ExtResource("2_xnsbc")
+SkillId = "dt_rage"
+SkillName = "Bế Nguyệt Tuyệt Sắc"
+Description = ""
+Type = 3
+MoraleCost = 100
+DamageMultiplier = 1.45
+IsMagic = true
+TargetCount = 1
+Effects = [{
+"chance": 0.6,
+"duration": 2,
+"type": 2
+}]
+
+[resource]
+script = ExtResource("3_8oir1")
+HeroId = "dieu_thuyen"
+HeroName = "Điêu Thuyền"
+Title = "Bế Nguyệt Mỹ Nhân"
+Element = 5
+Position = 1
+Rarity = 2
+BaseStats = SubResource("Resource_yxihf")
+Skills = [SubResource("Resource_6khlq"), SubResource("Resource_2einw")]

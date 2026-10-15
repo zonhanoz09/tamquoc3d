@@ -1,0 +1,61 @@
+[gd_resource type="Resource" script_class="HeroData" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://data/resources/HeroStats.cs" id="1_iebx3"]
+[ext_resource type="Script" path="res://data/resources/SkillData.cs" id="2_581vn"]
+[ext_resource type="Script" path="res://data/resources/HeroData.cs" id="3_lx2yu"]
+
+[sub_resource type="Resource" id="Resource_l0x7w"]
+script = ExtResource("1_iebx3")
+HpMax = 1600
+HpCurrent = 1600
+AtkPhys = 60
+AtkMag = 225
+DefPhys = 75
+DefMag = 125
+Speed = 110
+CritRate = 0.16
+CritDmg = 1.5
+DodgeRate = 0.05
+BlockRate = 0.05
+CounterRate = 0.0
+MoraleCurrent = 50
+MoraleMax = 100
+
+[sub_resource type="Resource" id="Resource_xeor4"]
+script = ExtResource("2_581vn")
+SkillId = "cd_atk"
+SkillName = "Hỏa Kiếm Vũ"
+Description = ""
+Type = 1
+MoraleCost = 0
+DamageMultiplier = 1.0
+IsMagic = true
+TargetCount = 1
+Effects = []
+
+[sub_resource type="Resource" id="Resource_rrux1"]
+script = ExtResource("2_581vn")
+SkillId = "cd_rage"
+SkillName = "Đại Hỏa Xích Bích"
+Description = ""
+Type = 2
+MoraleCost = 100
+DamageMultiplier = 1.55
+IsMagic = true
+TargetCount = 1
+Effects = [{
+"duration": 3,
+"type": 3,
+"val": 90
+}]
+
+[resource]
+script = ExtResource("3_lx2yu")
+HeroId = "chu_du"
+HeroName = "Chu Du"
+Title = "Mỹ Chu Lang"
+Element = 1
+Position = 1
+Rarity = 2
+BaseStats = SubResource("Resource_l0x7w")
+Skills = [SubResource("Resource_xeor4"), SubResource("Resource_rrux1")]

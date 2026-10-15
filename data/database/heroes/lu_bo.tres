@@ -1,0 +1,61 @@
+[gd_resource type="Resource" script_class="HeroData" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://data/resources/HeroStats.cs" id="1_dlgk1"]
+[ext_resource type="Script" path="res://data/resources/SkillData.cs" id="2_f08je"]
+[ext_resource type="Script" path="res://data/resources/HeroData.cs" id="3_gmgxu"]
+
+[sub_resource type="Resource" id="Resource_0b7dw"]
+script = ExtResource("1_dlgk1")
+HpMax = 2100
+HpCurrent = 2100
+AtkPhys = 265
+AtkMag = 0
+DefPhys = 115
+DefMag = 70
+Speed = 114
+CritRate = 0.25
+CritDmg = 1.85
+DodgeRate = 0.05
+BlockRate = 0.05
+CounterRate = 0.0
+MoraleCurrent = 50
+MoraleMax = 100
+
+[sub_resource type="Resource" id="Resource_hv5kf"]
+script = ExtResource("2_f08je")
+SkillId = "lb_atk"
+SkillName = "Phương Thiên Họa Kích"
+Description = ""
+Type = 0
+MoraleCost = 0
+DamageMultiplier = 1.15
+IsMagic = false
+TargetCount = 1
+Effects = []
+
+[sub_resource type="Resource" id="Resource_e6i4e"]
+script = ExtResource("2_f08je")
+SkillId = "lb_rage"
+SkillName = "Vô Song Chiến Thần"
+Description = ""
+Type = 2
+MoraleCost = 100
+DamageMultiplier = 1.85
+IsMagic = false
+TargetCount = 1
+Effects = [{
+"chance": 0.35,
+"duration": 1,
+"type": 1
+}]
+
+[resource]
+script = ExtResource("3_gmgxu")
+HeroId = "lu_bo"
+HeroName = "Lữ Bố"
+Title = "Chiến Thần Vô Song"
+Element = 5
+Position = 1
+Rarity = 3
+BaseStats = SubResource("Resource_0b7dw")
+Skills = [SubResource("Resource_hv5kf"), SubResource("Resource_e6i4e")]

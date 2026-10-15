@@ -1,0 +1,61 @@
+[gd_resource type="Resource" script_class="HeroData" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://data/resources/HeroStats.cs" id="1_kweug"]
+[ext_resource type="Script" path="res://data/resources/SkillData.cs" id="2_mte63"]
+[ext_resource type="Script" path="res://data/resources/HeroData.cs" id="3_n2jfw"]
+
+[sub_resource type="Resource" id="Resource_cilh2"]
+script = ExtResource("1_kweug")
+HpMax = 2800
+HpCurrent = 2800
+AtkPhys = 140
+AtkMag = 0
+DefPhys = 160
+DefMag = 110
+Speed = 88
+CritRate = 0.05
+CritDmg = 1.5
+DodgeRate = 0.05
+BlockRate = 0.28
+CounterRate = 0.0
+MoraleCurrent = 50
+MoraleMax = 100
+
+[sub_resource type="Resource" id="Resource_10wa4"]
+script = ExtResource("2_mte63")
+SkillId = "tn_atk"
+SkillName = "Kim Cương Kích"
+Description = ""
+Type = 0
+MoraleCost = 0
+DamageMultiplier = 0.9
+IsMagic = false
+TargetCount = 1
+Effects = []
+
+[sub_resource type="Resource" id="Resource_cq2g3"]
+script = ExtResource("2_mte63")
+SkillId = "tn_rage"
+SkillName = "Trầm Lực Thiết Bích"
+Description = ""
+Type = 6
+MoraleCost = 100
+DamageMultiplier = 0.0
+IsMagic = false
+TargetCount = 1
+Effects = [{
+"duration": 2,
+"type": 11,
+"val": 500
+}]
+
+[resource]
+script = ExtResource("3_n2jfw")
+HeroId = "tao_nhan"
+HeroName = "Tào Nhân"
+Title = "Thiên Nhân Chi Địch"
+Element = 4
+Position = 0
+Rarity = 2
+BaseStats = SubResource("Resource_cilh2")
+Skills = [SubResource("Resource_10wa4"), SubResource("Resource_cq2g3")]

@@ -1,0 +1,61 @@
+[gd_resource type="Resource" script_class="HeroData" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://data/resources/HeroStats.cs" id="1_i5tvy"]
+[ext_resource type="Script" path="res://data/resources/SkillData.cs" id="2_7fks6"]
+[ext_resource type="Script" path="res://data/resources/HeroData.cs" id="3_v53us"]
+
+[sub_resource type="Resource" id="Resource_xnlcn"]
+script = ExtResource("1_i5tvy")
+HpMax = 1950
+HpCurrent = 1950
+AtkPhys = 240
+AtkMag = 0
+DefPhys = 110
+DefMag = 85
+Speed = 108
+CritRate = 0.22
+CritDmg = 1.75
+DodgeRate = 0.05
+BlockRate = 0.05
+CounterRate = 0.0
+MoraleCurrent = 50
+MoraleMax = 100
+
+[sub_resource type="Resource" id="Resource_syrn5"]
+script = ExtResource("2_7fks6")
+SkillId = "qv_atk"
+SkillName = "Thanh Long Yển Nguyệt"
+Description = ""
+Type = 0
+MoraleCost = 0
+DamageMultiplier = 1.1
+IsMagic = false
+TargetCount = 1
+Effects = []
+
+[sub_resource type="Resource" id="Resource_nb8q4"]
+script = ExtResource("2_7fks6")
+SkillId = "qv_rage"
+SkillName = "Qua Ngũ Quan Trảm Tướng"
+Description = ""
+Type = 0
+MoraleCost = 100
+DamageMultiplier = 2.8
+IsMagic = false
+TargetCount = 1
+Effects = [{
+"duration": 2,
+"type": 10,
+"val": 35
+}]
+
+[resource]
+script = ExtResource("3_v53us")
+HeroId = "quan_vu"
+HeroName = "Quan Vũ"
+Title = "Mỹ Nhiễm Công"
+Element = 3
+Position = 1
+Rarity = 3
+BaseStats = SubResource("Resource_xnlcn")
+Skills = [SubResource("Resource_syrn5"), SubResource("Resource_nb8q4")]

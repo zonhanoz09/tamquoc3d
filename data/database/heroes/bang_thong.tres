@@ -1,0 +1,61 @@
+[gd_resource type="Resource" script_class="HeroData" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://data/resources/HeroStats.cs" id="1_5gma4"]
+[ext_resource type="Script" path="res://data/resources/SkillData.cs" id="2_63thc"]
+[ext_resource type="Script" path="res://data/resources/HeroData.cs" id="3_f52cw"]
+
+[sub_resource type="Resource" id="Resource_bkc5r"]
+script = ExtResource("1_5gma4")
+HpMax = 1580
+HpCurrent = 1580
+AtkPhys = 45
+AtkMag = 235
+DefPhys = 75
+DefMag = 130
+Speed = 108
+CritRate = 0.05
+CritDmg = 1.5
+DodgeRate = 0.05
+BlockRate = 0.05
+CounterRate = 0.0
+MoraleCurrent = 50
+MoraleMax = 100
+
+[sub_resource type="Resource" id="Resource_ohg88"]
+script = ExtResource("2_63thc")
+SkillId = "bt_atk"
+SkillName = "Hỏa Long Chú"
+Description = ""
+Type = 1
+MoraleCost = 0
+DamageMultiplier = 1.0
+IsMagic = true
+TargetCount = 1
+Effects = []
+
+[sub_resource type="Resource" id="Resource_orwjh"]
+script = ExtResource("2_63thc")
+SkillId = "bt_rage"
+SkillName = "Liên Hoàn Hỏa Kế"
+Description = ""
+Type = 2
+MoraleCost = 100
+DamageMultiplier = 1.6
+IsMagic = true
+TargetCount = 1
+Effects = [{
+"duration": 3,
+"type": 3,
+"val": 85
+}]
+
+[resource]
+script = ExtResource("3_f52cw")
+HeroId = "bang_thong"
+HeroName = "Bàng Thống"
+Title = "Phượng Sồ Tiên Sinh"
+Element = 1
+Position = 2
+Rarity = 2
+BaseStats = SubResource("Resource_bkc5r")
+Skills = [SubResource("Resource_ohg88"), SubResource("Resource_orwjh")]

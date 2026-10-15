@@ -1,0 +1,61 @@
+[gd_resource type="Resource" script_class="HeroData" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://data/resources/HeroStats.cs" id="1_2guj5"]
+[ext_resource type="Script" path="res://data/resources/SkillData.cs" id="2_a05de"]
+[ext_resource type="Script" path="res://data/resources/HeroData.cs" id="3_4pfvh"]
+
+[sub_resource type="Resource" id="Resource_wvti0"]
+script = ExtResource("1_2guj5")
+HpMax = 1850
+HpCurrent = 1850
+AtkPhys = 215
+AtkMag = 0
+DefPhys = 95
+DefMag = 80
+Speed = 120
+CritRate = 0.18
+CritDmg = 1.5
+DodgeRate = 0.05
+BlockRate = 0.05
+CounterRate = 0.0
+MoraleCurrent = 50
+MoraleMax = 100
+
+[sub_resource type="Resource" id="Resource_pay5m"]
+script = ExtResource("2_a05de")
+SkillId = "ms_atk"
+SkillName = "Tây Lương Mã Đao"
+Description = ""
+Type = 0
+MoraleCost = 0
+DamageMultiplier = 1.05
+IsMagic = false
+TargetCount = 1
+Effects = []
+
+[sub_resource type="Resource" id="Resource_xss0u"]
+script = ExtResource("2_a05de")
+SkillId = "ms_rage"
+SkillName = "Thần Uy Đột Kích"
+Description = ""
+Type = 5
+MoraleCost = 100
+DamageMultiplier = 2.3
+IsMagic = false
+TargetCount = 1
+Effects = [{
+"duration": 2,
+"type": 9,
+"val": 25
+}]
+
+[resource]
+script = ExtResource("3_4pfvh")
+HeroId = "ma_sieu"
+HeroName = "Mã Siêu"
+Title = "Cẩm Mã Siêu"
+Element = 3
+Position = 1
+Rarity = 2
+BaseStats = SubResource("Resource_wvti0")
+Skills = [SubResource("Resource_pay5m"), SubResource("Resource_xss0u")]

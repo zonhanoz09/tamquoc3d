@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/resources/SkillData.cs" id="1_skill"]
+
+[resource]
+script = ExtResource("1_skill")
+SkillId = "lien_kich"
+SkillName = "Liên Kích"
+Description = "Chém liên hoàn vào một mục tiêu đơn thể, dồn lượng lớn sát thương vật lý và tăng tốc độ bản thân."
+Type = 0
+MoraleCost = 100
+DamageMultiplier = 2.4
+IsMagic = false
+TargetCount = 1
+Effects = [{
+"duration": 2,
+"type": 8,
+"val": 20
+}]
