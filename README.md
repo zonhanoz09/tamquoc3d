@@ -38,4 +38,3 @@ Dự án Game Chiến thuật Nhập vai Theo lượt 2D Pixel chủ đề Tam Q
 - `data/`: Tầng dữ liệu thuần (Custom Resources C# và database file `.tres`).
 - `features/`: Các module độc lập (`battle`, `deck_builder`, `campaign`).
 - `assets/`: Tài nguyên hình ảnh, âm thanh chuẩn hóa (`heroes/`, `environments/`, `ui/`, `vfx/`, `common/`).
-- `scenes/`: Scene Godot (`scenes/battle/BattleScene.tscn`).

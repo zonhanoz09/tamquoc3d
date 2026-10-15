@@ -58,6 +58,7 @@ res://
 │
 ├── features/                     # Tầng tính năng độc lập (Modular Feature Layer)
 │   ├── battle/                   # Module trận đánh theo lượt (Turn-Based Combat)
+│   │   ├── BattleScene.tscn      # Scene trận đấu chính (Main Scene)
 │   │   ├── controllers/          # Bộ điều khiển logic trận đấu
 │   │   │   ├── BattleManager.cs  # Điều phối vòng lặp round/turn, chọn mục tiêu, lifecycle an toàn
 │   │   │   ├── TurnManager.cs    # Tính toán lượt đánh theo tốc độ, team priority, round queue
@@ -92,10 +93,6 @@ res://
 │   │   └── shared/               # pedestal_player.png, pedestal_enemy.png, pedestal_active.png,...
 │   └── vfx/                      # Hiệu ứng kỹ năng dùng chung (fire/, water/, lightning/, hits/)
 │
-├── scenes/                       # Các scene .tscn của Godot
-│   └── battle/
-│       └── BattleScene.tscn      # Main scene trận đấu chính
-│
 └── docs/                         # Tài liệu Game Design & Kỹ thuật
     ├── 01 Cơ chế Chiến đấu & Đội hình.md
     ├── 02 Thuộc tính & Phát triển Nhân vật.md
@@ -116,7 +113,7 @@ res://
    - `EventBus`: Khởi tạo hệ thống bus sự kiện tập trung.
    - `GameManager`: Nạp cấu hình game, khởi tạo tiền tệ, danh sách tướng sở hữu.
    - `HeroDatabase`: Quét và nạp toàn bộ file `.tres` trong `res://data/database/heroes/`.
-2. Godot nạp scene mặc định: `res://scenes/battle/BattleScene.tscn`.
+2. Godot nạp scene mặc định: `res://features/battle/BattleScene.tscn`.
 3. `BattleScene.cs`:
    - Gọi `Grid3x3` để tính toán vị trí hai phe.
    - Lấy dữ liệu tướng từ `HeroDatabase`.
