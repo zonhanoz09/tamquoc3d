@@ -72,7 +72,7 @@ public partial class BattleManager : Node
         EventBus.Instance?.EmitSignal(EventBus.SignalName.BattleStarted);
         Log("⚔️ Trận chiến bắt đầu! (Architecture: core/ data/ features/)");
 
-        while (IsBattleActive)
+        while (IsBattleActive && IsInsideTree())
         {
             if (IsBattleOver())
             {
@@ -89,10 +89,11 @@ public partial class BattleManager : Node
             {
                 while (IsPaused)
                 {
+                    if (!IsInsideTree() || GetTree() == null) return;
                     await ToSignal(GetTree().CreateTimer(0.1f), SceneTreeTimer.SignalName.Timeout);
                 }
 
-                if (!IsBattleActive || IsBattleOver())
+                if (!IsBattleActive || IsBattleOver() || !IsInsideTree() || GetTree() == null)
                 {
                     EndBattle();
                     return;
@@ -105,9 +106,11 @@ public partial class BattleManager : Node
                 }
 
                 await ExecuteTurn(currentHero);
+                if (!IsInsideTree() || GetTree() == null) return;
                 await ToSignal(GetTree().CreateTimer(0.4f / BattleSpeed), SceneTreeTimer.SignalName.Timeout);
             }
 
+            if (!IsInsideTree() || GetTree() == null) return;
             await ToSignal(GetTree().CreateTimer(0.6f / BattleSpeed), SceneTreeTimer.SignalName.Timeout);
         }
     }
