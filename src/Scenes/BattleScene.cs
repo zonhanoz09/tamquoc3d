@@ -104,7 +104,7 @@ public partial class BattleScene : Node2D
     private void SetupBackground()
     {
         var bgSprite = new Sprite2D();
-        var bgTex = GD.Load<Texture2D>("res://assets/sprites/backgrounds/battlefield.png");
+        var bgTex = GD.Load<Texture2D>("res://assets/environments/battlefields/xich_bich/battlefield.png");
         if (bgTex != null)
         {
             bgSprite.Texture = bgTex;
@@ -405,7 +405,7 @@ public partial class BattleScene : Node2D
             if (!bh.Stats.IsAlive()) continue;
 
             var avatarRect = new TextureRect();
-            var pTex = GD.Load<Texture2D>($"res://assets/sprites/portraits/{bh.Data.HeroId}.png");
+            var pTex = GD.Load<Texture2D>($"res://assets/heroes/{bh.Data.HeroId}/icon.png");
             if (pTex != null)
             {
                 avatarRect.Texture = pTex;

@@ -44,7 +44,7 @@ func show_cut_in(hero_data: HeroData, skill_name: String, speed_mult: float = 1.
 
 	# 3. Hero Portrait (Left)
 	var portrait = TextureRect.new()
-	var p_path = "res://assets/sprites/portraits/%s.png" % hero_data.hero_id
+	var p_path = "res://assets/heroes/%s/portrait.png" % hero_data.hero_id
 	var tex = load(p_path)
 	if tex:
 		portrait.texture = tex

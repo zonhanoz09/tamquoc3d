@@ -46,7 +46,7 @@ func _build_visuals() -> void:
 	# 1. Bệ đứng võ đài chiến thuật (Tactical Pedestal)
 	pedestal = Sprite2D.new()
 	var p_name = "pedestal_enemy" if is_enemy else "pedestal_player"
-	var p_tex = load("res://assets/sprites/ui/%s.png" % p_name)
+	var p_tex = load("res://assets/ui/shared/%s.png" % p_name)
 	if p_tex:
 		pedestal.texture = p_tex
 	pedestal.position = Vector2(0, 0)
@@ -56,7 +56,7 @@ func _build_visuals() -> void:
 
 	# 2. Hiệu ứng dưới chân khi tích đầy Nộ/Kỹ năng (Skill Ready Blazing Aura to lớn & rực rỡ)
 	skill_ready_aura = Sprite2D.new()
-	var sr_tex = load("res://assets/sprites/ui/pedestal_skill_ready.png")
+	var sr_tex = load("res://assets/ui/shared/pedestal_skill_ready.png")
 	if sr_tex:
 		skill_ready_aura.texture = sr_tex
 	skill_ready_aura.position = Vector2(0, 0)
@@ -70,7 +70,7 @@ func _build_visuals() -> void:
 
 	# 3. Vòng sáng bệ đứng khi tới lượt hành động (Active Turn Glow)
 	active_pedestal = Sprite2D.new()
-	var a_tex = load("res://assets/sprites/ui/pedestal_active.png")
+	var a_tex = load("res://assets/ui/shared/pedestal_active.png")
 	if a_tex:
 		active_pedestal.texture = a_tex
 	active_pedestal.position = Vector2(0, 0)
@@ -82,7 +82,7 @@ func _build_visuals() -> void:
 	# 4. Hero Sprite (64x64 HD Spritesheet)
 	# Căn chỉnh để gót chân (y = 56 trong frame 64x64) đặt chuẩn xác tại y = 0 trên bệ đứng
 	sprite = Sprite2D.new()
-	var spr_path = "res://assets/sprites/heroes/%s.png" % battle_hero.data.hero_id
+	var spr_path = "res://assets/heroes/%s/spritesheet.png" % battle_hero.data.hero_id
 	var tex = load(spr_path)
 	if tex:
 		sprite.texture = tex
@@ -114,7 +114,7 @@ func _build_overhead_ui() -> void:
 		HeroData.Element.WIND: elem_name = "wind"
 		HeroData.Element.LIGHT: elem_name = "light"
 		HeroData.Element.DARK: elem_name = "dark"
-	var e_tex = load("res://assets/sprites/ui/elem_%s.png" % elem_name)
+	var e_tex = load("res://assets/common/icons/elem_%s.png" % elem_name)
 	if e_tex:
 		elem_icon.texture = e_tex
 	elem_icon.scale = Vector2(0.65, 0.65)
@@ -347,7 +347,7 @@ func update_status_icons() -> void:
 
 		if s_name != "":
 			var tex_rect = TextureRect.new()
-			tex_rect.texture = load("res://assets/sprites/ui/status_%s.png" % s_name)
+			tex_rect.texture = load("res://assets/common/icons/status_%s.png" % s_name)
 			tex_rect.custom_minimum_size = Vector2(14, 14)
 			tex_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 			status_row.add_child(tex_rect)

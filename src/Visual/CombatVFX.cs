@@ -9,6 +9,40 @@ namespace TamQuoc3D.Visual;
 [GlobalClass]
 public partial class CombatVFX : Node2D
 {
+    private static readonly Dictionary<string, string> HeroVfxHeroMap = new()
+    {
+        { "vfx_spear_blue", "trieu_van" },
+        { "vfx_dragon_white", "trieu_van" },
+        { "vfx_cross_axes", "dien_vi" },
+        { "vfx_magma_eruption", "dien_vi" },
+        { "vfx_serpent_spear", "truong_phi" },
+        { "vfx_sonic_roar", "truong_phi" },
+        { "vfx_shield_strike", "tao_nhan" },
+        { "vfx_fortress_shield", "tao_nhan" },
+        { "vfx_water_smash", "hoang_cai" },
+        { "vfx_fire_ship", "hoang_cai" },
+        { "vfx_crescent_blade_green", "quan_vu" },
+        { "vfx_dragon_blade_ultimate", "quan_vu" },
+        { "vfx_halberd_crimson", "lu_bo" },
+        { "vfx_demonic_meteor", "lu_bo" },
+        { "vfx_fire_sword", "chu_du" },
+        { "vfx_inferno_storm", "chu_du" },
+        { "vfx_arrow_gold", "hoang_trung" },
+        { "vfx_sniper_beam", "hoang_trung" },
+        { "vfx_cavalry_blade", "ma_sieu" },
+        { "vfx_cavalry_charge", "ma_sieu" },
+        { "vfx_silk_ribbon", "dieu_thuyen" },
+        { "vfx_crescent_moon", "dieu_thuyen" },
+        { "vfx_bagua_circle", "gia_cat_luong" },
+        { "vfx_divine_storm", "gia_cat_luong" },
+        { "vfx_music_water", "tieu_kieu" },
+        { "vfx_lotus_healing", "tieu_kieu" },
+        { "vfx_fire_talisman", "bang_thong" },
+        { "vfx_phoenix_chains", "bang_thong" },
+        { "vfx_guqin_waves", "sai_van_co" },
+        { "vfx_celestial_zither", "sai_van_co" }
+    };
+
     public static void SpawnHeroAttackVfx(Node parent, string heroId, Vector2 targetPos, Vector2 attackerPos, bool isEnemy, bool isCrit = false)
     {
         var hitPos = targetPos + new Vector2(0, -30);
@@ -131,7 +165,22 @@ public partial class CombatVFX : Node2D
     private static Sprite2D CreateVfxSprite(string texName)
     {
         var spr = new Sprite2D();
-        var tex = GD.Load<Texture2D>($"res://assets/sprites/vfx/{texName}.png");
+        Texture2D tex = null;
+
+        if (HeroVfxHeroMap.TryGetValue(texName, out var heroId))
+        {
+            tex = GD.Load<Texture2D>($"res://assets/heroes/{heroId}/vfx/{texName}.png");
+        }
+
+        if (tex == null)
+        {
+            tex = GD.Load<Texture2D>($"res://assets/vfx/physical/{texName}.png")
+               ?? GD.Load<Texture2D>($"res://assets/vfx/hits/{texName}.png")
+               ?? GD.Load<Texture2D>($"res://assets/vfx/fire/{texName}.png")
+               ?? GD.Load<Texture2D>($"res://assets/vfx/water/{texName}.png")
+               ?? GD.Load<Texture2D>($"res://assets/vfx/lightning/{texName}.png");
+        }
+
         if (tex != null)
         {
             spr.Texture = tex;
@@ -468,7 +517,7 @@ public partial class CombatVFX : Node2D
     public static void SpawnSlash(Node parent, Vector2 pos, bool flipH = false)
     {
         var spr = new Sprite2D();
-        var tex = GD.Load<Texture2D>("res://assets/sprites/vfx/slash.png");
+        var tex = GD.Load<Texture2D>("res://assets/vfx/physical/slash.png");
         if (tex != null)
         {
             spr.Texture = tex;
@@ -488,7 +537,7 @@ public partial class CombatVFX : Node2D
     public static void SpawnImpact(Node parent, Vector2 pos, bool isCrit = false)
     {
         var spr = new Sprite2D();
-        var tex = GD.Load<Texture2D>("res://assets/sprites/vfx/impact.png");
+        var tex = GD.Load<Texture2D>("res://assets/vfx/hits/impact.png");
         if (tex != null)
         {
             spr.Texture = tex;
@@ -508,7 +557,7 @@ public partial class CombatVFX : Node2D
     public static void SpawnFire(Node parent, Vector2 pos)
     {
         var spr = new Sprite2D();
-        var tex = GD.Load<Texture2D>("res://assets/sprites/vfx/fire.png");
+        var tex = GD.Load<Texture2D>("res://assets/vfx/fire/fire.png");
         if (tex != null)
         {
             spr.Texture = tex;
@@ -527,7 +576,7 @@ public partial class CombatVFX : Node2D
     public static void SpawnWind(Node parent, Vector2 pos)
     {
         var spr = new Sprite2D();
-        var tex = GD.Load<Texture2D>("res://assets/sprites/vfx/wind.png");
+        var tex = GD.Load<Texture2D>("res://assets/vfx/lightning/wind.png");
         if (tex != null)
         {
             spr.Texture = tex;
@@ -547,7 +596,7 @@ public partial class CombatVFX : Node2D
     public static void SpawnWater(Node parent, Vector2 pos)
     {
         var spr = new Sprite2D();
-        var tex = GD.Load<Texture2D>("res://assets/sprites/vfx/water.png");
+        var tex = GD.Load<Texture2D>("res://assets/vfx/water/water.png");
         if (tex != null)
         {
             spr.Texture = tex;
@@ -567,7 +616,7 @@ public partial class CombatVFX : Node2D
     public static Node SpawnRageAura(Node parent, Vector2 pos)
     {
         var spr = new Sprite2D();
-        var tex = GD.Load<Texture2D>("res://assets/sprites/vfx/rage_aura.png");
+        var tex = GD.Load<Texture2D>("res://assets/vfx/fire/rage_aura.png");
         if (tex != null)
         {
             spr.Texture = tex;

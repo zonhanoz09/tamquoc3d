@@ -60,7 +60,7 @@ public partial class HeroVisual : Node2D
         // 1. Be dung vo dai chien thuat (Tactical Pedestal)
         Pedestal = new Sprite2D();
         string pName = IsEnemy ? "pedestal_enemy" : "pedestal_player";
-        var pTex = GD.Load<Texture2D>($"res://assets/sprites/ui/{pName}.png");
+        var pTex = GD.Load<Texture2D>($"res://assets/ui/shared/{pName}.png");
         if (pTex != null)
         {
             Pedestal.Texture = pTex;
@@ -72,7 +72,7 @@ public partial class HeroVisual : Node2D
 
         // 2. Hieu ung duoi chan khi tich day No/Ky nang (Skill Ready Blazing Aura)
         SkillReadyAura = new Sprite2D();
-        var srTex = GD.Load<Texture2D>("res://assets/sprites/ui/pedestal_skill_ready.png");
+        var srTex = GD.Load<Texture2D>("res://assets/ui/shared/pedestal_skill_ready.png");
         if (srTex != null)
         {
             SkillReadyAura.Texture = srTex;
@@ -90,7 +90,7 @@ public partial class HeroVisual : Node2D
 
         // 3. Vong sang be dung khi toi luot hanh dong (Active Turn Glow)
         ActivePedestal = new Sprite2D();
-        var aTex = GD.Load<Texture2D>("res://assets/sprites/ui/pedestal_active.png");
+        var aTex = GD.Load<Texture2D>("res://assets/ui/shared/pedestal_active.png");
         if (aTex != null)
         {
             ActivePedestal.Texture = aTex;
@@ -103,7 +103,7 @@ public partial class HeroVisual : Node2D
 
         // 4. Hero Sprite (64x64 HD Spritesheet)
         Sprite = new Sprite2D();
-        var sprPath = $"res://assets/sprites/heroes/{BattleHero.Data.HeroId}.png";
+        var sprPath = $"res://assets/heroes/{BattleHero.Data.HeroId}/spritesheet.png";
         var tex = GD.Load<Texture2D>(sprPath);
         if (tex != null)
         {
@@ -142,7 +142,7 @@ public partial class HeroVisual : Node2D
             HeroData.ElementType.Dark => "dark",
             _ => "neutral"
         };
-        var eTex = GD.Load<Texture2D>($"res://assets/sprites/ui/elem_{elemName}.png");
+        var eTex = GD.Load<Texture2D>($"res://assets/common/icons/elem_{elemName}.png");
         if (eTex != null)
         {
             ElemIcon.Texture = eTex;
@@ -441,7 +441,7 @@ public partial class HeroVisual : Node2D
                 {
                     var texRect = new TextureRect
                     {
-                        Texture = GD.Load<Texture2D>($"res://assets/sprites/ui/status_{sName}.png"),
+                        Texture = GD.Load<Texture2D>($"res://assets/common/icons/status_{sName}.png"),
                         CustomMinimumSize = new Vector2(14, 14),
                         ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize
                     };

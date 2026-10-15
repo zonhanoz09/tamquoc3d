@@ -74,7 +74,7 @@ public partial class SkillCutIn : CanvasLayer
 
         // 3. Hero Portrait (Left)
         var portrait = new TextureRect();
-        var pPath = $"res://assets/sprites/portraits/{heroData.HeroId}.png";
+        var pPath = $"res://assets/heroes/{heroData.HeroId}/portrait.png";
         var tex = GD.Load<Texture2D>(pPath);
         if (tex != null)
         {

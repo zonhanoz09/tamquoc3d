@@ -63,7 +63,7 @@ func _setup_sound() -> void:
 
 func _setup_background() -> void:
 	var bg_sprite = Sprite2D.new()
-	var bg_tex = load("res://assets/sprites/backgrounds/battlefield.png")
+	var bg_tex = load("res://assets/environments/battlefields/xich_bich/battlefield.png")
 	if bg_tex:
 		bg_sprite.texture = bg_tex
 	bg_sprite.position = Vector2(640, 360)
@@ -301,7 +301,7 @@ func _update_timeline() -> void:
 		if not bh.stats.is_alive():
 			continue
 		var avatar_rect = TextureRect.new()
-		var p_tex = load("res://assets/sprites/portraits/%s.png" % bh.data.hero_id)
+		var p_tex = load("res://assets/heroes/%s/icon.png" % bh.data.hero_id)
 		if p_tex:
 			avatar_rect.texture = p_tex
 		avatar_rect.custom_minimum_size = Vector2(32, 32)
