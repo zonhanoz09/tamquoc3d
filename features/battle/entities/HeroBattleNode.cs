@@ -57,7 +57,7 @@ public partial class HeroBattleNode : Node2D
         Pedestal.ZIndex = LayerConstants.PedestalZ;
         AddChild(Pedestal);
 
-        // 2. Skill Ready Blazing Aura
+        // 2. Skill Ready Blazing Aura (Scaled neatly to hug the pedestal)
         SkillReadyAura = new Sprite2D();
         var srTex = GD.Load<Texture2D>("res://assets/ui/shared/pedestal_skill_ready.png");
         if (srTex != null)
@@ -65,7 +65,7 @@ public partial class HeroBattleNode : Node2D
             SkillReadyAura.Texture = srTex;
         }
         SkillReadyAura.Position = Vector2.Zero;
-        SkillReadyAura.Scale = new Vector2(1.15f, 1.15f);
+        SkillReadyAura.Scale = new Vector2(0.65f, 0.65f);
         var srMat = new CanvasItemMaterial
         {
             BlendMode = CanvasItemMaterial.BlendModeEnum.Add
@@ -192,6 +192,11 @@ public partial class HeroBattleNode : Node2D
 
     public void SetActiveTurn(bool active)
     {
+        if (_isDead || !GodotObject.IsInstanceValid(ActivePedestal))
+        {
+            return;
+        }
+
         ActivePedestal.Visible = active;
         if (active)
         {
@@ -230,15 +235,16 @@ public partial class HeroBattleNode : Node2D
                     _skillReadyTween.Kill();
                 }
                 _skillReadyTween = CreateTween().SetLoops();
-                _skillReadyTween.TweenProperty(SkillReadyAura, "scale", new Vector2(1.22f, 1.22f), 0.45f).SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.InOut);
+                _skillReadyTween.TweenProperty(SkillReadyAura, "scale", new Vector2(0.70f, 0.70f), 0.45f).SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.InOut);
                 _skillReadyTween.Parallel().TweenProperty(SkillReadyAura, "modulate", new Color(1.2f, 1.15f, 0.9f, 1.0f), 0.45f);
-                _skillReadyTween.TweenProperty(SkillReadyAura, "scale", new Vector2(1.08f, 1.08f), 0.45f).SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.InOut);
+                _skillReadyTween.TweenProperty(SkillReadyAura, "scale", new Vector2(0.60f, 0.60f), 0.45f).SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.InOut);
                 _skillReadyTween.Parallel().TweenProperty(SkillReadyAura, "modulate", new Color(0.95f, 0.8f, 0.45f, 0.75f), 0.45f);
             }
         }
         else
         {
             SkillReadyAura.Visible = false;
+            SkillReadyAura.Scale = new Vector2(0.65f, 0.65f);
             if (_skillReadyTween != null && _skillReadyTween.IsValid())
             {
                 _skillReadyTween.Kill();
