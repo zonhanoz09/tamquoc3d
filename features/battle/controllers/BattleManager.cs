@@ -34,6 +34,11 @@ public partial class BattleManager : Node
     public float BattleSpeed { get; set; } = GameConstants.DefaultBattleSpeed;
     public bool IsPaused { get; set; } = false;
 
+    /// <summary>
+    /// Delegate bat dong bo de cho hoat anh chien dau (Attack / Rage / VFX) hoan tat truoc khi chuyen luot.
+    /// </summary>
+    public System.Func<BattleHero, Godot.Collections.Dictionary, Task> ActionAwaiter { get; set; }
+
     public void SetupBattle(IList<HeroData> party0, IList<HeroData> party1)
     {
         Team0.Clear();
@@ -130,11 +135,13 @@ public partial class BattleManager : Node
 
                 await ExecuteTurn(currentHero);
                 if (!IsInsideTree() || GetTree() == null) return;
-                await ToSignal(GetTree().CreateTimer(0.4f / BattleSpeed), SceneTreeTimer.SignalName.Timeout);
+                // Khoang nghi giua cac luot de nguoi choi de dang quan sat dien bien
+                await ToSignal(GetTree().CreateTimer(GameConstants.InterTurnDelay / BattleSpeed), SceneTreeTimer.SignalName.Timeout);
             }
 
             if (!IsInsideTree() || GetTree() == null) return;
-            await ToSignal(GetTree().CreateTimer(0.6f / BattleSpeed), SceneTreeTimer.SignalName.Timeout);
+            // Khoang nghi giua cac hiep dau
+            await ToSignal(GetTree().CreateTimer(GameConstants.InterRoundDelay / BattleSpeed), SceneTreeTimer.SignalName.Timeout);
         }
     }
 
@@ -248,11 +255,20 @@ public partial class BattleManager : Node
         EmitSignal(SignalName.HeroActed, hero, actionData);
         EventBus.Instance?.EmitSignal(EventBus.SignalName.HeroActed, hero, actionData);
 
+        // Chờ toàn bộ hoạt ảnh đánh, VFX, floating text hoàn tất
+        if (ActionAwaiter != null)
+        {
+            await ActionAwaiter(hero, actionData);
+        }
+        else
+        {
+            float fallbackDelay = (isRage ? 2.0f : 1.2f) / BattleSpeed;
+            await ToSignal(GetTree().CreateTimer(fallbackDelay), SceneTreeTimer.SignalName.Timeout);
+        }
+
         DecrementStatus(hero);
         EmitSignal(SignalName.HeroTurnEnded, hero);
         EventBus.Instance?.EmitSignal(EventBus.SignalName.HeroTurnEnded, hero);
-
-        await Task.CompletedTask;
     }
 
     private List<BattleHero> SelectTargets(BattleHero attacker, SkillData skill)

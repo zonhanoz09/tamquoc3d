@@ -47,24 +47,29 @@ public class Grid3x3
 
     public static Vector2 CalculateSlotPosition(int team, BattlePosition pos, BattleLane lane)
     {
-        // 1. Tien quan (Front): CHI CO 1 VI TRI O CHINH GIUA
-        if (pos == BattlePosition.Front)
+        // Trục Y: Front luôn ở chính giữa (505f), các vị trí khác tùy thuộc vào Lane
+        float y = (pos == BattlePosition.Front) ? 505.0f : lane switch
         {
-            float frontX = team == 0 ? 490.0f : 790.0f;
-            return new Vector2(frontX, 505.0f);
-        }
-
-        // 2. Trung quan (Mid) & Hau quan (Back): phan bo theo cac duong
-        float y = lane switch
-        {
-            BattleLane.Top => 425.0f,
+            BattleLane.Top    => 425.0f,
             BattleLane.Bottom => 585.0f,
-            _ => 505.0f // Center
+            _                 => 505.0f // Center hoặc mặc định
         };
 
-        float x = team == 0
-            ? (pos == BattlePosition.Mid ? 350.0f : 210.0f)
-            : (pos == BattlePosition.Mid ? 930.0f : 1070.0f);
+        // Trục X: Mapping trực tiếp theo (Team, Position)
+        float x = (team, pos) switch
+        {
+            // Team 0 (bên trái nhìn sang phải: Back -> Mid -> Front)
+            (0, BattlePosition.Back)  => 210.0f,
+            (0, BattlePosition.Mid)   => 350.0f,
+            (0, BattlePosition.Front) => 490.0f,
+
+            // Team 1 (bên phải nhìn sang trái: Front <- Mid <- Back)
+            (1, BattlePosition.Front) => 790.0f,
+            (1, BattlePosition.Mid)   => 930.0f,
+            (1, BattlePosition.Back)  => 1070.0f,
+
+            _ => 0.0f
+        };
 
         return new Vector2(x, y);
     }

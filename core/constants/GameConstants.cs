@@ -27,12 +27,14 @@ public static class GameConstants
     public const float HealthBarHeight = 4.0f;
     public const int HealthBarCornerRadius = 2;
 
-    // Pacing & Animation Timings
+    // Pacing & Animation Timings (Nhip do tran dau tram tinh, ro rang, de quan sat)
     public const float DefaultBattleSpeed = 1.0f;
-    public const float AttackDashDuration = 0.28f;
-    public const float AttackHoldDuration = 0.24f;
-    public const float AttackBackDuration = 0.28f;
-    public const float SkillBannerInDuration = 0.25f;
-    public const float SkillBannerStayDuration = 0.70f;
-    public const float SkillBannerOutDuration = 0.25f;
+    public const float AttackDashDuration = 0.35f;
+    public const float AttackHoldDuration = 0.32f;
+    public const float AttackBackDuration = 0.35f;
+    public const float SkillBannerInDuration = 0.28f;
+    public const float SkillBannerStayDuration = 0.85f;
+    public const float SkillBannerOutDuration = 0.28f;
+    public const float InterTurnDelay = 0.75f;
+    public const float InterRoundDelay = 1.30f;
 }

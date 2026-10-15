@@ -275,7 +275,7 @@ public partial class BattleScene : Node2D
         _battleManager.RoundStarted += OnRoundStarted;
         _battleManager.HeroTurnStarted += OnHeroTurnStarted;
         _battleManager.HeroTurnEnded += OnHeroTurnEnded;
-        _battleManager.HeroActed += (hero, data) => _ = OnHeroActedAsync(hero, data);
+        _battleManager.ActionAwaiter = OnHeroActedAsync;
         _battleManager.HeroDied += OnHeroDied;
 
         StartBattleWithRoster();
@@ -439,14 +439,24 @@ public partial class BattleScene : Node2D
             UpdateTimeline();
         }
 
+        var tcs = new System.Threading.Tasks.TaskCompletionSource<bool>();
+
+        void OnCompleteWrapped()
+        {
+            OnComplete();
+            tcs.TrySetResult(true);
+        }
+
         if (skill.Type is SkillData.SkillType.Melee or SkillData.SkillType.Flank)
         {
-            attackerNode.AnimateAttack(targetPos, OnImpact, OnComplete, _battleManager.BattleSpeed);
+            attackerNode.AnimateAttack(targetPos, OnImpact, OnCompleteWrapped, _battleManager.BattleSpeed);
         }
         else
         {
-            attackerNode.AnimateRangedAttack(targetPos, OnImpact, OnComplete, _battleManager.BattleSpeed);
+            attackerNode.AnimateRangedAttack(targetPos, OnImpact, OnCompleteWrapped, _battleManager.BattleSpeed);
         }
+
+        await tcs.Task;
     }
 
     private void ApplyActionEffects(BattleHero attacker, SkillData skill, bool isRage, Godot.Collections.Array results)
