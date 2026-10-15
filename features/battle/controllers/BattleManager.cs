@@ -257,14 +257,14 @@ public partial class BattleManager : Node
             return aliveEnemies;
         }
 
-        // 3. AoE Row (Hang ngang)
+        // 3. AoE Row (Hang ngang theo vi tri)
         if (skill.Type == SkillData.SkillType.AoeRow)
         {
-            var frontRow = aliveEnemies.Where(h => h.SlotRow == 0).ToList();
+            var frontRow = aliveEnemies.Where(h => h.PositionType == BattlePosition.Front).ToList();
             if (frontRow.Count > 0) return frontRow;
-            var midRow = aliveEnemies.Where(h => h.SlotRow == 1).ToList();
+            var midRow = aliveEnemies.Where(h => h.PositionType == BattlePosition.Mid).ToList();
             if (midRow.Count > 0) return midRow;
-            return aliveEnemies.Where(h => h.SlotRow == 2).ToList();
+            return aliveEnemies.Where(h => h.PositionType == BattlePosition.Back).ToList();
         }
 
         // 4. Flank (Muc tieu it mau nhat)
@@ -273,14 +273,14 @@ public partial class BattleManager : Node
             return [aliveEnemies.OrderBy(h => h.Stats.HpCurrent).First()];
         }
 
-        // 5. Normal / Melee / Ranged: danh tien quan truoc
-        var targetFront = aliveEnemies.Where(h => h.SlotRow == 0).ToList();
+        // 5. Normal / Melee / Ranged: uu tien danh Tien quan truoc, roi toi Trung quan, Hau quan
+        var targetFront = aliveEnemies.Where(h => h.PositionType == BattlePosition.Front).ToList();
         if (targetFront.Count > 0)
         {
             return [targetFront[GD.RandRange(0, targetFront.Count - 1)]];
         }
 
-        var targetMid = aliveEnemies.Where(h => h.SlotRow == 1).ToList();
+        var targetMid = aliveEnemies.Where(h => h.PositionType == BattlePosition.Mid).ToList();
         if (targetMid.Count > 0)
         {
             return [targetMid[GD.RandRange(0, targetMid.Count - 1)]];

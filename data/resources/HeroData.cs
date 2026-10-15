@@ -1,4 +1,5 @@
 using Godot;
+using TamQuoc3D.Core.Constants;
 
 namespace TamQuoc3D.Data.Resources;
 
@@ -18,11 +19,12 @@ public partial class HeroData : Resource
         Dark    // Am (khac Quang)
     }
 
+    // Alias tuong thich cho cac he thong goi HeroData.PositionType
     public enum PositionType
     {
-        Front, // Tien quan (Chiu don, khong che)
-        Mid,   // Trung quan (Sat thuong chu luc)
-        Back   // Hau quan (Ho tro, hoi phuc, phep thuat)
+        Front = BattlePosition.Front,
+        Mid = BattlePosition.Mid,
+        Back = BattlePosition.Back
     }
 
     public enum RarityType
@@ -37,7 +39,7 @@ public partial class HeroData : Resource
     [Export] public string HeroName { get; set; } = string.Empty;
     [Export] public string Title { get; set; } = string.Empty;
     [Export] public ElementType Element { get; set; } = ElementType.None;
-    [Export] public PositionType Position { get; set; } = PositionType.Mid;
+    [Export] public BattlePosition Position { get; set; } = BattlePosition.Mid;
     [Export] public RarityType Rarity { get; set; } = RarityType.Ssr;
 
     [Export] public HeroStats BaseStats { get; set; } = new();

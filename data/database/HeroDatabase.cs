@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Godot;
+using TamQuoc3D.Core.Constants;
 using TamQuoc3D.Data.Resources;
 
 namespace TamQuoc3D.Data.Database;
@@ -110,7 +111,7 @@ public partial class HeroDatabase : Node
             HeroName = "Triệu Vân",
             Title = "Thường Sơn Triệu Tử Long",
             Element = HeroData.ElementType.Water,
-            Position = HeroData.PositionType.Front,
+            Position = BattlePosition.Front,
             Rarity = HeroData.RarityType.Ur,
             BaseStats = new HeroStats
             {
@@ -135,7 +136,7 @@ public partial class HeroDatabase : Node
             HeroName = "Điển Vi",
             Title = "Cổ Chi Ác Lai",
             Element = HeroData.ElementType.Fire,
-            Position = HeroData.PositionType.Front,
+            Position = BattlePosition.Front,
             Rarity = HeroData.RarityType.Ssr,
             BaseStats = new HeroStats
             {
@@ -160,7 +161,7 @@ public partial class HeroDatabase : Node
             HeroName = "Trương Phi",
             Title = "Vạn Nhân Địch",
             Element = HeroData.ElementType.Fire,
-            Position = HeroData.PositionType.Front,
+            Position = BattlePosition.Front,
             Rarity = HeroData.RarityType.Ssr,
             BaseStats = new HeroStats
             {
@@ -185,7 +186,7 @@ public partial class HeroDatabase : Node
             HeroName = "Tào Nhân",
             Title = "Thiên Nhân Chi Địch",
             Element = HeroData.ElementType.Light,
-            Position = HeroData.PositionType.Front,
+            Position = BattlePosition.Front,
             Rarity = HeroData.RarityType.Ssr,
             BaseStats = new HeroStats
             {
@@ -210,7 +211,7 @@ public partial class HeroDatabase : Node
             HeroName = "Hoàng Cái",
             Title = "Khổ Nhục Tiên Phong",
             Element = HeroData.ElementType.Water,
-            Position = HeroData.PositionType.Front,
+            Position = BattlePosition.Front,
             Rarity = HeroData.RarityType.Sr,
             BaseStats = new HeroStats
             {
@@ -236,7 +237,7 @@ public partial class HeroDatabase : Node
             HeroName = "Quan Vũ",
             Title = "Mỹ Nhiễm Công",
             Element = HeroData.ElementType.Wind,
-            Position = HeroData.PositionType.Mid,
+            Position = BattlePosition.Mid,
             Rarity = HeroData.RarityType.Ur,
             BaseStats = new HeroStats
             {
@@ -261,7 +262,7 @@ public partial class HeroDatabase : Node
             HeroName = "Lữ Bố",
             Title = "Chiến Thần Vô Song",
             Element = HeroData.ElementType.Dark,
-            Position = HeroData.PositionType.Mid,
+            Position = BattlePosition.Mid,
             Rarity = HeroData.RarityType.Ur,
             BaseStats = new HeroStats
             {
@@ -286,7 +287,7 @@ public partial class HeroDatabase : Node
             HeroName = "Chu Du",
             Title = "Mỹ Chu Lang",
             Element = HeroData.ElementType.Fire,
-            Position = HeroData.PositionType.Mid,
+            Position = BattlePosition.Mid,
             Rarity = HeroData.RarityType.Ssr,
             BaseStats = new HeroStats
             {
@@ -311,7 +312,7 @@ public partial class HeroDatabase : Node
             HeroName = "Hoàng Trung",
             Title = "Lão Tướng Thần Xạ",
             Element = HeroData.ElementType.Light,
-            Position = HeroData.PositionType.Mid,
+            Position = BattlePosition.Mid,
             Rarity = HeroData.RarityType.Ssr,
             BaseStats = new HeroStats
             {
@@ -336,7 +337,7 @@ public partial class HeroDatabase : Node
             HeroName = "Mã Siêu",
             Title = "Cẩm Mã Siêu",
             Element = HeroData.ElementType.Wind,
-            Position = HeroData.PositionType.Mid,
+            Position = BattlePosition.Mid,
             Rarity = HeroData.RarityType.Ssr,
             BaseStats = new HeroStats
             {
@@ -361,7 +362,7 @@ public partial class HeroDatabase : Node
             HeroName = "Điêu Thuyền",
             Title = "Bế Nguyệt Mỹ Nhân",
             Element = HeroData.ElementType.Dark,
-            Position = HeroData.PositionType.Mid,
+            Position = BattlePosition.Mid,
             Rarity = HeroData.RarityType.Ssr,
             BaseStats = new HeroStats
             {
@@ -387,7 +388,7 @@ public partial class HeroDatabase : Node
             HeroName = "Gia Cát Lượng",
             Title = "Ngọa Long Tiên Sinh",
             Element = HeroData.ElementType.Wind,
-            Position = HeroData.PositionType.Back,
+            Position = BattlePosition.Back,
             Rarity = HeroData.RarityType.Ur,
             BaseStats = new HeroStats
             {
@@ -412,7 +413,7 @@ public partial class HeroDatabase : Node
             HeroName = "Tiểu Kiều",
             Title = "Giang Nam Đệ Nhất Kiều",
             Element = HeroData.ElementType.Water,
-            Position = HeroData.PositionType.Back,
+            Position = BattlePosition.Back,
             Rarity = HeroData.RarityType.Ssr,
             BaseStats = new HeroStats
             {
@@ -437,7 +438,7 @@ public partial class HeroDatabase : Node
             HeroName = "Bàng Thống",
             Title = "Phượng Sồ Tiên Sinh",
             Element = HeroData.ElementType.Fire,
-            Position = HeroData.PositionType.Back,
+            Position = BattlePosition.Back,
             Rarity = HeroData.RarityType.Ssr,
             BaseStats = new HeroStats
             {
@@ -462,7 +463,7 @@ public partial class HeroDatabase : Node
             HeroName = "Sái Văn Cơ",
             Title = "Tài Nữ Thi Ca",
             Element = HeroData.ElementType.Light,
-            Position = HeroData.PositionType.Back,
+            Position = BattlePosition.Back,
             Rarity = HeroData.RarityType.Sr,
             BaseStats = new HeroStats
             {
