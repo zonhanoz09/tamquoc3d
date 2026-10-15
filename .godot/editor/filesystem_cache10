@@ -1,5 +1,5 @@
 78098b89c88a74ebe8c20117b8754620
-::res://::1792001440
+::res://::1792071498
 ::res://assets/::1791995244
 ::res://assets/sprites/::1791996514
 ::res://assets/sprites/backgrounds/::1791999399
@@ -55,7 +55,7 @@ status_debuff_atk.png::CompressedTexture2D::290024932791079451::1791996605::1791
 status_debuff_def.png::CompressedTexture2D::2849153703880283674::1791996605::1791996615::1::::<><><>0<>0<>fd14a2db49ecab61c008862a1de53990<>res://.godot/imported/status_debuff_def.png-24c876fc5fb1e2be654c1b980aa63e4b.ctex::
 status_silence.png::CompressedTexture2D::1946022362362554049::1791996605::1791996615::1::::<><><>0<>0<>e0d81c7b282b22dc80020f9904123930<>res://.godot/imported/status_silence.png-4134d763674bac5da122ca05b57b39aa.ctex::
 status_stun.png::CompressedTexture2D::6254519198857751517::1791996605::1791996615::1::::<><><>0<>0<>4ae1838b4a7f5370d7fe20e6ebb61f2d<>res://.godot/imported/status_stun.png-caa07ad54e0f02323cad8b7a0d387ccc.ctex::
-::res://assets/sprites/vfx/::1792002373
+::res://assets/sprites/vfx/::1792002472
 fire.png::CompressedTexture2D::454850044804588518::1791996605::1791996615::1::::<><><>0<>0<>139b027de8d79c70cb76c534495acf69<>res://.godot/imported/fire.png-076483f4606c73943e6b1fd67626322c.ctex::
 impact.png::CompressedTexture2D::8377850937427076492::1791996605::1791996615::1::::<><><>0<>0<>6872a370b539a1c7dba99bd4605af669<>res://.godot/imported/impact.png-8e51e92c6e0a4e0e35159d1a4235a96e.ctex::
 rage_aura.png::CompressedTexture2D::7724892870314490546::1791996605::1791996615::1::::<><><>0<>0<>bbab83ce4f8fa5d699b3fb3f16e7f092<>res://.godot/imported/rage_aura.png-daee297d19a8cd9d322a94e25f0b0722.ctex::
@@ -106,8 +106,8 @@ Game Design Document (GDD) - 2D Pixel Turn-Based S.md::TextFile::-1::1791968542:
 ::res://resources/heroes/::1791995244
 ::res://resources/skills/::1791995244
 ::res://scenes/::1791995244
-::res://scenes/battle/::1791995540
-BattleScene.gd::GDScript::7529937886708448527::1791999288::0::1::::<>Node2D<><>0<>0<><>::
+::res://scenes/battle/::1792002767
+BattleScene.gd::GDScript::7529937886708448527::1792002767::0::1::::<>Node2D<><>0<>0<><>::
 BattleScene.tscn::PackedScene::-1::1791996797::0::1::::<><><>0<>0<><>::
 ::res://scenes/hero/::1791995244
 ::res://scenes/ui/::1791995244
@@ -116,9 +116,9 @@ BattleScene.tscn::PackedScene::-1::1791996797::0::1::::<><><>0<>0<><>::
 SoundManager.gd::GDScript::8950722320773094813::1791996624::0::1::::SoundManager<>Node<><>0<>0<><>::
 ::res://scripts/autoload/::1791995409
 GameManager.gd::GDScript::3112471965858343018::1791996958::0::1::::<>Node<><>0<>0<><>::
-::res://scripts/battle/::1791995683
+::res://scripts/battle/::1792002736
 BattleHero.gd::GDScript::5704522856515374528::1791995683::0::1::::BattleHero<>RefCounted<><>0<>0<><>::
-BattleManager.gd::GDScript::4802271963495680475::1791998280::0::1::::BattleManager<>Node<><>0<>0<><>::
+BattleManager.gd::GDScript::4802271963495680475::1792002752::0::1::::BattleManager<>Node<><>0<>0<><>::
 CombatFormulas.gd::GDScript::6964439190231691908::1791995307::0::1::::CombatFormulas<>RefCounted<><>0<>0<><>::
 TurnManager.gd::GDScript::2383513716992014038::1791996967::0::1::::TurnManager<>RefCounted<><>0<>0<><>::
 ::res://scripts/data/::1791995658
@@ -128,7 +128,7 @@ HeroData.gd::GDScript::7006600226561931932::1791995599::0::1::::HeroData<>Resour
 HeroStats.gd::GDScript::7850463087906926056::1791995638::0::1::::HeroStats<>Resource<><>0<>0<><>::
 SkillData.gd::GDScript::960413834902032134::1791995593::0::1::::SkillData<>Resource<><>0<>0<><>::
 ::res://scripts/visual/::1791996854
-CombatVFX.gd::GDScript::3655217107293540290::1791996644::0::1::::CombatVFX<>Node2D<><>0<>0<><>::
+CombatVFX.gd::GDScript::3655217107293540290::1792002483::0::1::::CombatVFX<>Node2D<><>0<>0<><>::
 FloatingText.gd::GDScript::7657099821328248972::1791996816::0::1::::FloatingText<>Node2D<><>0<>0<><>::
-HeroVisual.gd::GDScript::1609982106919249510::1792001838::0::1::::HeroVisual<>Node2D<><>0<>0<><>::
+HeroVisual.gd::GDScript::1609982106919249510::1792002617::0::1::::HeroVisual<>Node2D<><>0<>0<><>::
 SkillCutIn.gd::GDScript::1432495324845953475::1791996674::0::1::::SkillCutIn<>CanvasLayer<><>0<>0<><>::
