@@ -39,30 +39,53 @@ public partial class BattleManager : Node
         Team0.Clear();
         Team1.Clear();
 
-        // Team 0: Player
-        for (int i = 0; i < party0.Count; i++)
-        {
-            var data = party0[i];
-            int row = (int)data.Position;
-            int col = i % 3;
-            var bh = new BattleHero(data, 0, row, col);
-            bh.Died += OnHeroDied;
-            Team0.Add(bh);
-        }
-
-        // Team 1: Enemy
-        for (int i = 0; i < party1.Count; i++)
-        {
-            var data = party1[i];
-            int row = (int)data.Position;
-            int col = i % 3;
-            var bh = new BattleHero(data, 1, row, col);
-            bh.Died += OnHeroDied;
-            Team1.Add(bh);
-        }
+        SetupTeam(party0, 0, Team0);
+        SetupTeam(party1, 1, Team1);
 
         TurnManager = new TurnManager();
         TurnManager.Setup(Team0, Team1);
+    }
+
+    private void SetupTeam(IList<HeroData> party, int teamId, List<BattleHero> teamList)
+    {
+        int midCount = 0;
+        int backCount = 0;
+
+        foreach (var data in party)
+        {
+            int row = (int)data.Position;
+            int col;
+
+            if (data.Position == BattlePosition.Front)
+            {
+                // Luật bất biến: Tiền quân chỉ có duy nhất 1 vị trí ở chính giữa (Lane Center)
+                col = (int)BattleLane.Center;
+            }
+            else if (data.Position == BattlePosition.Mid)
+            {
+                col = midCount switch
+                {
+                    0 => (int)BattleLane.Top,
+                    1 => (int)BattleLane.Bottom,
+                    _ => (int)BattleLane.Center
+                };
+                midCount++;
+            }
+            else
+            {
+                col = backCount switch
+                {
+                    0 => (int)BattleLane.Top,
+                    1 => (int)BattleLane.Bottom,
+                    _ => (int)BattleLane.Center
+                };
+                backCount++;
+            }
+
+            var bh = new BattleHero(data, teamId, row, col);
+            bh.Died += OnHeroDied;
+            teamList.Add(bh);
+        }
     }
 
     public async void StartBattle()

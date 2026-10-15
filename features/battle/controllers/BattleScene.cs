@@ -296,11 +296,11 @@ public partial class BattleScene : Node2D
 
         var playerParty = new List<HeroData>
         {
-            GetHero("tao_nhan"),
-            GetHero("quan_vu"),
-            GetHero("trieu_van"),
-            GetHero("gia_cat_luong"),
-            GetHero("tieu_kieu")
+            GetHero("trieu_van"),     // 1 Tien quan chinh giua
+            GetHero("quan_vu"),       // Trung quan Top
+            GetHero("ma_sieu"),        // Trung quan Bottom
+            GetHero("gia_cat_luong"), // Hau quan Top
+            GetHero("tieu_kieu")      // Hau quan Bottom
         };
 
         var enemyParty = new List<HeroData>

@@ -6,6 +6,7 @@ namespace TamQuoc3D.Features.Battle.Grid;
 
 /// <summary>
 /// Grid3x3 - Quan ly ma tran vi tri 3x3 chuan doi xung chien tran Tam Quoc.
+/// Quy tac bat bien: Tien quan chi co DUY NHAT 1 vi tri o chinh giua (Row 0, Col 1).
 /// </summary>
 public class Grid3x3
 {
@@ -20,13 +21,21 @@ public class Grid3x3
     {
         for (int team = 0; team <= 1; team++)
         {
-            for (int row = 0; row < 3; row++)
+            // 1. Tien quan (Front): Luat tran hinh chi co duy nhat 1 vi tri o chinh giua (Col 1)
+            var frontPos = CalculateSlotPosition(team, BattlePosition.Front, BattleLane.Center);
+            _slots[(team, (int)BattlePosition.Front, (int)BattleLane.Center)] =
+                new PedestalSlot(team, (int)BattlePosition.Front, (int)BattleLane.Center, frontPos);
+
+            // 2. Trung quan (Row 1) & Hau quan (Row 2): 3 duong Top, Center, Bottom
+            for (int col = 0; col < 3; col++)
             {
-                for (int col = 0; col < 3; col++)
-                {
-                    var pos = CalculateSlotPosition(team, (BattlePosition)row, (BattleLane)col);
-                    _slots[(team, row, col)] = new PedestalSlot(team, row, col, pos);
-                }
+                var midPos = CalculateSlotPosition(team, BattlePosition.Mid, (BattleLane)col);
+                _slots[(team, (int)BattlePosition.Mid, col)] =
+                    new PedestalSlot(team, (int)BattlePosition.Mid, col, midPos);
+
+                var backPos = CalculateSlotPosition(team, BattlePosition.Back, (BattleLane)col);
+                _slots[(team, (int)BattlePosition.Back, col)] =
+                    new PedestalSlot(team, (int)BattlePosition.Back, col, backPos);
             }
         }
     }
@@ -38,38 +47,35 @@ public class Grid3x3
 
     public static Vector2 CalculateSlotPosition(int team, BattlePosition pos, BattleLane lane)
     {
-        // Cac duong ngang (Lanes) can bang voi khoang cach 80px:
-        // Top = 425, Center = 505, Bottom = 585
+        // 1. Tien quan (Front): CHI CO 1 VI TRI O CHINH GIUA
+        if (pos == BattlePosition.Front)
+        {
+            float frontX = team == 0 ? 490.0f : 790.0f;
+            return new Vector2(frontX, 505.0f);
+        }
+
+        // 2. Trung quan (Mid) & Hau quan (Back): phan bo theo cac duong
         float y = lane switch
         {
             BattleLane.Top => 425.0f,
-            BattleLane.Center => 505.0f,
-            _ => 585.0f
+            BattleLane.Bottom => 585.0f,
+            _ => 505.0f // Center
         };
 
-        // Cac hang doc (Rows) doi xung hoan hao qua tam san dau X = 640:
-        // - Tien quan (Front): cach tam 150px (vung giao chien o giua = 300px)
-        // - Trung quan (Mid): cach tam 290px (lui sau Tien quan 140px)
-        // - Hau quan (Back): cach tam 430px (lui sau Trung quan 140px, cach mep man hinh 210px)
         float x = team == 0
-            ? pos switch
-            {
-                BattlePosition.Front => 490.0f,
-                BattlePosition.Mid => 350.0f,
-                _ => 210.0f
-            }
-            : pos switch
-            {
-                BattlePosition.Front => 790.0f,
-                BattlePosition.Mid => 930.0f,
-                _ => 1070.0f
-            };
+            ? (pos == BattlePosition.Mid ? 350.0f : 210.0f)
+            : (pos == BattlePosition.Mid ? 930.0f : 1070.0f);
 
         return new Vector2(x, y);
     }
 
     public PedestalSlot GetSlot(int team, int row, int col)
     {
+        // Neu truy van Tien quan bat ke cot nao deu quy ve vi tri chinh giua (Col 1)
+        if (row == (int)BattlePosition.Front)
+        {
+            col = (int)BattleLane.Center;
+        }
         return _slots.GetValueOrDefault((team, row, col));
     }
 
