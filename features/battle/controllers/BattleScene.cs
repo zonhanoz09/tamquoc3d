@@ -103,7 +103,8 @@ public partial class BattleScene : Node2D
     private void SetupBackground()
     {
         var bgSprite = new Sprite2D();
-        var bgTex = GD.Load<Texture2D>("res://assets/environments/battlefields/xich_bich/battlefield.png");
+        var bgTex = GD.Load<Texture2D>("res://assets/environments/battlefields/dau_truong/battlefield.png")
+            ?? GD.Load<Texture2D>("res://assets/environments/battlefields/xich_bich/battlefield.png");
         if (bgTex != null)
         {
             bgSprite.Texture = bgTex;

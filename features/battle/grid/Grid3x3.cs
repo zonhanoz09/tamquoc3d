@@ -38,46 +38,34 @@ public class Grid3x3
 
     public static Vector2 CalculateSlotPosition(int team, BattlePosition pos, BattleLane lane)
     {
-        if (team == 0)
+        // Cac duong ngang (Lanes) can bang voi khoang cach 80px:
+        // Top = 425, Center = 505, Bottom = 585
+        float y = lane switch
         {
-            // Player
-            return pos switch
+            BattleLane.Top => 425.0f,
+            BattleLane.Center => 505.0f,
+            _ => 585.0f
+        };
+
+        // Cac hang doc (Rows) doi xung hoan hao qua tam san dau X = 640:
+        // - Tien quan (Front): cach tam 150px (vung giao chien o giua = 300px)
+        // - Trung quan (Mid): cach tam 290px (lui sau Tien quan 140px)
+        // - Hau quan (Back): cach tam 430px (lui sau Trung quan 140px, cach mep man hinh 210px)
+        float x = team == 0
+            ? pos switch
             {
-                BattlePosition.Front => new Vector2(520, 520),
-                BattlePosition.Mid => lane switch
-                {
-                    BattleLane.Top => new Vector2(350, 410),
-                    BattleLane.Center => new Vector2(350, 520),
-                    _ => new Vector2(350, 630)
-                },
-                _ => lane switch
-                {
-                    BattleLane.Top => new Vector2(180, 410),
-                    BattleLane.Center => new Vector2(180, 520),
-                    _ => new Vector2(180, 630)
-                }
-            };
-        }
-        else
-        {
-            // Enemy
-            return pos switch
+                BattlePosition.Front => 490.0f,
+                BattlePosition.Mid => 350.0f,
+                _ => 210.0f
+            }
+            : pos switch
             {
-                BattlePosition.Front => new Vector2(760, 520),
-                BattlePosition.Mid => lane switch
-                {
-                    BattleLane.Top => new Vector2(930, 410),
-                    BattleLane.Center => new Vector2(930, 520),
-                    _ => new Vector2(930, 630)
-                },
-                _ => lane switch
-                {
-                    BattleLane.Top => new Vector2(1100, 410),
-                    BattleLane.Center => new Vector2(1100, 520),
-                    _ => new Vector2(1100, 630)
-                }
+                BattlePosition.Front => 790.0f,
+                BattlePosition.Mid => 930.0f,
+                _ => 1070.0f
             };
-        }
+
+        return new Vector2(x, y);
     }
 
     public PedestalSlot GetSlot(int team, int row, int col)
