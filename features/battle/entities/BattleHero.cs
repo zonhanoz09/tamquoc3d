@@ -78,10 +78,6 @@ public partial class BattleHero : RefCounted, IEntity, ITurnReceiver
         {
             IsAlive = false;
             EmitSignal(SignalName.Died, this);
-            if (Node is HeroBattleNode hNode)
-            {
-                hNode.AnimateDeath();
-            }
         }
     }
 }

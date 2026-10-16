@@ -7,6 +7,7 @@ namespace TamQuoc3D.Features.Battle.Grid;
 /// <summary>
 /// Grid3x3 - Quan ly ma tran vi tri 3x3 chuan doi xung chien tran Tam Quoc.
 /// Quy tac bat bien: Tien quan chi co DUY NHAT 1 vi tri o chinh giua (Row 0, Col 1).
+/// Tat ca vi tri nam tron ven ben trong san dau (Arena Ring).
 /// </summary>
 public class Grid3x3
 {
@@ -55,18 +56,18 @@ public class Grid3x3
             _                 => 505.0f // Center hoặc mặc định
         };
 
-        // Trục X: Mapping trực tiếp theo (Team, Position)
+        // Trục X: Đưa toàn bộ đội hình nằm gọn gàng bên trong sàn đấu (Arena Ring: X=240..1040)
         float x = (team, pos) switch
         {
-            // Team 0 (bên trái nhìn sang phải: Back -> Mid -> Front)
-            (0, BattlePosition.Back)  => 210.0f,
-            (0, BattlePosition.Mid)   => 350.0f,
-            (0, BattlePosition.Front) => 490.0f,
+            // Team 0 (bên trái: Back=270, Mid=390, Front=510)
+            (0, BattlePosition.Back)  => 270.0f,
+            (0, BattlePosition.Mid)   => 390.0f,
+            (0, BattlePosition.Front) => 510.0f,
 
-            // Team 1 (bên phải nhìn sang trái: Front <- Mid <- Back)
-            (1, BattlePosition.Front) => 790.0f,
-            (1, BattlePosition.Mid)   => 930.0f,
-            (1, BattlePosition.Back)  => 1070.0f,
+            // Team 1 (bên phải: Front=770, Mid=890, Back=1010)
+            (1, BattlePosition.Front) => 770.0f,
+            (1, BattlePosition.Mid)   => 890.0f,
+            (1, BattlePosition.Back)  => 1010.0f,
 
             _ => 0.0f
         };

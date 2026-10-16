@@ -148,33 +148,29 @@ public partial class BattleScene : Node2D
         {
             Text = "⚔️ HIỆP 1"
         };
-        _roundLabel.AddThemeFontSizeOverride("font_size", 18);
-        _roundLabel.AddThemeColorOverride("font_color", new Color(1.0f, 0.85f, 0.3f));
+        _roundLabel.AddThemeFontSizeOverride("font_size", 14);
+        _roundLabel.AddThemeColorOverride("font_color", new Color(1.0f, 0.85f, 0.2f));
         topHbox.AddChild(_roundLabel);
 
-        var sep = new VSeparator
-        {
-            CustomMinimumSize = new Vector2(20, 30)
-        };
-        topHbox.AddChild(sep);
+        var vSep = new VSeparator();
+        topHbox.AddChild(vSep);
 
-        var tlLbl = new Label
+        var timeLbl = new Label
         {
-            Text = "THỨ TỰ HÀNH ĐỘNG:"
+            Text = "Thứ tự ra chiêu:"
         };
-        tlLbl.AddThemeFontSizeOverride("font_size", 13);
-        tlLbl.AddThemeColorOverride("font_color", new Color(0.7f, 0.8f, 0.9f));
-        topHbox.AddChild(tlLbl);
+        timeLbl.AddThemeFontSizeOverride("font_size", 11);
+        timeLbl.AddThemeColorOverride("font_color", new Color(0.8f, 0.8f, 0.85f));
+        topHbox.AddChild(timeLbl);
 
         _timelineContainer = new HBoxContainer();
         _timelineContainer.AddThemeConstantOverride("separation", 6);
         topHbox.AddChild(_timelineContainer);
 
-        // 2. Control Buttons
+        // 2. Control Buttons (Speed, Pause)
         var ctrlBox = new HBoxContainer
         {
-            Position = new Vector2(1060, 16),
-            Size = new Vector2(200, 36)
+            Position = new Vector2(1110, 16)
         };
         ctrlBox.AddThemeConstantOverride("separation", 8);
         uiLayer.AddChild(ctrlBox);
@@ -182,7 +178,7 @@ public partial class BattleScene : Node2D
         _speedBtn = new Button
         {
             Text = "Tốc độ: x1",
-            CustomMinimumSize = new Vector2(90, 32)
+            CustomMinimumSize = new Vector2(80, 32)
         };
         _speedBtn.Pressed += OnSpeedToggle;
         ctrlBox.AddChild(_speedBtn);
@@ -195,11 +191,11 @@ public partial class BattleScene : Node2D
         _pauseBtn.Pressed += OnPauseToggle;
         ctrlBox.AddChild(_pauseBtn);
 
-        // 3. Combat Log (Retro Battle Log Window)
+        // 3. Combat Log (Retro Battle Log Window) - Đặt góc trên bên trái (16, 70) hoàn toàn không che tướng
         _logPanel = new PanelContainer
         {
-            Position = new Vector2(16, 520),
-            Size = new Vector2(330, 185)
+            Position = new Vector2(16, 70),
+            Size = new Vector2(230, 220)
         };
         var sbLog = new StyleBoxFlat
         {
@@ -284,7 +280,7 @@ public partial class BattleScene : Node2D
             BbcodeEnabled = true,
             ScrollFollowing = true,
             SelectionEnabled = true,
-            CustomMinimumSize = new Vector2(314, 138),
+            CustomMinimumSize = new Vector2(214, 168),
             SizeFlagsVertical = Control.SizeFlags.ExpandFill
         };
         _logRichText.AddThemeFontSizeOverride("normal_font_size", 10);
@@ -417,12 +413,14 @@ public partial class BattleScene : Node2D
             c.QueueFree();
         }
 
-        if (_battleManager.TurnManager == null) return;
+        if (_battleManager?.TurnManager == null) return;
 
         var queue = _battleManager.TurnManager.TurnQueue;
-        foreach (var bh in queue)
+        int curIdx = Mathf.Clamp(_battleManager.TurnManager.CurrentTurnIndex, 0, queue.Count);
+        for (int i = curIdx; i < queue.Count; i++)
         {
-            if (!bh.Stats.IsAlive()) continue;
+            var bh = queue[i];
+            if (!bh.IsAlive || !bh.Stats.IsAlive()) continue;
 
             var avatarRect = new TextureRect();
             var pTex = GD.Load<Texture2D>($"res://assets/heroes/{bh.Data.HeroId}/icon.png");
@@ -449,6 +447,7 @@ public partial class BattleScene : Node2D
         {
             node.SetActiveTurn(true);
         }
+        UpdateTimeline();
     }
 
     private void OnHeroTurnEnded(BattleHero hero)
@@ -562,6 +561,7 @@ public partial class BattleScene : Node2D
                 _soundManager.PlayHeal();
                 int healAmount = (int)res["heal_amount"];
                 tNode.ShowFloatingText($"+{healAmount} HP", new Color(0.2f, 0.9f, 0.3f));
+                tNode.UpdateBars(true);
                 continue;
             }
 
@@ -578,10 +578,18 @@ public partial class BattleScene : Node2D
             if (res.TryGetValue("is_block", out var blockVal) && (bool)blockVal)
             {
                 _soundManager.PlayBlock();
-                tNode.AnimateHurt(false, true, _battleManager.BattleSpeed);
                 int dmg = (int)res["damage"];
                 tNode.ShowFloatingText($"ĐỠ ĐÒN! -{dmg}", new Color(0.4f, 0.8f, 1.0f));
                 CombatVFX.SpawnImpact(this, pos + new Vector2(0, -30), false);
+                tNode.UpdateBars(true);
+                if (!tHero.IsAlive || tHero.Stats.HpCurrent <= 0)
+                {
+                    tNode.AnimateDeath(_battleManager.BattleSpeed);
+                }
+                else
+                {
+                    tNode.AnimateHurt(false, true, _battleManager.BattleSpeed);
+                }
                 continue;
             }
 
@@ -606,13 +614,21 @@ public partial class BattleScene : Node2D
                 CombatVFX.SpawnHeroAttackVfx(this, attacker.Data.HeroId, pos, attackerPos, attacker.Team == 1, isCrit);
             }
 
-            tNode.AnimateHurt(false, false, _battleManager.BattleSpeed);
+            tNode.UpdateBars(true);
+            if (!tHero.IsAlive || tHero.Stats.HpCurrent <= 0)
+            {
+                tNode.AnimateDeath(_battleManager.BattleSpeed);
+            }
+            else
+            {
+                tNode.AnimateHurt(false, false, _battleManager.BattleSpeed);
+            }
         }
     }
 
     private void OnHeroDied(BattleHero hero)
     {
-        if (hero.Node is HeroBattleNode node)
+        if (hero.Node is HeroBattleNode node && !node.IsDead)
         {
             node.AnimateDeath(_battleManager.BattleSpeed);
         }
@@ -646,18 +662,18 @@ public partial class BattleScene : Node2D
         _isLogMinimized = !_isLogMinimized;
         if (_isLogMinimized)
         {
-            _logPanel.Position = new Vector2(16, 676);
-            _logPanel.Size = new Vector2(330, 32);
+            _logPanel.Position = new Vector2(16, 70);
+            _logPanel.Size = new Vector2(230, 32);
             _logRichText.Visible = false;
-            _toggleLogBtn.Text = "▴";
+            _toggleLogBtn.Text = "▾";
             _toggleLogBtn.TooltipText = "Mở rộng nhật ký";
         }
         else
         {
-            _logPanel.Position = new Vector2(16, 520);
-            _logPanel.Size = new Vector2(330, 185);
+            _logPanel.Position = new Vector2(16, 70);
+            _logPanel.Size = new Vector2(230, 220);
             _logRichText.Visible = true;
-            _toggleLogBtn.Text = "▾";
+            _toggleLogBtn.Text = "▴";
             _toggleLogBtn.TooltipText = "Thu nhỏ nhật ký";
         }
     }

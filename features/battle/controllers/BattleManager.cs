@@ -136,6 +136,13 @@ public partial class BattleManager : Node
 
                 await ExecuteTurn(currentHero);
                 if (!IsInsideTree() || GetTree() == null) return;
+
+                if (IsBattleOver())
+                {
+                    EndBattle();
+                    return;
+                }
+
                 // Khoang nghi giua cac luot de nguoi choi de dang quan sat dien bien
                 await ToSignal(GetTree().CreateTimer(GameConstants.InterTurnDelay / BattleSpeed), SceneTreeTimer.SignalName.Timeout);
             }
@@ -148,6 +155,13 @@ public partial class BattleManager : Node
 
     private async Task ExecuteTurn(BattleHero hero)
     {
+        if (!hero.IsAlive || IsBattleOver())
+        {
+            EmitSignal(SignalName.HeroTurnEnded, hero);
+            EventBus.Instance?.EmitSignal(EventBus.SignalName.HeroTurnEnded, hero);
+            return;
+        }
+
         EmitSignal(SignalName.HeroTurnStarted, hero);
         EventBus.Instance?.EmitSignal(EventBus.SignalName.HeroTurnStarted, hero);
 
@@ -280,6 +294,7 @@ public partial class BattleManager : Node
 
         var allyTeam = attacker.Team == 0 ? Team0 : Team1;
         var aliveAllies = allyTeam.Where(h => h.IsAlive).ToList();
+        if (aliveAllies.Count == 0) return [];
 
         // 1. Heal / Buff Allies
         if (skill.Type is SkillData.SkillType.Heal or SkillData.SkillType.Buff)

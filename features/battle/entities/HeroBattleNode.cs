@@ -32,6 +32,8 @@ public partial class HeroBattleNode : Node2D
     private Tween _skillReadyTween;
     private bool _isDead = false;
 
+    public bool IsDead => _isDead;
+
     public void Setup(BattleHero bh, bool enemy)
     {
         BattleHero = bh;
@@ -140,7 +142,7 @@ public partial class HeroBattleNode : Node2D
             HeroData.ElementType.Fire => "🔥",
             HeroData.ElementType.Water => "💧",
             HeroData.ElementType.Wind => "🌪️",
-            HeroData.ElementType.Dark => "🌘",
+            HeroData.ElementType.Dark => "🌑",
             HeroData.ElementType.Light => "⚡",
             _ => "⚔️"
         };
@@ -408,6 +410,7 @@ public partial class HeroBattleNode : Node2D
 
     public void AnimateDeath(float speedMult = 1.0f)
     {
+        if (_isDead) return;
         _isDead = true;
         SetSkillReady(false);
         SetActiveTurn(false);
