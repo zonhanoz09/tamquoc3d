@@ -1,0 +1,35 @@
+[gd_resource type="SpriteFrames" load_steps=8 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/heroes/truong_phi/vfx/vfx_sonic_roar_strip.png" id="1_vfx"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_vfx_0"]
+atlas = ExtResource("1_vfx")
+region = Rect2(0, 0, 96, 96)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_vfx_1"]
+atlas = ExtResource("1_vfx")
+region = Rect2(96, 0, 96, 96)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_vfx_2"]
+atlas = ExtResource("1_vfx")
+region = Rect2(192, 0, 96, 96)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_vfx_3"]
+atlas = ExtResource("1_vfx")
+region = Rect2(288, 0, 96, 96)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_vfx_4"]
+atlas = ExtResource("1_vfx")
+region = Rect2(384, 0, 96, 96)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_vfx_5"]
+atlas = ExtResource("1_vfx")
+region = Rect2(480, 0, 96, 96)
+
+[resource]
+animations = [{
+"frames": [SubResource("AtlasTexture_vfx_0"), SubResource("AtlasTexture_vfx_1"), SubResource("AtlasTexture_vfx_2"), SubResource("AtlasTexture_vfx_3"), SubResource("AtlasTexture_vfx_4"), SubResource("AtlasTexture_vfx_5")],
+"loop": false,
+"name": &"play",
+"speed": 16.0
+}]

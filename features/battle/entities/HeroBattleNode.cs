@@ -1,7 +1,7 @@
 using System;
 using Godot;
-using TamQuoc3D.Core.Audio;
 using TamQuoc3D.Core.Constants;
+using TamQuoc3D.Core.Audio;
 using TamQuoc3D.Data.Resources;
 
 namespace TamQuoc3D.Features.Battle.Entities;
@@ -16,12 +16,13 @@ public partial class HeroBattleNode : Node2D
     [Signal]
     public delegate void SkillBannerFinishedEventHandler();
 
-    public BattleHero BattleHero { get; set; }
+    public BattleHero BattleHero { get; private set; }
     public bool IsEnemy { get; set; } = false;
     public Vector2 HomePosition { get; set; } = Vector2.Zero;
 
     // Visual nodes
     public Sprite2D Pedestal { get; private set; }
+    public Sprite2D FootShadow { get; private set; }
     public Sprite2D SkillReadyAura { get; private set; }
     public Sprite2D ActivePedestal { get; private set; }
     public Sprite2D Sprite { get; private set; }
@@ -61,7 +62,30 @@ public partial class HeroBattleNode : Node2D
         Pedestal.ZIndex = LayerConstants.PedestalZ;
         AddChild(Pedestal);
 
-        // 2. Skill Ready Blazing Aura (Scaled neatly to hug the pedestal)
+        // 2. Dynamic Foot Shadow Ellipse (Co dãn theo độ cao chân & chuyển động)
+        FootShadow = new Sprite2D();
+        var shadowImg = Image.CreateEmpty(32, 16, false, Image.Format.Rgba8);
+        for (int y = 0; y < 16; y++)
+        {
+            for (int x = 0; x < 32; x++)
+            {
+                float nx = (x - 15.5f) / 15.5f;
+                float ny = (y - 7.5f) / 7.5f;
+                float distSq = nx * nx + ny * ny;
+                if (distSq <= 1.0f)
+                {
+                    float a = Mathf.Clamp(1.0f - distSq, 0f, 1f) * 0.42f;
+                    shadowImg.SetPixel(x, y, new Color(0f, 0f, 0f, a));
+                }
+            }
+        }
+        FootShadow.Texture = ImageTexture.CreateFromImage(shadowImg);
+        FootShadow.Position = new Vector2(0, -6);
+        FootShadow.Scale = new Vector2(1.3f, 0.9f);
+        FootShadow.ZIndex = LayerConstants.PedestalZ + 1;
+        AddChild(FootShadow);
+
+        // 3. Skill Ready Blazing Aura (Scaled neatly to hug the pedestal)
         SkillReadyAura = new Sprite2D();
         var srTex = GD.Load<Texture2D>("res://assets/ui/shared/pedestal_skill_ready.png");
         if (srTex != null)
@@ -79,7 +103,7 @@ public partial class HeroBattleNode : Node2D
         SkillReadyAura.ZIndex = LayerConstants.SkillReadyAuraZ;
         AddChild(SkillReadyAura);
 
-        // 3. Active Turn Glow
+        // 4. Active Turn Glow
         ActivePedestal = new Sprite2D();
         var aTex = GD.Load<Texture2D>("res://assets/ui/shared/pedestal_active.png");
         if (aTex != null)
@@ -92,7 +116,7 @@ public partial class HeroBattleNode : Node2D
         ActivePedestal.ZIndex = LayerConstants.ActivePedestalZ;
         AddChild(ActivePedestal);
 
-        // 4. Hero Sprite: Kiểm tra xem có SpriteFrames HD-2D (.tres) hay không
+        // 5. Hero Sprite: Kiểm tra xem có SpriteFrames HD-2D (.tres) hay không
         var sfPath = $"res://assets/heroes/{BattleHero.Data.HeroId}/sprite_frames.tres";
         if (ResourceLoader.Exists(sfPath))
         {
@@ -131,7 +155,7 @@ public partial class HeroBattleNode : Node2D
         }
         AddChild(Sprite);
 
-        // 5. Overhead HealthBar Component
+        // 6. Overhead HealthBar Component
         HealthBarNode = new HealthBar();
         AddChild(HealthBarNode);
         HealthBarNode.Setup(BattleHero.Data);
@@ -139,145 +163,60 @@ public partial class HeroBattleNode : Node2D
 
     public void ShowSkillBanner(string skillName, float speedMult = 1.0f)
     {
-        var banner = new PanelContainer
-        {
-            Position = new Vector2(-80, -152),
-            Size = new Vector2(160, 26),
-            ZIndex = LayerConstants.SkillBannerZ,
-            PivotOffset = new Vector2(80, 13)
-        };
+        var banner = new Control();
+        banner.Position = new Vector2(0, -95);
+        banner.ZIndex = LayerConstants.SkillBannerZ;
+        AddChild(banner);
 
-        var sb = new StyleBoxFlat
+        var bg = new ColorRect
         {
-            BgColor = new Color(0.06f, 0.06f, 0.1f, 0.95f)
+            Position = new Vector2(-110, -14),
+            Size = new Vector2(220, 28),
+            Color = new Color(0.08f, 0.05f, 0.15f, 0.90f)
         };
-        sb.SetBorderWidthAll(2);
+        banner.AddChild(bg);
 
-        Color borderCol = BattleHero.Data.Element switch
+        var goldBorder = new ReferenceRect
         {
-            HeroData.ElementType.Fire => new Color(1.0f, 0.35f, 0.2f),
-            HeroData.ElementType.Water => new Color(0.25f, 0.8f, 1.0f),
-            HeroData.ElementType.Wind => new Color(0.3f, 0.95f, 0.6f),
-            HeroData.ElementType.Dark => new Color(0.85f, 0.45f, 1.0f),
-            HeroData.ElementType.Light => new Color(1.0f, 0.95f, 0.4f),
-            _ => new Color(1.0f, 0.85f, 0.3f)
+            Position = new Vector2(-110, -14),
+            Size = new Vector2(220, 28),
+            BorderColor = new Color(1.0f, 0.85f, 0.25f, 1.0f),
+            BorderWidth = 2.0f,
+            EditorOnly = false
         };
-        string iconSym = BattleHero.Data.Element switch
-        {
-            HeroData.ElementType.Fire => "🔥",
-            HeroData.ElementType.Water => "💧",
-            HeroData.ElementType.Wind => "🌪️",
-            HeroData.ElementType.Dark => "🌑",
-            HeroData.ElementType.Light => "⚡",
-            _ => "⚔️"
-        };
-
-        sb.BorderColor = borderCol;
-        sb.SetCornerRadiusAll(13);
-        sb.ContentMarginLeft = 12;
-        sb.ContentMarginRight = 12;
-        sb.ContentMarginTop = 4;
-        sb.ContentMarginBottom = 4;
-        banner.AddThemeStyleboxOverride("panel", sb);
+        banner.AddChild(goldBorder);
 
         var lbl = new Label
         {
-            Text = $"{iconSym} {skillName}",
+            Text = $"⚡ {skillName} ⚡",
+            Position = new Vector2(-110, -14),
+            Size = new Vector2(220, 28),
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center
         };
-        lbl.AddThemeFontSizeOverride("font_size", 12);
-        lbl.AddThemeColorOverride("font_color", new Color(1.0f, 0.95f, 0.85f));
-        lbl.AddThemeColorOverride("font_shadow_color", Colors.Black);
-        lbl.AddThemeConstantOverride("shadow_offset_x", 1);
-        lbl.AddThemeConstantOverride("shadow_offset_y", 1);
-        lbl.AddThemeConstantOverride("shadow_outline_size", 2);
+        lbl.AddThemeFontSizeOverride("font_size", 13);
+        lbl.AddThemeColorOverride("font_color", new Color(1.0f, 0.95f, 0.5f));
         banner.AddChild(lbl);
 
-        AddChild(banner);
+        banner.Scale = new Vector2(0.2f, 0.2f);
+        banner.Modulate = new Color(1, 1, 1, 0);
 
-        banner.Scale = new Vector2(0.3f, 0.3f);
-        banner.Modulate = new Color(banner.Modulate.R, banner.Modulate.G, banner.Modulate.B, 0.0f);
-
+        var tw = CreateTween();
         float durIn = GameConstants.SkillBannerInDuration / speedMult;
         float durStay = GameConstants.SkillBannerStayDuration / speedMult;
         float durOut = GameConstants.SkillBannerOutDuration / speedMult;
 
-        var tw = banner.CreateTween();
         tw.TweenProperty(banner, "scale", new Vector2(1.15f, 1.15f), durIn * 0.7f).SetTrans(Tween.TransitionType.Back).SetEase(Tween.EaseType.Out);
-        tw.Parallel().TweenProperty(banner, "modulate:a", 1.0f, durIn * 0.5f);
-        tw.TweenProperty(banner, "scale", new Vector2(1.0f, 1.0f), durIn * 0.3f);
+        tw.Parallel().TweenProperty(banner, "modulate:a", 1.0f, durIn * 0.7f);
+        tw.TweenProperty(banner, "scale", Vector2.One, durIn * 0.3f);
         tw.TweenInterval(durStay);
-        tw.TweenProperty(banner, "position:y", -172f, durOut).SetTrans(Tween.TransitionType.Quad).SetEase(Tween.EaseType.In);
+        tw.TweenProperty(banner, "scale", new Vector2(1.2f, 0.1f), durOut);
         tw.Parallel().TweenProperty(banner, "modulate:a", 0.0f, durOut);
         tw.TweenCallback(Callable.From(() =>
         {
             banner.QueueFree();
             EmitSignal(SignalName.SkillBannerFinished);
         }));
-    }
-
-    public void SetActiveTurn(bool active)
-    {
-        if (_isDead || !GodotObject.IsInstanceValid(ActivePedestal))
-        {
-            return;
-        }
-
-        ActivePedestal.Visible = active;
-        if (active)
-        {
-            if (_activeTween != null && _activeTween.IsValid())
-            {
-                _activeTween.Kill();
-            }
-            _activeTween = CreateTween().SetLoops();
-            _activeTween.TweenProperty(ActivePedestal, "modulate:a", 1.0f, 0.3f);
-            _activeTween.TweenProperty(ActivePedestal, "modulate:a", 0.4f, 0.3f);
-        }
-        else
-        {
-            if (_activeTween != null && _activeTween.IsValid())
-            {
-                _activeTween.Kill();
-            }
-            ActivePedestal.Modulate = new Color(ActivePedestal.Modulate.R, ActivePedestal.Modulate.G, ActivePedestal.Modulate.B, 1.0f);
-        }
-    }
-
-    public void SetSkillReady(bool ready)
-    {
-        if (_isDead || !GodotObject.IsInstanceValid(SkillReadyAura))
-        {
-            return;
-        }
-
-        if (ready)
-        {
-            if (!SkillReadyAura.Visible || _skillReadyTween == null)
-            {
-                SkillReadyAura.Visible = true;
-                if (_skillReadyTween != null && _skillReadyTween.IsValid())
-                {
-                    _skillReadyTween.Kill();
-                }
-                _skillReadyTween = CreateTween().SetLoops();
-                _skillReadyTween.TweenProperty(SkillReadyAura, "scale", new Vector2(0.70f, 0.70f), 0.45f).SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.InOut);
-                _skillReadyTween.Parallel().TweenProperty(SkillReadyAura, "modulate", new Color(1.2f, 1.15f, 0.9f, 1.0f), 0.45f);
-                _skillReadyTween.TweenProperty(SkillReadyAura, "scale", new Vector2(0.60f, 0.60f), 0.45f).SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.InOut);
-                _skillReadyTween.Parallel().TweenProperty(SkillReadyAura, "modulate", new Color(0.95f, 0.8f, 0.45f, 0.75f), 0.45f);
-            }
-        }
-        else
-        {
-            SkillReadyAura.Visible = false;
-            SkillReadyAura.Scale = new Vector2(0.65f, 0.65f);
-            if (_skillReadyTween != null && _skillReadyTween.IsValid())
-            {
-                _skillReadyTween.Kill();
-                _skillReadyTween = null;
-            }
-        }
     }
 
     public void UpdateBars(bool animate = true)
@@ -294,42 +233,71 @@ public partial class HeroBattleNode : Node2D
 
     public void UpdateStatusIcons()
     {
-        if (HealthBarNode?.StatusRow == null) return;
+        // Status row visual updates if needed
+    }
 
-        foreach (var child in HealthBarNode.StatusRow.GetChildren())
+    public void SetActiveTurn(bool active)
+    {
+        ActivePedestal.Visible = active;
+        if (active)
         {
-            child.QueueFree();
+            if (_activeTween != null && _activeTween.IsValid()) _activeTween.Kill();
+            _activeTween = CreateTween().SetLoops();
+            _activeTween.TweenProperty(ActivePedestal, "modulate:a", 0.5f, 0.45f);
+            _activeTween.TweenProperty(ActivePedestal, "modulate:a", 1.0f, 0.45f);
+        }
+        else
+        {
+            if (_activeTween != null && _activeTween.IsValid()) _activeTween.Kill();
+            ActivePedestal.Modulate = Colors.White;
+        }
+    }
+
+    public void SetSkillReady(bool ready)
+    {
+        SkillReadyAura.Visible = ready;
+        if (ready)
+        {
+            if (_skillReadyTween != null && _skillReadyTween.IsValid()) _skillReadyTween.Kill();
+            _skillReadyTween = CreateTween().SetLoops();
+            _skillReadyTween.TweenProperty(SkillReadyAura, "scale", new Vector2(0.72f, 0.72f), 0.4f).SetTrans(Tween.TransitionType.Sine);
+            _skillReadyTween.Parallel().TweenProperty(SkillReadyAura, "modulate:a", 0.6f, 0.4f);
+            _skillReadyTween.TweenProperty(SkillReadyAura, "scale", new Vector2(0.62f, 0.62f), 0.4f).SetTrans(Tween.TransitionType.Sine);
+            _skillReadyTween.Parallel().TweenProperty(SkillReadyAura, "modulate:a", 1.0f, 0.4f);
+        }
+        else
+        {
+            if (_skillReadyTween != null && _skillReadyTween.IsValid()) _skillReadyTween.Kill();
+            SkillReadyAura.Scale = new Vector2(0.65f, 0.65f);
+            SkillReadyAura.Modulate = Colors.White;
+        }
+    }
+
+    public void ShowFloatingText(string text, Color color, bool isCrit = false)
+    {
+        var lbl = new Label
+        {
+            Text = text,
+            Position = new Vector2(-60, -75),
+            Size = new Vector2(120, 24),
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
+        lbl.AddThemeColorOverride("font_color", color);
+        lbl.AddThemeFontSizeOverride("font_size", isCrit ? 16 : 13);
+        lbl.ZIndex = LayerConstants.FloatingTextZ;
+        AddChild(lbl);
+
+        var tw = CreateTween();
+        if (isCrit)
+        {
+            lbl.Scale = new Vector2(0.5f, 0.5f);
+            tw.TweenProperty(lbl, "scale", new Vector2(1.3f, 1.3f), 0.12f).SetTrans(Tween.TransitionType.Back).SetEase(Tween.EaseType.Out);
+            tw.TweenProperty(lbl, "scale", Vector2.One, 0.1f);
         }
 
-        foreach (var st in BattleHero.StatusEffects)
-        {
-            if (st.TryGetValue("type", out var typeVal))
-            {
-                var t = (SkillData.EffectType)(int)typeVal;
-                string sName = t switch
-                {
-                    SkillData.EffectType.Stun => "stun",
-                    SkillData.EffectType.Silence => "silence",
-                    SkillData.EffectType.BuffAtk => "buff_atk",
-                    SkillData.EffectType.BuffDef => "buff_def",
-                    SkillData.EffectType.BuffSpeed => "buff_spd",
-                    SkillData.EffectType.DebuffAtk => "debuff_atk",
-                    SkillData.EffectType.DebuffDef => "debuff_def",
-                    _ => string.Empty
-                };
-
-                if (!string.IsNullOrEmpty(sName))
-                {
-                    var texRect = new TextureRect
-                    {
-                        Texture = GD.Load<Texture2D>($"res://assets/common/icons/status_{sName}.png"),
-                        CustomMinimumSize = new Vector2(14, 14),
-                        ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize
-                    };
-                    HealthBarNode.StatusRow.AddChild(texRect);
-                }
-            }
-        }
+        tw.TweenProperty(lbl, "position:y", lbl.Position.Y - 32f, 0.65f).SetTrans(Tween.TransitionType.Quad).SetEase(Tween.EaseType.Out);
+        tw.Parallel().TweenProperty(lbl, "modulate:a", 0.0f, 0.65f);
+        tw.TweenCallback(Callable.From(lbl.QueueFree));
     }
 
     public void PlayIdle()
@@ -370,6 +338,13 @@ public partial class HeroBattleNode : Node2D
         tw.Parallel().TweenProperty(this, "scale", new Vector2(1.08f, 0.94f), durDash * 0.35f);
         tw.TweenProperty(this, "scale", Vector2.One, durDash * 0.65f);
 
+        // Dynamic shadow squash & stretch
+        if (FootShadow != null)
+        {
+            tw.Parallel().TweenProperty(FootShadow, "scale", new Vector2(1.6f, 0.7f), durDash * 0.35f);
+            tw.TweenProperty(FootShadow, "scale", new Vector2(1.3f, 0.9f), durDash * 0.65f);
+        }
+
         tw.TweenCallback(Callable.From(() =>
         {
             if (AnimatedSprite == null) Sprite.Frame = 2;
@@ -407,6 +382,13 @@ public partial class HeroBattleNode : Node2D
 
         var stepForward = HomePosition + (IsEnemy ? new Vector2(-18, 0) : new Vector2(18, 0));
         tw.TweenProperty(this, "position", stepForward, durForward);
+
+        if (FootShadow != null)
+        {
+            tw.Parallel().TweenProperty(FootShadow, "scale", new Vector2(1.0f, 0.7f), durForward);
+            tw.Parallel().TweenProperty(FootShadow, "modulate:a", 0.5f, durForward);
+        }
+
         tw.TweenCallback(Callable.From(() =>
         {
             if (AnimatedSprite == null) Sprite.Frame = 2;
@@ -415,6 +397,13 @@ public partial class HeroBattleNode : Node2D
         }));
         tw.TweenInterval(durHold);
         tw.TweenProperty(this, "position", HomePosition, durBack);
+
+        if (FootShadow != null)
+        {
+            tw.Parallel().TweenProperty(FootShadow, "scale", new Vector2(1.3f, 0.9f), durBack);
+            tw.Parallel().TweenProperty(FootShadow, "modulate:a", 1.0f, durBack);
+        }
+
         tw.TweenCallback(Callable.From(() =>
         {
             if (AnimatedSprite == null) Sprite.Frame = 0;
@@ -483,25 +472,14 @@ public partial class HeroBattleNode : Node2D
         var tw = CreateTween();
         float dur = 0.65f / speedMult;
         tw.TweenProperty(this, "position:y", Position.Y + 12f, dur);
-        tw.Parallel().TweenProperty(this, "modulate", new Color(0.2f, 0.2f, 0.2f, 0.0f), dur);
-        tw.TweenCallback(Callable.From(() => Visible = false));
-    }
-
-    public void ShowFloatingText(string txt, Color color, bool isCrit = false)
-    {
-        var ft = new FloatingText
+        tw.Parallel().TweenProperty(this, "modulate:a", 0.0f, dur);
+        if (FootShadow != null)
         {
-            DisplayText = txt,
-            TextColor = color,
-            IsCrit = isCrit,
-            Position = Position + new Vector2(0, -75)
-        };
-        GetParent().AddChild(ft);
+            tw.Parallel().TweenProperty(FootShadow, "modulate:a", 0.0f, dur);
+        }
+        tw.TweenCallback(Callable.From(() =>
+        {
+            Visible = false;
+        }));
     }
 }
-
-/// <summary>
-/// Alias HeroVisual giup tuong thich toan bo code cu ma khong bi gay lien ket.
-/// </summary>
-[GlobalClass]
-public partial class HeroVisual : HeroBattleNode {}

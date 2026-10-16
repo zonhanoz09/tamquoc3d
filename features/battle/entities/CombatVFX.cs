@@ -6,6 +6,7 @@ namespace TamQuoc3D.Features.Battle.Entities;
 
 /// <summary>
 /// CombatVFX - Quan ly sinh hieu ung Pixel VFX chuyen biet theo tung tuong va ky nang.
+/// Ho tro ca AnimatedSprite2D frame-by-frame HD-2D (.tres) lan Sprite2D tinh.
 /// </summary>
 [GlobalClass]
 public partial class CombatVFX : Node2D
@@ -163,12 +164,40 @@ public partial class CombatVFX : Node2D
         }
     }
 
-    private static Sprite2D CreateVfxSprite(string texName)
+    private static void SetVfxFlipH(Node2D node, bool flip)
     {
+        if (node is Sprite2D s) s.FlipH = flip;
+        else if (node is AnimatedSprite2D a) a.FlipH = flip;
+    }
+
+    private static Node2D CreateVfxSprite(string texName)
+    {
+        // 1. Kiem tra xem co Animated SpriteFrames .tres chuyen biet hay khong
+        if (HeroVfxHeroMap.TryGetValue(texName, out var heroId))
+        {
+            var framesPath = $"res://assets/heroes/{heroId}/vfx/{texName}_frames.tres";
+            if (ResourceLoader.Exists(framesPath))
+            {
+                var frames = GD.Load<SpriteFrames>(framesPath);
+                if (frames != null)
+                {
+                    var animSpr = new AnimatedSprite2D
+                    {
+                        SpriteFrames = frames,
+                        Material = new CanvasItemMaterial { BlendMode = CanvasItemMaterial.BlendModeEnum.Add },
+                        ZIndex = LayerConstants.HeroSkillVfxZ
+                    };
+                    animSpr.Play("play");
+                    return animSpr;
+                }
+            }
+        }
+
+        // 2. Fallback sang Sprite2D tinh co dien
         var spr = new Sprite2D();
         Texture2D tex = null;
 
-        if (HeroVfxHeroMap.TryGetValue(texName, out var heroId))
+        if (HeroVfxHeroMap.TryGetValue(texName, out heroId))
         {
             tex = GD.Load<Texture2D>($"res://assets/heroes/{heroId}/vfx/{texName}.png");
         }
@@ -201,7 +230,7 @@ public partial class CombatVFX : Node2D
         var spr = CreateVfxSprite(tex);
         spr.Position = pos;
         spr.Scale = new Vector2(0.3f, scaleVal.Y);
-        spr.FlipH = isEnemy;
+        SetVfxFlipH(spr, isEnemy);
         parent.AddChild(spr);
 
         var tw = spr.CreateTween();
@@ -234,7 +263,7 @@ public partial class CombatVFX : Node2D
         var spr = CreateVfxSprite(tex);
         spr.Position = pos;
         spr.Scale = scaleVal * 0.7f;
-        spr.FlipH = isEnemy;
+        SetVfxFlipH(spr, isEnemy);
         parent.AddChild(spr);
 
         var tw = spr.CreateTween();
@@ -248,7 +277,7 @@ public partial class CombatVFX : Node2D
         var spr = CreateVfxSprite(tex);
         spr.Position = fromPos;
         spr.Scale = new Vector2(1.5f, 1.5f);
-        spr.FlipH = isEnemy;
+        SetVfxFlipH(spr, isEnemy);
         parent.AddChild(spr);
 
         var tw = spr.CreateTween();
@@ -265,7 +294,7 @@ public partial class CombatVFX : Node2D
         var spr = CreateVfxSprite(tex);
         spr.Position = fromPos;
         spr.Scale = new Vector2(1.8f, 1.8f);
-        spr.FlipH = isEnemy;
+        SetVfxFlipH(spr, isEnemy);
         parent.AddChild(spr);
 
         var tw = spr.CreateTween();
@@ -280,27 +309,27 @@ public partial class CombatVFX : Node2D
         foreach (var tPos in targets)
         {
             var spr = CreateVfxSprite("vfx_magma_eruption");
-            spr.Position = tPos + new Vector2(0, -20);
-            spr.Scale = new Vector2(0.5f, 0.5f);
+            spr.Position = tPos + new Vector2(0, -10);
+            spr.Scale = new Vector2(1.5f, 1.5f);
             parent.AddChild(spr);
 
             var tw = spr.CreateTween();
-            tw.TweenProperty(spr, "scale", new Vector2(2.0f, 2.0f), 0.3f).SetTrans(Tween.TransitionType.Bounce).SetEase(Tween.EaseType.Out);
-            tw.TweenProperty(spr, "modulate:a", 0.0f, 0.4f);
+            tw.TweenProperty(spr, "scale", new Vector2(2.2f, 2.2f), 0.4f).SetTrans(Tween.TransitionType.Back).SetEase(Tween.EaseType.Out);
+            tw.TweenProperty(spr, "modulate:a", 0.0f, 0.3f);
             tw.TweenCallback(Callable.From(spr.QueueFree));
         }
     }
 
-    private static void SpawnSonicWaveRow(Node parent, Vector2 centerPos)
+    private static void SpawnSonicWaveRow(Node parent, Vector2 rowCenterPos)
     {
         var spr = CreateVfxSprite("vfx_sonic_roar");
-        spr.Position = centerPos;
-        spr.Scale = new Vector2(1.0f, 1.0f);
+        spr.Position = rowCenterPos;
+        spr.Scale = new Vector2(0.5f, 0.5f);
         parent.AddChild(spr);
 
         var tw = spr.CreateTween();
-        tw.TweenProperty(spr, "scale", new Vector2(3.5f, 3.5f), 0.45f).SetTrans(Tween.TransitionType.Expo).SetEase(Tween.EaseType.Out);
-        tw.Parallel().TweenProperty(spr, "modulate:a", 0.0f, 0.5f);
+        tw.TweenProperty(spr, "scale", new Vector2(3.2f, 3.2f), 0.45f).SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.Out);
+        tw.Parallel().TweenProperty(spr, "modulate:a", 0.0f, 0.45f);
         tw.TweenCallback(Callable.From(spr.QueueFree));
     }
 
@@ -310,12 +339,12 @@ public partial class CombatVFX : Node2D
         {
             var spr = CreateVfxSprite("vfx_fortress_shield");
             spr.Position = aPos + new Vector2(0, -35);
-            spr.Scale = new Vector2(0.5f, 0.5f);
+            spr.Scale = new Vector2(1.4f, 1.4f);
             parent.AddChild(spr);
 
             var tw = spr.CreateTween();
-            tw.TweenProperty(spr, "scale", new Vector2(1.6f, 1.6f), 0.3f).SetTrans(Tween.TransitionType.Back).SetEase(Tween.EaseType.Out);
-            tw.TweenInterval(0.4f);
+            tw.TweenProperty(spr, "scale", new Vector2(1.9f, 1.9f), 0.3f).SetTrans(Tween.TransitionType.Elastic).SetEase(Tween.EaseType.Out);
+            tw.TweenInterval(0.3f);
             tw.TweenProperty(spr, "modulate:a", 0.0f, 0.3f);
             tw.TweenCallback(Callable.From(spr.QueueFree));
         }
@@ -324,19 +353,20 @@ public partial class CombatVFX : Node2D
     private static void SpawnFireShipCharge(Node parent, Vector2 targetPos, bool isEnemy)
     {
         var spr = CreateVfxSprite("vfx_fire_ship");
-        spr.Position = targetPos + (isEnemy ? new Vector2(80, -20) : new Vector2(-80, -20));
+        var startPos = targetPos + (isEnemy ? new Vector2(140, 0) : new Vector2(-140, 0));
+        spr.Position = startPos;
         spr.Scale = new Vector2(1.8f, 1.8f);
-        spr.FlipH = isEnemy;
+        SetVfxFlipH(spr, isEnemy);
         parent.AddChild(spr);
 
         var tw = spr.CreateTween();
-        tw.TweenProperty(spr, "position", targetPos + new Vector2(0, -20), 0.35f).SetTrans(Tween.TransitionType.Quad).SetEase(Tween.EaseType.In);
+        tw.TweenProperty(spr, "position", targetPos, 0.38f).SetTrans(Tween.TransitionType.Quad).SetEase(Tween.EaseType.In);
         tw.TweenCallback(Callable.From(() =>
         {
-            SpawnFire(parent, targetPos + new Vector2(0, -20));
-            SpawnImpact(parent, targetPos + new Vector2(0, -20), true);
+            SpawnFire(parent, targetPos);
+            SpawnImpact(parent, targetPos, true);
         }));
-        tw.TweenProperty(spr, "scale", new Vector2(2.5f, 2.5f), 0.25f);
+        tw.TweenProperty(spr, "scale", new Vector2(2.4f, 2.4f), 0.25f);
         tw.Parallel().TweenProperty(spr, "modulate:a", 0.0f, 0.25f);
         tw.TweenCallback(Callable.From(spr.QueueFree));
     }
@@ -346,7 +376,7 @@ public partial class CombatVFX : Node2D
         var spr = CreateVfxSprite("vfx_dragon_blade_ultimate");
         spr.Position = targetPos + new Vector2(0, -70);
         spr.Scale = new Vector2(1.2f, 1.2f);
-        spr.FlipH = isEnemy;
+        SetVfxFlipH(spr, isEnemy);
         parent.AddChild(spr);
 
         var tw = spr.CreateTween();
@@ -407,7 +437,7 @@ public partial class CombatVFX : Node2D
         var spr = CreateVfxSprite("vfx_sniper_beam");
         spr.Position = (fromPos + toPos) / 2.0f;
         spr.Scale = new Vector2(2.4f, 2.0f);
-        spr.FlipH = isEnemy;
+        SetVfxFlipH(spr, isEnemy);
         parent.AddChild(spr);
 
         var tw = spr.CreateTween();
@@ -421,7 +451,7 @@ public partial class CombatVFX : Node2D
         var spr = CreateVfxSprite("vfx_cavalry_charge");
         spr.Position = fromPos;
         spr.Scale = new Vector2(1.8f, 1.8f);
-        spr.FlipH = isEnemy;
+        SetVfxFlipH(spr, isEnemy);
         parent.AddChild(spr);
 
         var tw = spr.CreateTween();
@@ -485,28 +515,25 @@ public partial class CombatVFX : Node2D
         foreach (var t in targets)
         {
             var spr = CreateVfxSprite("vfx_phoenix_chains");
-            spr.Position = t + new Vector2(0, -25);
-            spr.Scale = new Vector2(1.0f, 1.0f);
+            spr.Position = t + new Vector2(0, -30);
+            spr.Scale = new Vector2(0.6f, 0.6f);
             parent.AddChild(spr);
 
             var tw = spr.CreateTween();
-            tw.TweenProperty(spr, "scale", new Vector2(2.0f, 2.0f), 0.3f).SetTrans(Tween.TransitionType.Elastic).SetEase(Tween.EaseType.Out);
-            tw.TweenCallback(Callable.From(() =>
-            {
-                SpawnFire(parent, t + new Vector2(0, -20));
-            }));
-            tw.TweenProperty(spr, "modulate:a", 0.0f, 0.3f);
+            tw.TweenProperty(spr, "scale", new Vector2(2.2f, 2.2f), 0.4f).SetTrans(Tween.TransitionType.Back).SetEase(Tween.EaseType.Out);
+            tw.Parallel().TweenProperty(spr, "rotation", Mathf.DegToRad(45f), 0.4f);
+            tw.TweenProperty(spr, "modulate:a", 0.0f, 0.35f);
             tw.TweenCallback(Callable.From(spr.QueueFree));
         }
     }
 
-    private static void SpawnCelestialZitherRings(Node parent, IReadOnlyList<Vector2> allies)
+    private static void SpawnCelestialZitherRings(Node parent, IReadOnlyList<Vector2> targets)
     {
-        foreach (var a in allies)
+        foreach (var t in targets)
         {
             var spr = CreateVfxSprite("vfx_celestial_zither");
-            spr.Position = a + new Vector2(0, -25);
-            spr.Scale = new Vector2(0.8f, 0.8f);
+            spr.Position = t + new Vector2(0, -30);
+            spr.Scale = new Vector2(0.5f, 0.5f);
             parent.AddChild(spr);
 
             var tw = spr.CreateTween();
@@ -628,9 +655,11 @@ public partial class CombatVFX : Node2D
         spr.ZIndex = LayerConstants.MagicVfxZ;
         parent.AddChild(spr);
 
-        var tw = spr.CreateTween().SetLoops(3);
-        tw.TweenProperty(spr, "scale", new Vector2(1.6f, 1.0f), 0.3f);
-        tw.TweenProperty(spr, "scale", new Vector2(1.2f, 0.7f), 0.3f);
+        var tw = spr.CreateTween().SetLoops();
+        tw.TweenProperty(spr, "scale", new Vector2(1.6f, 0.95f), 0.5f);
+        tw.Parallel().TweenProperty(spr, "modulate:a", 0.7f, 0.5f);
+        tw.TweenProperty(spr, "scale", new Vector2(1.3f, 0.8f), 0.5f);
+        tw.Parallel().TweenProperty(spr, "modulate:a", 1.0f, 0.5f);
         return spr;
     }
 }

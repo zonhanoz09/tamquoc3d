@@ -1,7 +1,8 @@
+using System;
 using System.Collections.Generic;
 using Godot;
-using TamQuoc3D.Core.Audio;
 using TamQuoc3D.Core.Constants;
+using TamQuoc3D.Core.Audio;
 using TamQuoc3D.Data.Database;
 using TamQuoc3D.Data.Resources;
 using TamQuoc3D.Features.Battle.Entities;
@@ -10,7 +11,8 @@ using TamQuoc3D.Features.Battle.Grid;
 namespace TamQuoc3D.Features.Battle.Controllers;
 
 /// <summary>
-/// BattleScene - Controller man hinh chien dau Tam Quoc chuan Formation HD-2D (.NET 8).
+/// BattleScene - Controller man hinh chien tran (.NET 8).
+/// Ho tro AnimatedSprite2D HD-2D, Camera Zoom can canh, va Slow-motion 0.1s khi bao kich.
 /// </summary>
 [GlobalClass]
 public partial class BattleScene : Node2D
@@ -18,9 +20,10 @@ public partial class BattleScene : Node2D
     private BattleManager _battleManager;
     private SoundManager _soundManager;
 
-    // Camera & Shake
+    // Camera & Shake & Dynamic Zoom
     private Camera2D _camera;
     private float _shakeAmount = 0.0f;
+    private Tween _zoomTween;
 
     // Hero Battle Nodes Storage
     private readonly List<HeroBattleNode> _playerVisuals = [];
@@ -63,6 +66,7 @@ public partial class BattleScene : Node2D
 
     public override void _Ready()
     {
+        Engine.TimeScale = 1.0f;
         SetupCamera();
         SetupSound();
         SetupBackground();
@@ -85,6 +89,38 @@ public partial class BattleScene : Node2D
     public void TriggerScreenShake(float amount = 8.0f)
     {
         _shakeAmount = amount;
+    }
+
+    /// <summary>
+    /// Camera Zoom cận cảnh & Slow-motion nhẹ 0.1s khi Bạo Kích hoặc Kết Liễu (Arcade Impact Feel).
+    /// </summary>
+    public void TriggerCritSlowMoAndZoom(Vector2 targetPos)
+    {
+        if (_camera == null) return;
+
+        // 1. Zoom in cận cảnh hướng vào vị trí va chạm
+        if (_zoomTween != null && _zoomTween.IsValid()) _zoomTween.Kill();
+        _zoomTween = CreateTween();
+
+        Vector2 baseCamPos = new Vector2(GameConstants.ViewportWidth / 2.0f, GameConstants.ViewportHeight / 2.0f);
+        Vector2 focusCamPos = baseCamPos.Lerp(targetPos, 0.15f);
+
+        _zoomTween.TweenProperty(_camera, "zoom", new Vector2(1.08f, 1.08f), 0.08f)
+                  .SetTrans(Tween.TransitionType.Quad).SetEase(Tween.EaseType.Out);
+        _zoomTween.Parallel().TweenProperty(_camera, "position", focusCamPos, 0.08f);
+
+        _zoomTween.TweenInterval(0.10f); // Giữ cận cảnh 0.1s
+
+        _zoomTween.TweenProperty(_camera, "zoom", Vector2.One, 0.20f)
+                  .SetTrans(Tween.TransitionType.Quad).SetEase(Tween.EaseType.InOut);
+        _zoomTween.Parallel().TweenProperty(_camera, "position", baseCamPos, 0.20f);
+
+        // 2. Slow-motion nhẹ 0.1s thời gian thực
+        Engine.TimeScale = 0.35f;
+        GetTree().CreateTimer(0.12, false, false, true).Timeout += () =>
+        {
+            Engine.TimeScale = 1.0f;
+        };
     }
 
     private void SetupCamera()
@@ -139,49 +175,36 @@ public partial class BattleScene : Node2D
 
         var topHbox = new HBoxContainer
         {
-            CustomMinimumSize = new Vector2(780, 44),
             Alignment = BoxContainer.AlignmentMode.Center
         };
+        topHbox.AddThemeConstantOverride("separation", 20);
         topBar.AddChild(topHbox);
 
         _roundLabel = new Label
         {
-            Text = "⚔️ HIỆP 1"
+            Text = "⚔️ HIỆP 1",
+            VerticalAlignment = VerticalAlignment.Center
         };
-        _roundLabel.AddThemeFontSizeOverride("font_size", 14);
-        _roundLabel.AddThemeColorOverride("font_color", new Color(1.0f, 0.85f, 0.2f));
+        _roundLabel.AddThemeFontSizeOverride("font_size", 16);
+        _roundLabel.AddThemeColorOverride("font_color", new Color(1.0f, 0.85f, 0.3f));
         topHbox.AddChild(_roundLabel);
 
-        var vSep = new VSeparator();
-        topHbox.AddChild(vSep);
-
-        var timeLbl = new Label
+        // Timeline Action Order
+        _timelineContainer = new HBoxContainer
         {
-            Text = "Thứ tự ra chiêu:"
+            Alignment = BoxContainer.AlignmentMode.Center
         };
-        timeLbl.AddThemeFontSizeOverride("font_size", 11);
-        timeLbl.AddThemeColorOverride("font_color", new Color(0.8f, 0.8f, 0.85f));
-        topHbox.AddChild(timeLbl);
-
-        _timelineContainer = new HBoxContainer();
-        _timelineContainer.AddThemeConstantOverride("separation", 6);
+        _timelineContainer.AddThemeConstantOverride("separation", 8);
         topHbox.AddChild(_timelineContainer);
 
-        // 2. Control Buttons (Speed, Pause)
-        var ctrlBox = new HBoxContainer
-        {
-            Position = new Vector2(1110, 16)
-        };
-        ctrlBox.AddThemeConstantOverride("separation", 8);
-        uiLayer.AddChild(ctrlBox);
-
+        // Control Buttons
         _speedBtn = new Button
         {
             Text = "Tốc độ: x1",
-            CustomMinimumSize = new Vector2(80, 32)
+            CustomMinimumSize = new Vector2(90, 32)
         };
         _speedBtn.Pressed += OnSpeedToggle;
-        ctrlBox.AddChild(_speedBtn);
+        topHbox.AddChild(_speedBtn);
 
         _pauseBtn = new Button
         {
@@ -189,13 +212,13 @@ public partial class BattleScene : Node2D
             CustomMinimumSize = new Vector2(85, 32)
         };
         _pauseBtn.Pressed += OnPauseToggle;
-        ctrlBox.AddChild(_pauseBtn);
+        topHbox.AddChild(_pauseBtn);
 
-        // 3. Combat Log (Retro Battle Log Window) - Đặt góc trên bên trái (16, 70) hoàn toàn không che tướng
+        // 2. Retro Combat Battle Log Box (Góc trên bên trái, xếp gọn gàng không che khuất tướng)
         _logPanel = new PanelContainer
         {
             Position = new Vector2(16, 70),
-            Size = new Vector2(230, 220)
+            Size = new Vector2(250, 150)
         };
         var sbLog = new StyleBoxFlat
         {
@@ -259,41 +282,27 @@ public partial class BattleScene : Node2D
         {
             Text = "▾",
             CustomMinimumSize = new Vector2(22, 20),
-            TooltipText = "Thu nhỏ / Mở rộng"
+            TooltipText = "Thu nhỏ nhật ký"
         };
         _toggleLogBtn.AddThemeFontSizeOverride("font_size", 10);
         _toggleLogBtn.Pressed += OnToggleLog;
         headerBox.AddChild(_toggleLogBtn);
 
-        var hSep = new HSeparator();
-        var sbSep = new StyleBoxFlat
-        {
-            BgColor = new Color(0.85f, 0.72f, 0.32f, 0.35f)
-        };
-        sbSep.SetBorderWidthAll(1);
-        hSep.AddThemeStyleboxOverride("separator", sbSep);
-        logVbox.AddChild(hSep);
-
-        // RichTextLabel for retro combat log
+        // RichTextLabel for colored BBCode battle logs
         _logRichText = new RichTextLabel
         {
             BbcodeEnabled = true,
             ScrollFollowing = true,
-            SelectionEnabled = true,
-            CustomMinimumSize = new Vector2(214, 168),
-            SizeFlagsVertical = Control.SizeFlags.ExpandFill
+            CustomMinimumSize = new Vector2(230, 110),
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill,
+            AutowrapMode = TextServer.AutowrapMode.WordSmart
         };
         _logRichText.AddThemeFontSizeOverride("normal_font_size", 10);
-        _logRichText.AddThemeFontSizeOverride("bold_font_size", 10);
-        _logRichText.AddThemeConstantOverride("line_separation", 3);
-        _logRichText.Text = "[color=#ffd700]⚔️ [b]CHIẾN TRẬN KÝ KHỞI ĐỘNG[/b][/color]\n[color=#94a3b8]› Chờ hồi còi xuất quân...[/color]";
         logVbox.AddChild(_logRichText);
 
-        // 4. Result Banner
+        // 3. Result Banner
         _resultBanner = new Control
         {
-            Position = Vector2.Zero,
-            Size = new Vector2(GameConstants.ViewportWidth, GameConstants.ViewportHeight),
             Visible = false
         };
         uiLayer.AddChild(_resultBanner);
@@ -343,6 +352,7 @@ public partial class BattleScene : Node2D
 
     private void StartBattleWithRoster()
     {
+        Engine.TimeScale = 1.0f;
         foreach (var v in _playerVisuals)
         {
             if (GodotObject.IsInstanceValid(v)) v.QueueFree();
@@ -584,6 +594,7 @@ public partial class BattleScene : Node2D
                 tNode.UpdateBars(true);
                 if (!tHero.IsAlive || tHero.Stats.HpCurrent <= 0)
                 {
+                    TriggerCritSlowMoAndZoom(pos);
                     tNode.AnimateDeath(_battleManager.BattleSpeed);
                 }
                 else
@@ -601,6 +612,7 @@ public partial class BattleScene : Node2D
             {
                 _soundManager.PlayCrit();
                 TriggerScreenShake(8.0f);
+                TriggerCritSlowMoAndZoom(pos);
                 tNode.ShowFloatingText($"BẠO KÍCH! -{damage}", new Color(1.0f, 0.25f, 0.25f), true);
             }
             else
@@ -617,6 +629,7 @@ public partial class BattleScene : Node2D
             tNode.UpdateBars(true);
             if (!tHero.IsAlive || tHero.Stats.HpCurrent <= 0)
             {
+                TriggerCritSlowMoAndZoom(pos);
                 tNode.AnimateDeath(_battleManager.BattleSpeed);
             }
             else
@@ -663,7 +676,7 @@ public partial class BattleScene : Node2D
         if (_isLogMinimized)
         {
             _logPanel.Position = new Vector2(16, 70);
-            _logPanel.Size = new Vector2(230, 32);
+            _logPanel.Size = new Vector2(250, 32);
             _logRichText.Visible = false;
             _toggleLogBtn.Text = "▾";
             _toggleLogBtn.TooltipText = "Mở rộng nhật ký";
@@ -671,22 +684,19 @@ public partial class BattleScene : Node2D
         else
         {
             _logPanel.Position = new Vector2(16, 70);
-            _logPanel.Size = new Vector2(230, 220);
+            _logPanel.Size = new Vector2(250, 150);
             _logRichText.Visible = true;
             _toggleLogBtn.Text = "▴";
             _toggleLogBtn.TooltipText = "Thu nhỏ nhật ký";
         }
     }
 
-    private void OnBattleEnded(int winnerTeam)
+    private void OnBattleEnded(int winner)
     {
-        bool isPlayerWin = winnerTeam == 0;
-        string title = isPlayerWin ? "🏆 ĐẠI THẮNG QUANG VINH!" : "💀 QUÂN TA BẠI TRẬN!";
-        var col = isPlayerWin ? new Color(1.0f, 0.85f, 0.2f) : new Color(0.9f, 0.3f, 0.3f);
-
-        _soundManager?.PlayVictory();
-
+        Engine.TimeScale = 1.0f;
         _resultBanner.Visible = true;
+        string title = winner == 0 ? "🏆 CHIẾN THẮNG!" : "💀 THẤT BẠI!";
+        Color col = winner == 0 ? new Color(1.0f, 0.85f, 0.2f) : new Color(0.9f, 0.2f, 0.2f);
         var lbl = _resultBanner.GetNode<Label>("ResultText");
         lbl.Text = title;
         lbl.AddThemeColorOverride("font_color", col);
@@ -719,6 +729,7 @@ public partial class BattleScene : Node2D
 
     private void OnRestartPressed()
     {
+        Engine.TimeScale = 1.0f;
         _resultBanner.Visible = false;
         _battleManager.IsBattleActive = false;
         StartBattleWithRoster();
