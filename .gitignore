@@ -4,3 +4,5 @@ obj/
 *.tmp
 node_modules/
 .zed/
+__pycache__/
+*.pyc
