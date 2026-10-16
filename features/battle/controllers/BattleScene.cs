@@ -30,6 +30,7 @@ public partial class BattleScene : Node2D
     private readonly List<HeroBattleNode> _enemyVisuals = [];
 
     // UI Nodes
+    private CanvasLayer _uiLayer;
     private Label _roundLabel;
     private RichTextLabel _logRichText;
     private Button _toggleLogBtn;
@@ -154,8 +155,8 @@ public partial class BattleScene : Node2D
 
     private void SetupUi()
     {
-        var uiLayer = new CanvasLayer { Layer = LayerConstants.HudCanvasLayer };
-        AddChild(uiLayer);
+        _uiLayer = new CanvasLayer { Layer = LayerConstants.HudCanvasLayer };
+        AddChild(_uiLayer);
 
         // 1. Top HUD Header
         var topBar = new PanelContainer
@@ -171,7 +172,7 @@ public partial class BattleScene : Node2D
         sbTop.SetBorderWidthAll(2);
         sbTop.SetCornerRadiusAll(6);
         topBar.AddThemeStyleboxOverride("panel", sbTop);
-        uiLayer.AddChild(topBar);
+        _uiLayer.AddChild(topBar);
 
         var topHbox = new HBoxContainer
         {
@@ -235,7 +236,7 @@ public partial class BattleScene : Node2D
         sbLog.ContentMarginTop = 6;
         sbLog.ContentMarginBottom = 6;
         _logPanel.AddThemeStyleboxOverride("panel", sbLog);
-        uiLayer.AddChild(_logPanel);
+        _uiLayer.AddChild(_logPanel);
 
         var logVbox = new VBoxContainer();
         logVbox.AddThemeConstantOverride("separation", 4);
@@ -305,7 +306,7 @@ public partial class BattleScene : Node2D
         {
             Visible = false
         };
-        uiLayer.AddChild(_resultBanner);
+        _uiLayer.AddChild(_resultBanner);
 
         var resBg = new ColorRect
         {
@@ -477,13 +478,21 @@ public partial class BattleScene : Node2D
 
         if (hero.Node is not HeroBattleNode attackerNode) return;
 
-        // 1. Skill Banner on rage
+        // 1. Super Move Cut-In & Skill Banner on rage
         if (isRage)
         {
             _soundManager.PlayRage();
             TriggerScreenShake(6.0f);
+
+            var bannerTcs = new System.Threading.Tasks.TaskCompletionSource<bool>();
+            void OnBannerFinished() => bannerTcs.TrySetResult(true);
+            attackerNode.SkillBannerFinished += OnBannerFinished;
+
             attackerNode.ShowSkillBanner(skill.SkillName, _battleManager.BattleSpeed);
-            await ToSignal(attackerNode, HeroBattleNode.SignalName.SkillBannerFinished);
+            var cutInTask = HeroCutInCinematic.PlayAsync(_uiLayer ?? (Node)this, hero.Data, skill, hero.Team == 1, _battleManager.BattleSpeed);
+
+            await System.Threading.Tasks.Task.WhenAll(bannerTcs.Task, cutInTask);
+            attackerNode.SkillBannerFinished -= OnBannerFinished;
         }
 
         if (targets.Count == 0) return;
@@ -546,11 +555,12 @@ public partial class BattleScene : Node2D
             }
         }
 
-        // 1. Skill VFX on rage
+        // 1. Skill VFX & Elemental Audio on rage
         if (isRage)
         {
             var priPos = allTargetPositions.Count > 0 ? allTargetPositions[0] : attackerPos;
             CombatVFX.SpawnHeroSkillVfx(this, attacker.Data.HeroId, priPos, attackerPos, allTargetPositions, attacker.Team == 1);
+            _soundManager.PlayElementSfx(attacker.Data.Element);
         }
 
         // 2. Apply effects to each target

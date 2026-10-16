@@ -1,4 +1,5 @@
 using Godot;
+using TamQuoc3D.Data.Resources;
 
 namespace TamQuoc3D.Core.Audio;
 
@@ -160,6 +161,81 @@ public partial class SoundManager : Node
         p.VolumeDb = 2.0f;
         p.PitchScale = 1.0f;
         p.Play();
+    }
+
+    public void PlayThunder()
+    {
+        var wav = MakeToneWav(700.0f, 50.0f, 0.38f, "noise");
+        var p = GetPlayer();
+        p.Stream = wav;
+        p.VolumeDb = 1.0f;
+        p.PitchScale = (float)GD.RandRange(0.9, 1.1);
+        p.Play();
+    }
+
+    public void PlayFireExplosion()
+    {
+        var wav = MakeToneWav(220.0f, 40.0f, 0.42f, "noise");
+        var p = GetPlayer();
+        p.Stream = wav;
+        p.VolumeDb = 1.5f;
+        p.PitchScale = (float)GD.RandRange(0.95, 1.05);
+        p.Play();
+    }
+
+    public void PlayWindGale()
+    {
+        var wav = MakeToneWav(600.0f, 220.0f, 0.32f, "sine");
+        var p = GetPlayer();
+        p.Stream = wav;
+        p.VolumeDb = -1.0f;
+        p.PitchScale = (float)GD.RandRange(0.95, 1.1);
+        p.Play();
+    }
+
+    public void PlayWaterSurge()
+    {
+        var wav = MakeToneWav(280.0f, 820.0f, 0.35f, "sine");
+        var p = GetPlayer();
+        p.Stream = wav;
+        p.VolumeDb = -2.0f;
+        p.PitchScale = 1.0f;
+        p.Play();
+    }
+
+    public void PlayZitherChime()
+    {
+        var wav = MakeToneWav(523.25f, 659.25f, 0.45f, "triangle");
+        var p = GetPlayer();
+        p.Stream = wav;
+        p.VolumeDb = -2.5f;
+        p.PitchScale = 1.0f;
+        p.Play();
+    }
+
+    public void PlayElementSfx(HeroData.ElementType element)
+    {
+        switch (element)
+        {
+            case HeroData.ElementType.Fire:
+                PlayFireExplosion();
+                break;
+            case HeroData.ElementType.Light:
+                PlayThunder();
+                break;
+            case HeroData.ElementType.Wind:
+                PlayWindGale();
+                break;
+            case HeroData.ElementType.Water:
+                PlayWaterSurge();
+                break;
+            case HeroData.ElementType.Dark:
+                PlayZitherChime();
+                break;
+            default:
+                PlayMagic();
+                break;
+        }
     }
 
     public void PlayVictory()
