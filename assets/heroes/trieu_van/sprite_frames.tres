@@ -1,0 +1,127 @@
+[gd_resource type="SpriteFrames" load_steps=26 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/heroes/trieu_van/spritesheet_hd.png" id="1_tex"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_idle_0"]
+atlas = ExtResource("1_tex")
+region = Rect2(0, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_idle_1"]
+atlas = ExtResource("1_tex")
+region = Rect2(64, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_idle_2"]
+atlas = ExtResource("1_tex")
+region = Rect2(128, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_idle_3"]
+atlas = ExtResource("1_tex")
+region = Rect2(192, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_idle_4"]
+atlas = ExtResource("1_tex")
+region = Rect2(256, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_idle_5"]
+atlas = ExtResource("1_tex")
+region = Rect2(320, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_atk_0"]
+atlas = ExtResource("1_tex")
+region = Rect2(0, 64, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_atk_1"]
+atlas = ExtResource("1_tex")
+region = Rect2(64, 64, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_atk_2"]
+atlas = ExtResource("1_tex")
+region = Rect2(128, 64, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_atk_3"]
+atlas = ExtResource("1_tex")
+region = Rect2(192, 64, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_atk_4"]
+atlas = ExtResource("1_tex")
+region = Rect2(256, 64, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_atk_5"]
+atlas = ExtResource("1_tex")
+region = Rect2(320, 64, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_skl_0"]
+atlas = ExtResource("1_tex")
+region = Rect2(0, 128, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_skl_1"]
+atlas = ExtResource("1_tex")
+region = Rect2(64, 128, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_skl_2"]
+atlas = ExtResource("1_tex")
+region = Rect2(128, 128, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_skl_3"]
+atlas = ExtResource("1_tex")
+region = Rect2(192, 128, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_skl_4"]
+atlas = ExtResource("1_tex")
+region = Rect2(256, 128, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_skl_5"]
+atlas = ExtResource("1_tex")
+region = Rect2(320, 128, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hrt_0"]
+atlas = ExtResource("1_tex")
+region = Rect2(0, 192, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hrt_1"]
+atlas = ExtResource("1_tex")
+region = Rect2(64, 192, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hrt_2"]
+atlas = ExtResource("1_tex")
+region = Rect2(128, 192, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_dth_0"]
+atlas = ExtResource("1_tex")
+region = Rect2(192, 192, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_dth_1"]
+atlas = ExtResource("1_tex")
+region = Rect2(256, 192, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_dth_2"]
+atlas = ExtResource("1_tex")
+region = Rect2(320, 192, 64, 64)
+
+[resource]
+animations = [{
+"frames": [SubResource("AtlasTexture_idle_0"), SubResource("AtlasTexture_idle_1"), SubResource("AtlasTexture_idle_2"), SubResource("AtlasTexture_idle_3"), SubResource("AtlasTexture_idle_4"), SubResource("AtlasTexture_idle_5")],
+"loop": true,
+"name": &"idle",
+"speed": 8.0
+}, {
+"frames": [SubResource("AtlasTexture_atk_0"), SubResource("AtlasTexture_atk_1"), SubResource("AtlasTexture_atk_2"), SubResource("AtlasTexture_atk_3"), SubResource("AtlasTexture_atk_4"), SubResource("AtlasTexture_atk_5")],
+"loop": false,
+"name": &"attack",
+"speed": 12.0
+}, {
+"frames": [SubResource("AtlasTexture_skl_0"), SubResource("AtlasTexture_skl_1"), SubResource("AtlasTexture_skl_2"), SubResource("AtlasTexture_skl_3"), SubResource("AtlasTexture_skl_4"), SubResource("AtlasTexture_skl_5")],
+"loop": false,
+"name": &"skill",
+"speed": 12.0
+}, {
+"frames": [SubResource("AtlasTexture_hrt_0"), SubResource("AtlasTexture_hrt_1"), SubResource("AtlasTexture_hrt_2")],
+"loop": false,
+"name": &"hurt",
+"speed": 10.0
+}, {
+"frames": [SubResource("AtlasTexture_dth_0"), SubResource("AtlasTexture_dth_1"), SubResource("AtlasTexture_dth_2")],
+"loop": false,
+"name": &"death",
+"speed": 6.0
+}]

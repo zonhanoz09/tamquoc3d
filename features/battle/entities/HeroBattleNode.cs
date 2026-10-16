@@ -7,7 +7,8 @@ using TamQuoc3D.Data.Resources;
 namespace TamQuoc3D.Features.Battle.Entities;
 
 /// <summary>
-/// HeroBattleNode - Node do hoa & hoat hoa chien dau 2D tren san dau.
+/// HeroBattleNode - Node do hoa & hoat hoa chien dau 2D tren san dau (.NET 8).
+/// Ho tro ca AnimatedSprite2D HD-2D nhieu frame lan Sprite2D co dien.
 /// </summary>
 [GlobalClass]
 public partial class HeroBattleNode : Node2D
@@ -24,9 +25,10 @@ public partial class HeroBattleNode : Node2D
     public Sprite2D SkillReadyAura { get; private set; }
     public Sprite2D ActivePedestal { get; private set; }
     public Sprite2D Sprite { get; private set; }
+    public AnimatedSprite2D AnimatedSprite { get; private set; }
     public HealthBar HealthBarNode { get; private set; }
 
-    // Tweens
+    // Tweens & State
     private Tween _idleTween;
     private Tween _activeTween;
     private Tween _skillReadyTween;
@@ -90,7 +92,26 @@ public partial class HeroBattleNode : Node2D
         ActivePedestal.ZIndex = LayerConstants.ActivePedestalZ;
         AddChild(ActivePedestal);
 
-        // 4. Hero Spritesheet (64x64 HD Spritesheet)
+        // 4. Hero Sprite: Kiểm tra xem có SpriteFrames HD-2D (.tres) hay không
+        var sfPath = $"res://assets/heroes/{BattleHero.Data.HeroId}/sprite_frames.tres";
+        if (ResourceLoader.Exists(sfPath))
+        {
+            var frames = GD.Load<SpriteFrames>(sfPath);
+            if (frames != null)
+            {
+                AnimatedSprite = new AnimatedSprite2D
+                {
+                    SpriteFrames = frames,
+                    Position = new Vector2(0, -48),
+                    Scale = new Vector2(2.0f, 2.0f),
+                    FlipH = IsEnemy,
+                    ZIndex = LayerConstants.HeroSpriteZ
+                };
+                AddChild(AnimatedSprite);
+            }
+        }
+
+        // Fallback: Sprite2D cổ điển nếu chưa có SpriteFrames
         Sprite = new Sprite2D();
         var sprPath = $"res://assets/heroes/{BattleHero.Data.HeroId}/spritesheet.png";
         var tex = GD.Load<Texture2D>(sprPath);
@@ -104,6 +125,10 @@ public partial class HeroBattleNode : Node2D
         Sprite.Scale = new Vector2(2.0f, 2.0f);
         Sprite.FlipH = IsEnemy;
         Sprite.ZIndex = LayerConstants.HeroSpriteZ;
+        if (AnimatedSprite != null)
+        {
+            Sprite.Visible = false;
+        }
         AddChild(Sprite);
 
         // 5. Overhead HealthBar Component
@@ -312,6 +337,12 @@ public partial class HeroBattleNode : Node2D
         if (_isDead) return;
         if (_idleTween != null && _idleTween.IsValid()) _idleTween.Kill();
 
+        if (AnimatedSprite != null)
+        {
+            AnimatedSprite.Play("idle");
+            return;
+        }
+
         _idleTween = CreateTween().SetLoops();
         _idleTween.TweenCallback(Callable.From(() => Sprite.Frame = 0));
         _idleTween.TweenInterval(0.4f);
@@ -323,23 +354,35 @@ public partial class HeroBattleNode : Node2D
     {
         if (_idleTween != null && _idleTween.IsValid()) _idleTween.Kill();
 
+        if (AnimatedSprite != null)
+        {
+            AnimatedSprite.Play("attack");
+        }
+
         var tw = CreateTween();
         var attackDest = targetPos + (IsEnemy ? new Vector2(55, 0) : new Vector2(-55, 0));
         float durDash = GameConstants.AttackDashDuration / speedMult;
         float durHold = GameConstants.AttackHoldDuration / speedMult;
         float durBack = GameConstants.AttackBackDuration / speedMult;
 
+        // Juice: nhẹ nhàng kéo giãn (Squash & Stretch) tăng uy lực
         tw.TweenProperty(this, "position", attackDest, durDash).SetTrans(Tween.TransitionType.Quad).SetEase(Tween.EaseType.Out);
+        tw.Parallel().TweenProperty(this, "scale", new Vector2(1.08f, 0.94f), durDash * 0.35f);
+        tw.TweenProperty(this, "scale", Vector2.One, durDash * 0.65f);
+
         tw.TweenCallback(Callable.From(() =>
         {
-            Sprite.Frame = 2;
+            if (AnimatedSprite == null) Sprite.Frame = 2;
             SoundManager.Instance?.PlaySlash();
             onImpact?.Invoke();
         }));
 
         tw.TweenInterval(durHold);
 
-        tw.TweenCallback(Callable.From(() => Sprite.Frame = 0));
+        tw.TweenCallback(Callable.From(() =>
+        {
+            if (AnimatedSprite == null) Sprite.Frame = 0;
+        }));
         tw.TweenProperty(this, "position", HomePosition, durBack).SetTrans(Tween.TransitionType.Quad).SetEase(Tween.EaseType.In);
         tw.TweenCallback(Callable.From(() =>
         {
@@ -352,6 +395,11 @@ public partial class HeroBattleNode : Node2D
     {
         if (_idleTween != null && _idleTween.IsValid()) _idleTween.Kill();
 
+        if (AnimatedSprite != null)
+        {
+            AnimatedSprite.Play("skill");
+        }
+
         var tw = CreateTween();
         float durForward = 0.22f / speedMult;
         float durHold = 0.42f / speedMult;
@@ -361,7 +409,7 @@ public partial class HeroBattleNode : Node2D
         tw.TweenProperty(this, "position", stepForward, durForward);
         tw.TweenCallback(Callable.From(() =>
         {
-            Sprite.Frame = 2;
+            if (AnimatedSprite == null) Sprite.Frame = 2;
             SoundManager.Instance?.PlayMagic();
             onImpact?.Invoke();
         }));
@@ -369,7 +417,7 @@ public partial class HeroBattleNode : Node2D
         tw.TweenProperty(this, "position", HomePosition, durBack);
         tw.TweenCallback(Callable.From(() =>
         {
-            Sprite.Frame = 0;
+            if (AnimatedSprite == null) Sprite.Frame = 0;
             PlayIdle();
             onComplete?.Invoke();
         }));
@@ -379,6 +427,11 @@ public partial class HeroBattleNode : Node2D
     {
         if (_isDead) return;
         if (_idleTween != null && _idleTween.IsValid()) _idleTween.Kill();
+
+        if (AnimatedSprite != null && !isDodge)
+        {
+            AnimatedSprite.Play("hurt");
+        }
 
         var tw = CreateTween();
         float dur = 0.28f / speedMult;
@@ -394,16 +447,18 @@ public partial class HeroBattleNode : Node2D
             return;
         }
 
-        Sprite.Frame = 3;
+        if (AnimatedSprite == null) Sprite.Frame = 3;
         var knockback = IsEnemy ? new Vector2(18, 0) : new Vector2(-18, 0);
         tw.TweenProperty(this, "position", HomePosition + knockback, dur * 0.4f);
-        tw.Parallel().TweenProperty(Sprite, "modulate", new Color(2.5f, 2.5f, 2.5f), dur * 0.4f);
+
+        CanvasItem activeSpr = AnimatedSprite != null ? AnimatedSprite : Sprite;
+        tw.Parallel().TweenProperty(activeSpr, "modulate", new Color(2.5f, 2.5f, 2.5f), dur * 0.4f);
 
         tw.TweenProperty(this, "position", HomePosition, dur * 0.6f);
-        tw.Parallel().TweenProperty(Sprite, "modulate", Colors.White, dur * 0.6f);
+        tw.Parallel().TweenProperty(activeSpr, "modulate", Colors.White, dur * 0.6f);
         tw.TweenCallback(Callable.From(() =>
         {
-            Sprite.Frame = 0;
+            if (AnimatedSprite == null) Sprite.Frame = 0;
             PlayIdle();
         }));
     }
@@ -416,7 +471,15 @@ public partial class HeroBattleNode : Node2D
         SetActiveTurn(false);
         if (_idleTween != null && _idleTween.IsValid()) _idleTween.Kill();
 
-        Sprite.Frame = 3;
+        if (AnimatedSprite != null)
+        {
+            AnimatedSprite.Play("death");
+        }
+        else
+        {
+            Sprite.Frame = 3;
+        }
+
         var tw = CreateTween();
         float dur = 0.65f / speedMult;
         tw.TweenProperty(this, "position:y", Position.Y + 12f, dur);
