@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Godot;
 using TamQuoc3D.Core.Autoload;
@@ -98,7 +99,7 @@ public partial class BattleManager : Node
         IsBattleActive = true;
         EmitSignal(SignalName.BattleStarted);
         EventBus.Instance?.EmitSignal(EventBus.SignalName.BattleStarted);
-        Log("⚔️ Trận chiến bắt đầu! (Architecture: core/ data/ features/)");
+        Log("⚔️ [color=#ffd700][b]TRẬN CHIẾN BẮT ĐẦU![/b][/color] (Đấu Trường Đấu Hạng)");
 
         while (IsBattleActive && IsInsideTree())
         {
@@ -111,7 +112,7 @@ public partial class BattleManager : Node
             TurnManager.BuildRoundQueue();
             EmitSignal(SignalName.RoundStarted, TurnManager.CurrentRound);
             EventBus.Instance?.EmitSignal(EventBus.SignalName.RoundStarted, TurnManager.CurrentRound);
-            Log($"--- Round {TurnManager.CurrentRound} ---");
+            Log($"\n[color=#ffd700]═══════【 HIỆP {TurnManager.CurrentRound} 】═══════[/color]");
 
             while (!TurnManager.IsRoundFinished())
             {
@@ -153,7 +154,7 @@ public partial class BattleManager : Node
         // Check Stun
         if (HasStatus(hero, SkillData.EffectType.Stun))
         {
-            Log($"💫 {hero.Data.HeroName} bị Choáng, mất lượt!");
+            Log($"💫 {FormatHero(hero)} bị [color=#fbbf24]Choáng[/color], mất lượt!");
             DecrementStatus(hero);
             EmitSignal(SignalName.HeroTurnEnded, hero);
             EventBus.Instance?.EmitSignal(EventBus.SignalName.HeroTurnEnded, hero);
@@ -180,11 +181,11 @@ public partial class BattleManager : Node
         if (isRage)
         {
             hero.Stats.ConsumeMorale(100);
-            Log($"⚡ {hero.Data.HeroName} thi triển Tuyệt Kỹ: [{skill.SkillName}]!");
+            Log($"⚡ {FormatHero(hero)} thi triển Tuyệt Kỹ: [color=#fef08a]«{skill.SkillName}»[/color]!");
         }
         else
         {
-            Log($"⚔️ {hero.Data.HeroName} tấn công!");
+            Log($"⚔️ {FormatHero(hero)} xuất chiêu tấn công!");
         }
 
         var results = new Godot.Collections.Array();
@@ -196,7 +197,7 @@ public partial class BattleManager : Node
             {
                 int heal = CombatFormulas.CalculateHeal(hero, target, skill);
                 target.Stats.Heal(heal);
-                Log($"    💚 {hero.Data.HeroName} hồi {heal} HP cho {target.Data.HeroName}");
+                Log($"  💚 {FormatHero(hero)} hồi phục [color=#4ade80][b]+{heal} HP[/b][/color] cho {FormatHero(target)}");
 
                 var res = new Godot.Collections.Dictionary
                 {
@@ -216,15 +217,15 @@ public partial class BattleManager : Node
                     target.Stats.GainMorale(GameConstants.MoraleGainOnHurt);
                     hero.Stats.GainMorale(GameConstants.MoraleGainOnAttack);
 
-                    string critStr = isCrit ? " [BẠO KÍCH!]" : "";
-                    string blockStr = isBlock ? " [ĐỠ ĐÒN!]" : "";
-                    Log($"    💥 {hero.Data.HeroName} gây {dmg} sát thương lên {target.Data.HeroName}{critStr}{blockStr}");
+                    string critStr = isCrit ? " [color=#ff2e63][b]★BẠO KÍCH★[/b][/color]" : "";
+                    string blockStr = isBlock ? " [color=#38bdf8][b]⛨ĐỠ ĐÒN[/b][/color]" : "";
+                    Log($"  💥 {FormatHero(hero)} gây [color=#ff6b6b][b]{dmg}[/b][/color] ST lên {FormatHero(target)}{critStr}{blockStr}");
 
                     target.CheckDeath();
                 }
                 else
                 {
-                    Log($"    💨 {target.Data.HeroName} né đòn tấn công của {hero.Data.HeroName}!");
+                    Log($"  💨 {FormatHero(target)} [color=#4ade80][b]NÉ ĐÒN[/b][/color] từ {FormatHero(hero)}!");
                 }
 
                 var res = new Godot.Collections.Dictionary
@@ -351,7 +352,7 @@ public partial class BattleManager : Node
 
     private void OnHeroDied(BattleHero hero)
     {
-        Log($"💀 {hero.Data.HeroName} đã ngã xuống!");
+        Log($"💀 {FormatHero(hero)} [color=#f43f5e]trọng thương ngã xuống![/color]");
         EmitSignal(SignalName.HeroDied, hero);
         EventBus.Instance?.EmitSignal(EventBus.SignalName.HeroDied, hero);
     }
@@ -367,14 +368,23 @@ public partial class BattleManager : Node
     {
         IsBattleActive = false;
         int winner = Team0.Any(h => h.IsAlive) ? 0 : 1;
-        Log($"\n🏆 TRẬN ĐẤU KẾT THÚC! Phe {(winner == 0 ? "Player" : "Enemy")} chiến thắng!");
+        string wName = winner == 0 ? "Phe Ta (Player)" : "Phe Địch (Enemy)";
+        string wCol = winner == 0 ? "#38bdf8" : "#f87171";
+        Log($"\n[color=#ffd700]🏆 ════ KẾT THÚC CHIẾN ĐẤU ════[/color]\n[color={wCol}][b]{wName}[/b][/color] [color=#ffd700]giành đại thắng oanh liệt![/color]");
         EmitSignal(SignalName.BattleEnded, winner);
         EventBus.Instance?.EmitSignal(EventBus.SignalName.BattleEnded, winner);
     }
 
+    private static string FormatHero(BattleHero hero)
+    {
+        string col = hero.Team == 0 ? "#38bdf8" : "#f87171";
+        return $"[color={col}][b]{hero.Data.HeroName}[/b][/color]";
+    }
+
     private void Log(string text)
     {
-        GD.Print(text);
+        string plain = Regex.Replace(text, @"\[/?[a-zA-Z0-9_]+(=[^\]]*)?\]", "");
+        GD.Print(plain);
         EmitSignal(SignalName.LogMessage, text);
         EventBus.Instance?.EmitSignal(EventBus.SignalName.LogMessage, text);
     }

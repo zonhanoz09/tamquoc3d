@@ -28,7 +28,9 @@ public partial class BattleScene : Node2D
 
     // UI Nodes
     private Label _roundLabel;
-    private Label _logLabel;
+    private RichTextLabel _logRichText;
+    private Button _toggleLogBtn;
+    private bool _isLogMinimized = false;
     private Button _speedBtn;
     private Button _pauseBtn;
     private Button _restartBtn;
@@ -37,7 +39,7 @@ public partial class BattleScene : Node2D
     private Control _resultBanner;
 
     private readonly List<string> _logLines = [];
-    private const int MaxLogLines = 12;
+    private const int MaxLogLines = 100;
 
     private HeroData GetHero(string id)
     {
@@ -193,41 +195,103 @@ public partial class BattleScene : Node2D
         _pauseBtn.Pressed += OnPauseToggle;
         ctrlBox.AddChild(_pauseBtn);
 
-        // 3. Combat Log
+        // 3. Combat Log (Retro Battle Log Window)
         _logPanel = new PanelContainer
         {
-            Position = new Vector2(16, 580),
-            Size = new Vector2(240, 125)
+            Position = new Vector2(16, 520),
+            Size = new Vector2(330, 185)
         };
         var sbLog = new StyleBoxFlat
         {
-            BgColor = new Color(0.05f, 0.05f, 0.08f, 0.65f),
-            BorderColor = new Color(0.4f, 0.4f, 0.5f, 0.5f)
+            BgColor = new Color(0.06f, 0.05f, 0.09f, 0.90f),
+            BorderColor = new Color(0.85f, 0.72f, 0.32f, 1.0f)
         };
-        sbLog.SetBorderWidthAll(1);
+        sbLog.SetBorderWidthAll(2);
         sbLog.SetCornerRadiusAll(4);
+        sbLog.ShadowColor = new Color(0f, 0f, 0f, 0.70f);
+        sbLog.ShadowSize = 6;
+        sbLog.ShadowOffset = new Vector2(2, 2);
+        sbLog.ContentMarginLeft = 8;
+        sbLog.ContentMarginRight = 8;
+        sbLog.ContentMarginTop = 6;
+        sbLog.ContentMarginBottom = 6;
         _logPanel.AddThemeStyleboxOverride("panel", sbLog);
         uiLayer.AddChild(_logPanel);
 
         var logVbox = new VBoxContainer();
+        logVbox.AddThemeConstantOverride("separation", 4);
         _logPanel.AddChild(logVbox);
+
+        // Header
+        var headerBox = new HBoxContainer();
+        headerBox.AddThemeConstantOverride("separation", 6);
+        logVbox.AddChild(headerBox);
 
         var logTitle = new Label
         {
-            Text = "📜 NHẬT KÝ CHIẾN TRẬN"
+            Text = "📜 CHIẾN TRẬN KÝ"
         };
         logTitle.AddThemeFontSizeOverride("font_size", 11);
-        logTitle.AddThemeColorOverride("font_color", new Color(0.7f, 0.7f, 0.8f));
-        logVbox.AddChild(logTitle);
+        logTitle.AddThemeColorOverride("font_color", new Color(1.0f, 0.85f, 0.3f));
+        headerBox.AddChild(logTitle);
 
-        _logLabel = new Label
+        var liveLbl = new Label
         {
-            Text = "Khởi tạo trận đánh...",
-            AutowrapMode = TextServer.AutowrapMode.Word
+            Text = "● LIVE"
         };
-        _logLabel.AddThemeFontSizeOverride("font_size", 10);
-        _logLabel.AddThemeColorOverride("font_color", new Color(0.9f, 0.9f, 0.95f));
-        logVbox.AddChild(_logLabel);
+        liveLbl.AddThemeFontSizeOverride("font_size", 9);
+        liveLbl.AddThemeColorOverride("font_color", new Color(0.35f, 0.9f, 0.45f));
+        headerBox.AddChild(liveLbl);
+
+        var spacer = new Control
+        {
+            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+        };
+        headerBox.AddChild(spacer);
+
+        var clearBtn = new Button
+        {
+            Text = "⟲",
+            CustomMinimumSize = new Vector2(22, 20),
+            TooltipText = "Xóa nhật ký"
+        };
+        clearBtn.AddThemeFontSizeOverride("font_size", 10);
+        clearBtn.Pressed += OnClearLog;
+        headerBox.AddChild(clearBtn);
+
+        _toggleLogBtn = new Button
+        {
+            Text = "▾",
+            CustomMinimumSize = new Vector2(22, 20),
+            TooltipText = "Thu nhỏ / Mở rộng"
+        };
+        _toggleLogBtn.AddThemeFontSizeOverride("font_size", 10);
+        _toggleLogBtn.Pressed += OnToggleLog;
+        headerBox.AddChild(_toggleLogBtn);
+
+        var hSep = new HSeparator();
+        var sbSep = new StyleBoxFlat
+        {
+            BgColor = new Color(0.85f, 0.72f, 0.32f, 0.35f)
+        };
+        sbSep.SetBorderWidthAll(1);
+        hSep.AddThemeStyleboxOverride("separator", sbSep);
+        logVbox.AddChild(hSep);
+
+        // RichTextLabel for retro combat log
+        _logRichText = new RichTextLabel
+        {
+            BbcodeEnabled = true,
+            ScrollFollowing = true,
+            SelectionEnabled = true,
+            CustomMinimumSize = new Vector2(314, 138),
+            SizeFlagsVertical = Control.SizeFlags.ExpandFill
+        };
+        _logRichText.AddThemeFontSizeOverride("normal_font_size", 10);
+        _logRichText.AddThemeFontSizeOverride("bold_font_size", 10);
+        _logRichText.AddThemeConstantOverride("line_separation", 3);
+        _logRichText.Text = "[color=#ffd700]⚔️ [b]CHIẾN TRẬN KÝ KHỞI ĐỘNG[/b][/color]\n[color=#94a3b8]› Chờ hồi còi xuất quân...[/color]";
+        logVbox.AddChild(_logRichText);
 
         // 4. Result Banner
         _resultBanner = new Control
@@ -562,9 +626,39 @@ public partial class BattleScene : Node2D
         {
             _logLines.RemoveAt(0);
         }
-        if (_logLabel != null)
+        if (_logRichText != null)
         {
-            _logLabel.Text = string.Join("\n", _logLines);
+            _logRichText.Text = string.Join("\n", _logLines);
+        }
+    }
+
+    private void OnClearLog()
+    {
+        _logLines.Clear();
+        if (_logRichText != null)
+        {
+            _logRichText.Text = "[color=#94a3b8]-- Nhật ký đã được xóa --[/color]";
+        }
+    }
+
+    private void OnToggleLog()
+    {
+        _isLogMinimized = !_isLogMinimized;
+        if (_isLogMinimized)
+        {
+            _logPanel.Position = new Vector2(16, 676);
+            _logPanel.Size = new Vector2(330, 32);
+            _logRichText.Visible = false;
+            _toggleLogBtn.Text = "▴";
+            _toggleLogBtn.TooltipText = "Mở rộng nhật ký";
+        }
+        else
+        {
+            _logPanel.Position = new Vector2(16, 520);
+            _logPanel.Size = new Vector2(330, 185);
+            _logRichText.Visible = true;
+            _toggleLogBtn.Text = "▾";
+            _toggleLogBtn.TooltipText = "Thu nhỏ nhật ký";
         }
     }
 

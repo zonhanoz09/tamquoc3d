@@ -23,7 +23,7 @@ Kế hoạch phát triển dự án từ giai đoạn Prototype đến khi chín
 - [x] Thiết kế Concept & Sprite Pixel Art cho 15 nhân vật đầu tiên (Bạch ngân giáp, Hắc kim giáp, Bát xà mâu, Thanh long đao, v.v.).
 - [x] Tạo Animation hoàn chỉnh: Idle (nhịp thở), Attack (lướt chém/pháp thuật), Skill (Nộ khí phát quang & Cut-in Banner), Hurt (chớp trắng & giật lùi), Death (ngã gục tan biến).
 - [x] Thiết kế hiệu ứng chiêu thức (Pixel VFX: chém, lửa Xích Bích, lốc gió, nước hồi phục, impact bạo kích, screen shake) và hệ thống âm thanh chiến trận Chiptune 16-bit tổng hợp (SoundManager).
-- [x] Hoàn thiện giao diện người dùng (UI/UX): Bố cục chiến trường 3 hàng chuẩn, thanh máu/sĩ khí trên đầu tướng, thanh Timeline thứ tự hành động, bộ điều khiển tốc độ (x1, x2, x4), tạm dừng, nhật ký chiến trận retro.
+- [x] Hoàn thiện giao diện người dùng (UI/UX): Bố cục chiến trường 3 hàng chuẩn, thanh máu trên đầu tướng, thanh Timeline thứ tự hành động, bộ điều khiển tốc độ (x1, x2, x4), tạm dừng, nhật ký chiến trận retro.
 
 ### Giai đoạn 3: Backend, Database & PvE Campaign (Tháng 5 - 6)
 
