@@ -1,0 +1,43 @@
+[gd_resource type="Resource" script_class="StageData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://data/resources/StageData.cs" id="1_stage"]
+[ext_resource type="Script" path="res://data/resources/EnemyEntry.cs" id="1_enemy"]
+
+[sub_resource type="Resource" id="Resource_00001"]
+script = ExtResource("1_enemy")
+HeroId = "tao_nhan"
+Row = 0
+Col = 0
+OverrideLevel = 5
+[sub_resource type="Resource" id="Resource_00002"]
+script = ExtResource("1_enemy")
+HeroId = "tao_nhan"
+Row = 0
+Col = 2
+OverrideLevel = 5
+[sub_resource type="Resource" id="Resource_00003"]
+script = ExtResource("1_enemy")
+HeroId = "sai_van_co"
+Row = 2
+Col = 1
+OverrideLevel = 5
+
+[resource]
+script = ExtResource("1_stage")
+ChapterId = 1
+StageId = 1
+StageKey = "1-1"
+StageName = "Tuần Tra Biên Giới"
+Description = "Biên giới Đại Hán xuất hiện toán thổ phỉ áo vàng. Hãy phái binh trinh sát dẹp loạn."
+Type = 0
+RecommendedPower = 1500
+StaminaCost = 3
+EnemyFormation = [SubResource("Resource_00001"), SubResource("Resource_00002"), SubResource("Resource_00003")]
+FirstClearGold = 500
+FirstClearDiamond = 50
+FirstClearExp = 200
+FirstClearItems = []
+NormalGold = 200
+NormalExp = 100
+Star2Condition = 3
+Star3Condition = 5

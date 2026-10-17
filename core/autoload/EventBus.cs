@@ -51,6 +51,13 @@ public partial class EventBus : Node
     [Signal] public delegate void QuestCompletedEventHandler(string questId);
     [Signal] public delegate void DailyQuestResetEventHandler();
 
+    // Campaign Signals
+    [Signal] public delegate void StageSelectedEventHandler(int chapterId, int stageId);
+    [Signal] public delegate void StageStartedEventHandler(int chapterId, int stageId);
+    [Signal] public delegate void StageCompletedEventHandler(int chapterId, int stageId, int stars);
+    [Signal] public delegate void ChapterUnlockedEventHandler(int chapterId);
+    [Signal] public delegate void FirstClearRewardEventHandler(int stageId, int gold, int diamond);
+
     // Notification & Chat Signals
     [Signal] public delegate void SystemNotificationEventHandler(string title, string body, string type);
     [Signal] public delegate void ChatMessageReceivedEventHandler(string sender, string message, string channel);

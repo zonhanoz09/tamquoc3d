@@ -1,0 +1,49 @@
+[gd_resource type="Resource" script_class="StageData" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://data/resources/StageData.cs" id="1_stage"]
+[ext_resource type="Script" path="res://data/resources/EnemyEntry.cs" id="1_enemy"]
+
+[sub_resource type="Resource" id="Resource_00001"]
+script = ExtResource("1_enemy")
+HeroId = "tao_nhan"
+Row = 0
+Col = 0
+OverrideLevel = 10
+[sub_resource type="Resource" id="Resource_00002"]
+script = ExtResource("1_enemy")
+HeroId = "hoang_cai"
+Row = 0
+Col = 2
+OverrideLevel = 10
+[sub_resource type="Resource" id="Resource_00003"]
+script = ExtResource("1_enemy")
+HeroId = "dien_vi"
+Row = 1
+Col = 1
+OverrideLevel = 10
+[sub_resource type="Resource" id="Resource_00004"]
+script = ExtResource("1_enemy")
+HeroId = "bang_thong"
+Row = 2
+Col = 1
+OverrideLevel = 10
+
+[resource]
+script = ExtResource("1_stage")
+ChapterId = 1
+StageId = 3
+StageKey = "1-3"
+StageName = "Qua Ải Tiểu Bái"
+Description = "Cửa ải kiên cố ngăn lối hành quân. Kho lương dồi dào chờ đoạt lấy."
+Type = 2
+RecommendedPower = 3000
+StaminaCost = 4
+EnemyFormation = [SubResource("Resource_00001"), SubResource("Resource_00002"), SubResource("Resource_00003"), SubResource("Resource_00004")]
+FirstClearGold = 800
+FirstClearDiamond = 80
+FirstClearExp = 350
+FirstClearItems = []
+NormalGold = 300
+NormalExp = 150
+Star2Condition = 3
+Star3Condition = 7

@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="ChapterData" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://data/resources/ChapterData.cs" id="1_ch"]
+[ext_resource type="Resource" path="res://data/database/stages/ch01/stage_01_01.tres" id="2_s1"]
+[ext_resource type="Resource" path="res://data/database/stages/ch01/stage_01_02.tres" id="3_s2"]
+[ext_resource type="Resource" path="res://data/database/stages/ch01/stage_01_03.tres" id="4_s3"]
+[ext_resource type="Resource" path="res://data/database/stages/ch01/stage_01_04.tres" id="5_s4"]
+[ext_resource type="Resource" path="res://data/database/stages/ch01/stage_01_05.tres" id="6_s5"]
+[ext_resource type="Resource" path="res://data/database/stages/ch01/stage_01_boss.tres" id="7_s6"]
+
+[resource]
+script = ExtResource("1_ch")
+ChapterId = 1
+ChapterName = "Chương 1: Khởi Binh Đại Hán"
+Subtitle = "Dẹp loạn Hoàng Cân, khởi binh định thiên hạ"
+BackgroundImage = "res://assets/ui/activities/campaign/chapter_bg_ch01.png"
+BgmTrack = ""
+Stages = [ExtResource("2_s1"), ExtResource("3_s2"), ExtResource("4_s3"), ExtResource("5_s4"), ExtResource("6_s5"), ExtResource("7_s6")]
+TotalStars = 18
+UnlockRequirement = 0

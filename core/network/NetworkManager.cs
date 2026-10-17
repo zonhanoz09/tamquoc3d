@@ -7,14 +7,16 @@ using System.Threading.Tasks;
 using Godot;
 using TamQuoc3D.Core.Autoload;
 using TamQuoc3D.Data.Resources;
+
+// Prevent CS0104 ambiguity between Godot.HttpClient and System.Net.Http.HttpClient
 using NetHttpClient = System.Net.Http.HttpClient;
 using NetStringContent = System.Net.Http.StringContent;
 
 namespace TamQuoc3D.Core.Network;
 
 /// <summary>
-/// NetworkManager - Quản lý kết nối Client - Server giữa game Godot và máy chủ Authoritative Server (PostgreSQL/FastAPI/Redis).
-/// Hỗ trợ đồng bộ hồ sơ, ví tiền tệ, lưu trữ đội hình 3x3, triệu hồi Gacha và mô phỏng chiến đấu qua mạng.
+/// NetworkManager - Autoload giao tiep voi Backend Game Server (FastAPI + PostgreSQL 16 + Redis 7).
+/// Quan ly Auth, Wallet, Formations, Campaign Progress, Gacha va Replay chien dau.
 /// </summary>
 [GlobalClass]
 public partial class NetworkManager : Node
@@ -22,14 +24,15 @@ public partial class NetworkManager : Node
     public static NetworkManager Instance { get; private set; }
 
     [Signal] public delegate void ServerConnectedEventHandler(bool isConnected);
+    [Signal] public delegate void ServerDisconnectedEventHandler();
     [Signal] public delegate void DataSyncedEventHandler();
 
     [Export] public string BaseUrl { get; set; } = "http://localhost:8000";
-    [Export] public string CurrentUserId { get; set; } = "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11";
+    [Export] public string CurrentUserId { get; set; } = "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11"; // Chúa Công seeded
 
     public bool IsServerOnline { get; private set; } = false;
 
-    private readonly NetHttpClient _http = new() { Timeout = TimeSpan.FromSeconds(5) };
+    private NetHttpClient _http;
     private readonly JsonSerializerOptions _jsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
@@ -43,55 +46,39 @@ public partial class NetworkManager : Node
 
     public override void _Ready()
     {
-        // Read custom server URL from OS environment if provided
-        string envUrl = OS.GetEnvironment("GAME_SERVER_URL");
-        if (!string.IsNullOrEmpty(envUrl))
+        _http = new NetHttpClient
         {
-            BaseUrl = envUrl.TrimEnd('/');
-        }
+            Timeout = TimeSpan.FromSeconds(5)
+        };
 
         GD.Print($"🌐 NetworkManager khởi tạo. Target Server: {BaseUrl}");
-        _ = InitializeConnectionAsync();
-    }
-
-    public async Task<bool> InitializeConnectionAsync()
-    {
-        bool ok = await CheckHealthAsync();
-        IsServerOnline = ok;
-        Callable.From(() => EmitSignal(SignalName.ServerConnected, ok)).CallDeferred();
-
-        if (ok)
-        {
-            GD.Print("✅ Kết nối máy chủ Tam Quốc 3D thành công! Tiến hành đồng bộ dữ liệu...");
-            await SyncAllWithServerAsync();
-        }
-        else
-        {
-            GD.Print("⚠️ Không thể kết nối tới Game Server. Chuyển sang chế độ Local/Offline.");
-        }
-
-        return ok;
+        _ = CheckHealthAsync();
     }
 
     public async Task<bool> CheckHealthAsync()
     {
         try
         {
-            var res = await _http.GetAsync($"{BaseUrl}/health");
-            if (!res.IsSuccessStatusCode) return false;
-
-            string json = await res.Content.ReadAsStringAsync();
-            var doc = JsonDocument.Parse(json);
-            return doc.RootElement.GetProperty("status").GetString() == "healthy";
+            var response = await _http.GetAsync($"{BaseUrl}/health");
+            if (response.IsSuccessStatusCode)
+            {
+                IsServerOnline = true;
+                Callable.From(() => EmitSignal(SignalName.ServerConnected, true)).CallDeferred();
+                _ = SyncPlayerDataAsync();
+                return true;
+            }
         }
         catch (Exception ex)
         {
-            GD.Print($"[NetworkManager] Healthcheck failed: {ex.Message}");
-            return false;
+            GD.Print($"[NetworkManager] Server health check offline: {ex.Message}");
         }
+
+        IsServerOnline = false;
+        Callable.From(() => EmitSignal(SignalName.ServerDisconnected)).CallDeferred();
+        return false;
     }
 
-    public async Task<bool> SyncAllWithServerAsync()
+    public async Task<bool> SyncPlayerDataAsync()
     {
         if (!IsServerOnline) return false;
 
@@ -99,13 +86,18 @@ public partial class NetworkManager : Node
         {
             // 1. Fetch Profile
             var profileDto = await FetchProfileAsync();
-            if (profileDto != null && GameManager.Instance?.Profile != null)
+            if (profileDto != null && GameManager.Instance != null)
             {
-                var p = GameManager.Instance.Profile;
-                p.PlayerName = profileDto.DisplayName;
-                p.Level = profileDto.Level;
-                p.VipLevel = profileDto.VipLevel;
-                p.AvatarHeroId = profileDto.AvatarId;
+                if (GameManager.Instance.Profile == null)
+                {
+                    GameManager.Instance.Profile = PlayerProfile.CreateDefault();
+                }
+                GameManager.Instance.Profile.PlayerName = profileDto.DisplayName;
+                GameManager.Instance.Profile.Level = profileDto.Level;
+                GameManager.Instance.Profile.VipLevel = profileDto.VipLevel;
+
+                SafeEmitEventBus(EventBus.SignalName.ProfileLoaded);
+                SafeEmitEventBus(EventBus.SignalName.VipLevelChanged, profileDto.VipLevel);
             }
 
             // 2. Fetch Wallet
@@ -253,6 +245,67 @@ public partial class NetworkManager : Node
         }
     }
 
+    public async Task<List<CampaignProgressDto>> FetchCampaignProgressAsync()
+    {
+        try
+        {
+            var res = await _http.GetAsync($"{BaseUrl}/api/campaign/progress?user_id={CurrentUserId}");
+            if (!res.IsSuccessStatusCode) return null;
+
+            string json = await res.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<List<CampaignProgressDto>>(json, _jsonOptions);
+        }
+        catch (Exception ex)
+        {
+            GD.PrintErr($"[NetworkManager] FetchCampaignProgress failed: {ex.Message}");
+            return null;
+        }
+    }
+
+    public async Task<bool> ClearStageAsync(string stageId, int stars, int turns, int goldReward, int diamondReward, int staminaCost)
+    {
+        if (!IsServerOnline) return false;
+
+        try
+        {
+            var payload = new
+            {
+                stage_id = stageId,
+                stars = stars,
+                turns = turns,
+                gold_reward = goldReward,
+                diamond_reward = diamondReward,
+                stamina_cost = staminaCost
+            };
+
+            string json = JsonSerializer.Serialize(payload, _jsonOptions);
+            var content = new NetStringContent(json, Encoding.UTF8, "application/json");
+
+            var res = await _http.PostAsync($"{BaseUrl}/api/campaign/clear?user_id={CurrentUserId}", content);
+            if (res.IsSuccessStatusCode)
+            {
+                // Re-sync wallet
+                _ = FetchWalletAsync().ContinueWith(t =>
+                {
+                    if (t.Result != null && GameManager.Instance != null)
+                    {
+                        GameManager.Instance.Gold = t.Result.Gold;
+                        GameManager.Instance.Stamina = t.Result.Stamina;
+                        SafeEmitEventBus(EventBus.SignalName.GoldChanged, 0, (int)t.Result.Gold);
+                        SafeEmitEventBus(EventBus.SignalName.StaminaChanged, t.Result.Stamina, t.Result.MaxStamina);
+                    }
+                });
+                return true;
+            }
+            return false;
+        }
+        catch (Exception ex)
+        {
+            GD.PrintErr($"[NetworkManager] ClearStage failed: {ex.Message}");
+            return false;
+        }
+    }
+
     public async Task<BattleSimResultDto> SimulateBattleAsync(string battleType = "ASYNC_ARENA", string defenderId = null)
     {
         try
@@ -319,10 +372,10 @@ public partial class NetworkManager : Node
 
     private void SafeEmitEventBus(StringName signalName, params Variant[] args)
     {
-        if (EventBus.Instance == null) return;
+        if (EventBus.Instance == null || !GodotObject.IsInstanceValid(EventBus.Instance)) return;
         Callable.From(() =>
         {
-            if (EventBus.Instance == null) return;
+            if (EventBus.Instance == null || !GodotObject.IsInstanceValid(EventBus.Instance)) return;
             switch (args.Length)
             {
                 case 0:
@@ -399,6 +452,15 @@ public partial class NetworkManager : Node
         public string FormationType { get; set; }
         public Dictionary<string, List<string>> GridLayout { get; set; }
         public bool IsActive { get; set; }
+    }
+
+    public class CampaignProgressDto
+    {
+        public string StageId { get; set; }
+        public int Stars { get; set; }
+        public bool FirstClearClaimed { get; set; }
+        public int ClearCount { get; set; }
+        public int? BestRecordTurns { get; set; }
     }
 
     public class GachaItemDto

@@ -4,7 +4,7 @@
 [ext_resource type="Script" path="res://data/resources/SkillData.cs" id="2_thxxl"]
 [ext_resource type="Script" path="res://data/resources/HeroData.cs" id="3_guctq"]
 
-[sub_resource type="Resource" id="Resource_fhcy4"]
+[sub_resource type="Resource" id="Resource_6j48u"]
 script = ExtResource("1_vb2p4")
 HpMax = 2400
 HpCurrent = 2400
@@ -21,7 +21,7 @@ CounterRate = 0.0
 MoraleCurrent = 50
 MoraleMax = 100
 
-[sub_resource type="Resource" id="Resource_y33co"]
+[sub_resource type="Resource" id="Resource_2gq3o"]
 script = ExtResource("2_thxxl")
 SkillId = "tp_atk"
 SkillName = "Bát Xà Mâu Trảm"
@@ -33,7 +33,7 @@ IsMagic = false
 TargetCount = 1
 Effects = []
 
-[sub_resource type="Resource" id="Resource_b4fw4"]
+[sub_resource type="Resource" id="Resource_rtugb"]
 script = ExtResource("2_thxxl")
 SkillId = "tp_rage"
 SkillName = "Nộ Hống Bản Cầu"
@@ -57,5 +57,5 @@ Title = "Vạn Nhân Địch"
 Element = 1
 Position = 0
 Rarity = 2
-BaseStats = SubResource("Resource_fhcy4")
-Skills = [SubResource("Resource_y33co"), SubResource("Resource_b4fw4")]
+BaseStats = SubResource("Resource_6j48u")
+Skills = [SubResource("Resource_2gq3o"), SubResource("Resource_rtugb")]

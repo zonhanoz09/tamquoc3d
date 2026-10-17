@@ -1,0 +1,49 @@
+[gd_resource type="Resource" script_class="StageData" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://data/resources/StageData.cs" id="1_stage"]
+[ext_resource type="Script" path="res://data/resources/EnemyEntry.cs" id="1_enemy"]
+
+[sub_resource type="Resource" id="Resource_00001"]
+script = ExtResource("1_enemy")
+HeroId = "dien_vi"
+Row = 0
+Col = 0
+OverrideLevel = 7
+[sub_resource type="Resource" id="Resource_00002"]
+script = ExtResource("1_enemy")
+HeroId = "hoang_cai"
+Row = 0
+Col = 2
+OverrideLevel = 7
+[sub_resource type="Resource" id="Resource_00003"]
+script = ExtResource("1_enemy")
+HeroId = "hoang_trung"
+Row = 2
+Col = 0
+OverrideLevel = 7
+[sub_resource type="Resource" id="Resource_00004"]
+script = ExtResource("1_enemy")
+HeroId = "tieu_kieu"
+Row = 2
+Col = 2
+OverrideLevel = 7
+
+[resource]
+script = ExtResource("1_stage")
+ChapterId = 1
+StageId = 2
+StageKey = "1-2"
+StageName = "Phục Kích Rừng Trúc"
+Description = "Địch quân lợi dụng địa hình rừng trúc hiểm trở để mai phục quân ta."
+Type = 0
+RecommendedPower = 2200
+StaminaCost = 3
+EnemyFormation = [SubResource("Resource_00001"), SubResource("Resource_00002"), SubResource("Resource_00003"), SubResource("Resource_00004")]
+FirstClearGold = 600
+FirstClearDiamond = 60
+FirstClearExp = 250
+FirstClearItems = []
+NormalGold = 250
+NormalExp = 120
+Star2Condition = 3
+Star3Condition = 6

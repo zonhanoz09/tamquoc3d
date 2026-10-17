@@ -1,0 +1,55 @@
+[gd_resource type="Resource" script_class="StageData" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://data/resources/StageData.cs" id="1_stage"]
+[ext_resource type="Script" path="res://data/resources/EnemyEntry.cs" id="1_enemy"]
+
+[sub_resource type="Resource" id="Resource_00001"]
+script = ExtResource("1_enemy")
+HeroId = "dien_vi"
+Row = 0
+Col = 0
+OverrideLevel = 18
+[sub_resource type="Resource" id="Resource_00002"]
+script = ExtResource("1_enemy")
+HeroId = "tao_nhan"
+Row = 0
+Col = 2
+OverrideLevel = 18
+[sub_resource type="Resource" id="Resource_00003"]
+script = ExtResource("1_enemy")
+HeroId = "lu_bo"
+Row = 1
+Col = 1
+OverrideLevel = 20
+[sub_resource type="Resource" id="Resource_00004"]
+script = ExtResource("1_enemy")
+HeroId = "dieu_thuyen"
+Row = 2
+Col = 0
+OverrideLevel = 18
+[sub_resource type="Resource" id="Resource_00005"]
+script = ExtResource("1_enemy")
+HeroId = "chu_du"
+Row = 2
+Col = 2
+OverrideLevel = 18
+
+[resource]
+script = ExtResource("1_stage")
+ChapterId = 1
+StageId = 6
+StageKey = "1-6"
+StageName = "Đổng Trác — Bạo Quân"
+Description = "Tướng soái bạo ngược Đổng Trác thống lĩnh đại quân Tây Lương cùng Lữ Bố nghênh chiến!"
+Type = 1
+RecommendedPower = 8500
+StaminaCost = 6
+EnemyFormation = [SubResource("Resource_00001"), SubResource("Resource_00002"), SubResource("Resource_00003"), SubResource("Resource_00004"), SubResource("Resource_00005")]
+FirstClearGold = 3000
+FirstClearDiamond = 300
+FirstClearExp = 1200
+FirstClearItems = []
+NormalGold = 800
+NormalExp = 500
+Star2Condition = 4
+Star3Condition = 10

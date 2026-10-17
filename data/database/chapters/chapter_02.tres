@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ChapterData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/resources/ChapterData.cs" id="1_ch"]
+
+[resource]
+script = ExtResource("1_ch")
+ChapterId = 2
+ChapterName = "Chương 2: Quyết Chiến Xích Bích"
+Subtitle = "Hỏa thiêu liên hoàn thuyền, định thế chân vạc"
+BackgroundImage = "res://assets/ui/activities/campaign/chapter_bg_ch02.png"
+BgmTrack = ""
+Stages = []
+TotalStars = 18
+UnlockRequirement = 12

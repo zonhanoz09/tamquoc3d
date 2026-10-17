@@ -4,7 +4,7 @@
 [ext_resource type="Script" path="res://data/resources/SkillData.cs" id="2_581vn"]
 [ext_resource type="Script" path="res://data/resources/HeroData.cs" id="3_lx2yu"]
 
-[sub_resource type="Resource" id="Resource_31612"]
+[sub_resource type="Resource" id="Resource_lo7u8"]
 script = ExtResource("1_iebx3")
 HpMax = 1600
 HpCurrent = 1600
@@ -21,7 +21,7 @@ CounterRate = 0.0
 MoraleCurrent = 50
 MoraleMax = 100
 
-[sub_resource type="Resource" id="Resource_pnspd"]
+[sub_resource type="Resource" id="Resource_g0l3t"]
 script = ExtResource("2_581vn")
 SkillId = "cd_atk"
 SkillName = "Hỏa Kiếm Vũ"
@@ -33,7 +33,7 @@ IsMagic = true
 TargetCount = 1
 Effects = []
 
-[sub_resource type="Resource" id="Resource_5ib7m"]
+[sub_resource type="Resource" id="Resource_cyg0i"]
 script = ExtResource("2_581vn")
 SkillId = "cd_rage"
 SkillName = "Đại Hỏa Xích Bích"
@@ -57,5 +57,5 @@ Title = "Mỹ Chu Lang"
 Element = 1
 Position = 1
 Rarity = 2
-BaseStats = SubResource("Resource_31612")
-Skills = [SubResource("Resource_pnspd"), SubResource("Resource_5ib7m")]
+BaseStats = SubResource("Resource_lo7u8")
+Skills = [SubResource("Resource_g0l3t"), SubResource("Resource_cyg0i")]

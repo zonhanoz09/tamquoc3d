@@ -4,7 +4,7 @@
 [ext_resource type="Script" path="res://data/resources/SkillData.cs" id="2_63thc"]
 [ext_resource type="Script" path="res://data/resources/HeroData.cs" id="3_f52cw"]
 
-[sub_resource type="Resource" id="Resource_y6nne"]
+[sub_resource type="Resource" id="Resource_hesvu"]
 script = ExtResource("1_5gma4")
 HpMax = 1580
 HpCurrent = 1580
@@ -21,7 +21,7 @@ CounterRate = 0.0
 MoraleCurrent = 50
 MoraleMax = 100
 
-[sub_resource type="Resource" id="Resource_wweli"]
+[sub_resource type="Resource" id="Resource_tdovj"]
 script = ExtResource("2_63thc")
 SkillId = "bt_atk"
 SkillName = "Hỏa Long Chú"
@@ -33,7 +33,7 @@ IsMagic = true
 TargetCount = 1
 Effects = []
 
-[sub_resource type="Resource" id="Resource_0gwp7"]
+[sub_resource type="Resource" id="Resource_54o8d"]
 script = ExtResource("2_63thc")
 SkillId = "bt_rage"
 SkillName = "Liên Hoàn Hỏa Kế"
@@ -57,5 +57,5 @@ Title = "Phượng Sồ Tiên Sinh"
 Element = 1
 Position = 2
 Rarity = 2
-BaseStats = SubResource("Resource_y6nne")
-Skills = [SubResource("Resource_wweli"), SubResource("Resource_0gwp7")]
+BaseStats = SubResource("Resource_hesvu")
+Skills = [SubResource("Resource_tdovj"), SubResource("Resource_54o8d")]
