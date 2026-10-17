@@ -3,13 +3,14 @@ using Godot;
 namespace TamQuoc3D.Core.Autoload;
 
 /// <summary>
-/// EventBus - Kenh su kien trung gian toan cuc giup giao tiep giua logic, UI va hieu ung khong bi phu thuoc chat.
+/// EventBus - Kênh sự kiện trung gian toàn cục giúp giao tiếp giữa logic, UI và hiệu ứng không bị phụ thuộc chặt.
 /// </summary>
 [GlobalClass]
 public partial class EventBus : Node
 {
     public static EventBus Instance { get; private set; }
 
+    // Combat Signals
     [Signal] public delegate void BattleStartedEventHandler();
     [Signal] public delegate void BattleEndedEventHandler(int winnerTeam);
     [Signal] public delegate void RoundStartedEventHandler(int roundNumber);
@@ -28,6 +29,32 @@ public partial class EventBus : Node
     [Signal] public delegate void AutoDeployRequestedEventHandler();
     [Signal] public delegate void FormationPresetSavedEventHandler(int presetIndex, string presetName);
     [Signal] public delegate void FormationPresetLoadedEventHandler(int presetIndex);
+
+    // Player & Profile Signals
+    [Signal] public delegate void ProfileLoadedEventHandler();
+    [Signal] public delegate void LevelUpEventHandler(int newLevel);
+    [Signal] public delegate void VipLevelChangedEventHandler(int vipLevel);
+    [Signal] public delegate void TitleChangedEventHandler(string newTitle);
+
+    // Currency Signals
+    [Signal] public delegate void GoldChangedEventHandler(int delta, int total);
+    [Signal] public delegate void DiamondChangedEventHandler(int delta, int total);
+    [Signal] public delegate void StaminaChangedEventHandler(int current, int max);
+    [Signal] public delegate void StaminaTimerTickEventHandler(int secondsRemaining);
+
+    // Navigation Signals
+    [Signal] public delegate void SceneChangeRequestedEventHandler(string scenePath);
+    [Signal] public delegate void BackRequestedEventHandler();
+
+    // Quest Signals
+    [Signal] public delegate void QuestProgressUpdatedEventHandler(string questId, int current, int target);
+    [Signal] public delegate void QuestCompletedEventHandler(string questId);
+    [Signal] public delegate void DailyQuestResetEventHandler();
+
+    // Notification & Chat Signals
+    [Signal] public delegate void SystemNotificationEventHandler(string title, string body, string type);
+    [Signal] public delegate void ChatMessageReceivedEventHandler(string sender, string message, string channel);
+    [Signal] public delegate void EventBannerShowEventHandler(string eventId);
 
     public override void _EnterTree()
     {

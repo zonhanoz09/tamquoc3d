@@ -16,7 +16,7 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 
 config/name="Project Pixel Tactics"
 config/description="2D Pixel Turn-Based Strategy RPG - Tam Quoc Theme"
-run/main_scene="res://features/battle/BattleScene.tscn"
+run/main_scene="res://features/hub/HubScene.tscn"
 config/features=PackedStringArray("4.3", "C#", "GL Compatibility")
 config/icon="res://assets/common/icons/icon.png"
 

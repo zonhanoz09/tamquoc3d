@@ -6,7 +6,7 @@ using TamQuoc3D.Data.Resources;
 namespace TamQuoc3D.Core.Autoload;
 
 /// <summary>
-/// GameManager - Autoload toan cuc quan ly trang thai game, du lieu nguoi choi, chuyen scene.
+/// GameManager - Autoload toàn cục quản lý trạng thái game, dữ liệu người chơi, chuyển scene.
 /// </summary>
 [GlobalClass]
 public partial class GameManager : Node
@@ -17,18 +17,52 @@ public partial class GameManager : Node
     public enum GameState
     {
         MainMenu,
+        Hub,
         Battle,
         Result,
         DeckBuilder,
         Campaign
     }
 
-    public GameState CurrentState { get; set; } = GameState.MainMenu;
+    public GameState CurrentState { get; set; } = GameState.Hub;
     public Godot.Collections.Array<HeroData> PlayerTeam { get; set; } = [];
-    public int Gold { get; set; } = 10000;
-    public int Gems { get; set; } = 500;
-    public int Stamina { get; set; } = 100;
-    public const int MaxStamina = 120;
+    public PlayerProfile Profile { get; set; }
+
+    public long Gold
+    {
+        get => Profile?.Gold ?? _legacyGold;
+        set
+        {
+            if (Profile != null) Profile.Gold = value;
+            _legacyGold = value;
+        }
+    }
+
+    public int Gems
+    {
+        get => Profile?.Diamond ?? _legacyGems;
+        set
+        {
+            if (Profile != null) Profile.Diamond = value;
+            _legacyGems = value;
+        }
+    }
+
+    public int Stamina
+    {
+        get => Profile?.Stamina ?? _legacyStamina;
+        set
+        {
+            if (Profile != null) Profile.Stamina = value;
+            _legacyStamina = value;
+        }
+    }
+
+    public int MaxStamina => Profile?.MaxStamina ?? 145;
+
+    private long _legacyGold = 2145370;
+    private int _legacyGems = 150000;
+    private int _legacyStamina = 100;
 
     public Godot.Collections.Array<HeroData> OwnedHeroes { get; set; } = [];
     public Godot.Collections.Array<FormationEntry> CurrentFormation { get; set; } = [];
@@ -51,6 +85,8 @@ public partial class GameManager : Node
 
     public void InitializeDefaultData()
     {
+        Profile = PlayerProfile.Load();
+
         // Load all heroes into OwnedHeroes if empty
         if (OwnedHeroes.Count == 0 && HeroDatabase.Instance != null)
         {
@@ -87,21 +123,45 @@ public partial class GameManager : Node
         PlayerTeam = playerHeroes;
     }
 
-    public void AddGold(int amount) => Gold += amount;
+    public void AddGold(int amount)
+    {
+        Gold += amount;
+        EventBus.Instance?.EmitSignal(EventBus.SignalName.GoldChanged, amount, (int)Gold);
+    }
 
     public bool SpendGold(int amount)
     {
         if (Gold < amount) return false;
         Gold -= amount;
+        EventBus.Instance?.EmitSignal(EventBus.SignalName.GoldChanged, -amount, (int)Gold);
         return true;
     }
 
-    public void AddGems(int amount) => Gems += amount;
+    public void AddGems(int amount)
+    {
+        Gems += amount;
+        EventBus.Instance?.EmitSignal(EventBus.SignalName.DiamondChanged, amount, Gems);
+    }
 
     public bool SpendGems(int amount)
     {
         if (Gems < amount) return false;
         Gems -= amount;
+        EventBus.Instance?.EmitSignal(EventBus.SignalName.DiamondChanged, -amount, Gems);
         return true;
+    }
+
+    public bool ConsumeStamina(int amount)
+    {
+        if (Stamina < amount) return false;
+        Stamina -= amount;
+        EventBus.Instance?.EmitSignal(EventBus.SignalName.StaminaChanged, Stamina, MaxStamina);
+        return true;
+    }
+
+    public void AddStamina(int amount)
+    {
+        Stamina = Mathf.Min(Stamina + amount, MaxStamina);
+        EventBus.Instance?.EmitSignal(EventBus.SignalName.StaminaChanged, Stamina, MaxStamina);
     }
 }

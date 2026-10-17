@@ -4,7 +4,7 @@
 [ext_resource type="Script" path="res://data/resources/SkillData.cs" id="2_l2shp"]
 [ext_resource type="Script" path="res://data/resources/HeroData.cs" id="3_snmi7"]
 
-[sub_resource type="Resource" id="Resource_ljkio"]
+[sub_resource type="Resource" id="Resource_mdlr8"]
 script = ExtResource("1_nfnjv")
 HpMax = 2200
 HpCurrent = 2200
@@ -21,7 +21,7 @@ CounterRate = 0.0
 MoraleCurrent = 50
 MoraleMax = 100
 
-[sub_resource type="Resource" id="Resource_7voen"]
+[sub_resource type="Resource" id="Resource_6gr56"]
 script = ExtResource("2_l2shp")
 SkillId = "tv_atk"
 SkillName = "Bạch Long Thương"
@@ -33,7 +33,7 @@ IsMagic = false
 TargetCount = 1
 Effects = []
 
-[sub_resource type="Resource" id="Resource_rfope"]
+[sub_resource type="Resource" id="Resource_tahg0"]
 script = ExtResource("2_l2shp")
 SkillId = "tv_rage"
 SkillName = "Long Đảm Thần Uy"
@@ -57,5 +57,5 @@ Title = "Thường Sơn Triệu Tử Long"
 Element = 2
 Position = 0
 Rarity = 3
-BaseStats = SubResource("Resource_ljkio")
-Skills = [SubResource("Resource_7voen"), SubResource("Resource_rfope")]
+BaseStats = SubResource("Resource_mdlr8")
+Skills = [SubResource("Resource_6gr56"), SubResource("Resource_tahg0")]

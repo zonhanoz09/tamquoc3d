@@ -27,3 +27,6 @@ res://features/deck_builder/FormationGrid.cs
 res://features/deck_builder/FormationSlot.cs
 res://features/campaign/CampaignController.cs
 res://features/battle/entities/SkillCutIn.cs
+res://data/resources/PlayerProfile.cs
+res://features/campaign/CampaignScene.cs
+res://tests/TestHubScreen.cs

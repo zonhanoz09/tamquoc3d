@@ -4,7 +4,7 @@
 [ext_resource type="Script" path="res://data/resources/SkillData.cs" id="2_i6e2x"]
 [ext_resource type="Script" path="res://data/resources/HeroData.cs" id="3_f7a0a"]
 
-[sub_resource type="Resource" id="Resource_24hxb"]
+[sub_resource type="Resource" id="Resource_mvh3f"]
 script = ExtResource("1_hs7lj")
 HpMax = 1450
 HpCurrent = 1450
@@ -21,7 +21,7 @@ CounterRate = 0.0
 MoraleCurrent = 50
 MoraleMax = 100
 
-[sub_resource type="Resource" id="Resource_k77mb"]
+[sub_resource type="Resource" id="Resource_865b4"]
 script = ExtResource("2_i6e2x")
 SkillId = "svc_atk"
 SkillName = "Hồ Gia Khúc"
@@ -33,7 +33,7 @@ IsMagic = true
 TargetCount = 1
 Effects = []
 
-[sub_resource type="Resource" id="Resource_mmln3"]
+[sub_resource type="Resource" id="Resource_4ibjx"]
 script = ExtResource("2_i6e2x")
 SkillId = "svc_rage"
 SkillName = "Thập Bát Phách Linh"
@@ -57,5 +57,5 @@ Title = "Tài Nữ Thi Ca"
 Element = 4
 Position = 2
 Rarity = 1
-BaseStats = SubResource("Resource_24hxb")
-Skills = [SubResource("Resource_k77mb"), SubResource("Resource_mmln3")]
+BaseStats = SubResource("Resource_mvh3f")
+Skills = [SubResource("Resource_865b4"), SubResource("Resource_4ibjx")]

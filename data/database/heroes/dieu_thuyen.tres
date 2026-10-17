@@ -4,7 +4,7 @@
 [ext_resource type="Script" path="res://data/resources/SkillData.cs" id="2_xnsbc"]
 [ext_resource type="Script" path="res://data/resources/HeroData.cs" id="3_8oir1"]
 
-[sub_resource type="Resource" id="Resource_w5kfn"]
+[sub_resource type="Resource" id="Resource_dlxa4"]
 script = ExtResource("1_klbrv")
 HpMax = 1550
 HpCurrent = 1550
@@ -21,7 +21,7 @@ CounterRate = 0.0
 MoraleCurrent = 50
 MoraleMax = 100
 
-[sub_resource type="Resource" id="Resource_e3cn5"]
+[sub_resource type="Resource" id="Resource_hqiet"]
 script = ExtResource("2_xnsbc")
 SkillId = "dt_atk"
 SkillName = "Lụa Hồng Mê Hoặc"
@@ -33,7 +33,7 @@ IsMagic = true
 TargetCount = 1
 Effects = []
 
-[sub_resource type="Resource" id="Resource_gptxt"]
+[sub_resource type="Resource" id="Resource_lo4w4"]
 script = ExtResource("2_xnsbc")
 SkillId = "dt_rage"
 SkillName = "Bế Nguyệt Tuyệt Sắc"
@@ -57,5 +57,5 @@ Title = "Bế Nguyệt Mỹ Nhân"
 Element = 5
 Position = 1
 Rarity = 2
-BaseStats = SubResource("Resource_w5kfn")
-Skills = [SubResource("Resource_e3cn5"), SubResource("Resource_gptxt")]
+BaseStats = SubResource("Resource_dlxa4")
+Skills = [SubResource("Resource_hqiet"), SubResource("Resource_lo4w4")]

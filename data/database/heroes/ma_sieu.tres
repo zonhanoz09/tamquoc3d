@@ -4,7 +4,7 @@
 [ext_resource type="Script" path="res://data/resources/SkillData.cs" id="2_a05de"]
 [ext_resource type="Script" path="res://data/resources/HeroData.cs" id="3_4pfvh"]
 
-[sub_resource type="Resource" id="Resource_i23le"]
+[sub_resource type="Resource" id="Resource_svk3a"]
 script = ExtResource("1_2guj5")
 HpMax = 1850
 HpCurrent = 1850
@@ -21,7 +21,7 @@ CounterRate = 0.0
 MoraleCurrent = 50
 MoraleMax = 100
 
-[sub_resource type="Resource" id="Resource_pjn58"]
+[sub_resource type="Resource" id="Resource_57edk"]
 script = ExtResource("2_a05de")
 SkillId = "ms_atk"
 SkillName = "Tây Lương Mã Đao"
@@ -33,7 +33,7 @@ IsMagic = false
 TargetCount = 1
 Effects = []
 
-[sub_resource type="Resource" id="Resource_cgi5n"]
+[sub_resource type="Resource" id="Resource_pxxh1"]
 script = ExtResource("2_a05de")
 SkillId = "ms_rage"
 SkillName = "Thần Uy Đột Kích"
@@ -57,5 +57,5 @@ Title = "Cẩm Mã Siêu"
 Element = 3
 Position = 1
 Rarity = 2
-BaseStats = SubResource("Resource_i23le")
-Skills = [SubResource("Resource_pjn58"), SubResource("Resource_cgi5n")]
+BaseStats = SubResource("Resource_svk3a")
+Skills = [SubResource("Resource_57edk"), SubResource("Resource_pxxh1")]
