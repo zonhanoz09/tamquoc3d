@@ -36,74 +36,86 @@ public partial class TestFormationSelector : Node
         var gcl = db.GetHero("gia_cat_luong");
         var tk = db.GetHero("tieu_kieu");
         var dv = db.GetHero("dien_vi");
+        var lb = db.GetHero("lu_bo");
 
         Assert(tv != null && qv != null, "Hero database load failed");
 
-        // 1. Test FormationGrid Layout
+        // 1. Test FormationGrid Layout: 1 Front, 3 Mid, 3 Back
         var grid = new FormationGrid();
         AddChild(grid);
 
         Assert(grid.IsSlotActive(0, 1), "Slot (0, 1) must be active (Tiền quân)");
         Assert(grid.IsSlotActive(1, 0), "Slot (1, 0) must be active (Trung quân trên)");
+        Assert(grid.IsSlotActive(1, 1), "Slot (1, 1) must be active (Trung quân giữa)");
         Assert(grid.IsSlotActive(1, 2), "Slot (1, 2) must be active (Trung quân dưới)");
         Assert(grid.IsSlotActive(2, 0), "Slot (2, 0) must be active (Hậu quân trên)");
+        Assert(grid.IsSlotActive(2, 1), "Slot (2, 1) must be active (Hậu quân giữa)");
         Assert(grid.IsSlotActive(2, 2), "Slot (2, 2) must be active (Hậu quân dưới)");
 
         Assert(!grid.IsSlotActive(0, 0), "Slot (0, 0) must be inactive");
         Assert(!grid.IsSlotActive(0, 2), "Slot (0, 2) must be inactive");
-        Assert(!grid.IsSlotActive(1, 1), "Slot (1, 1) must be inactive");
-        Assert(!grid.IsSlotActive(2, 1), "Slot (2, 1) must be inactive");
-        GD.Print("✅ Test 1: FormationGrid 3x3 layout passed (5 active, 4 inactive).");
+        GD.Print("✅ Test 1: FormationGrid 3x3 layout passed (7 active: 1 Front, 3 Mid, 3 Back; 2 inactive).");
 
-        // 2. Test Assign Hero & Uniqueness
-        bool placed = grid.AssignHero(tv, 0, 1);
-        Assert(placed, "Should assign Trieu Van to (0, 1)");
-        Assert(grid.GetHeroAt(0, 1)?.HeroId == "trieu_van", "Trieu Van should be at (0, 1)");
+        // 2. Test Assign Hero & Uniqueness & Mid/Back Center slots
+        bool placedCenterMid = grid.AssignHero(tv, 1, 1);
+        Assert(placedCenterMid, "Should assign Trieu Van to (1, 1) Trung quân giữa");
+        Assert(grid.GetHeroAt(1, 1)?.HeroId == "trieu_van", "Trieu Van should be at (1, 1)");
+
+        bool placedCenterBack = grid.AssignHero(qv, 2, 1);
+        Assert(placedCenterBack, "Should assign Quan Vu to (2, 1) Hậu quân giữa");
+        Assert(grid.GetHeroAt(2, 1)?.HeroId == "quan_vu", "Quan Vu should be at (2, 1)");
 
         // Assign to another slot should move hero
-        grid.AssignHero(tv, 1, 0);
-        Assert(grid.GetHeroAt(1, 0)?.HeroId == "trieu_van", "Trieu Van should move to (1, 0)");
-        Assert(grid.GetHeroAt(0, 1) == null, "Previous slot (0, 1) should now be empty");
-        Assert(grid.GetAssignedCount() == 1, "Only 1 instance of hero should exist in formation");
-        GD.Print("✅ Test 2: Hero assignment & uniqueness passed.");
-
-        // 3. Test Swap Heroes
         grid.AssignHero(tv, 0, 1);
-        grid.AssignHero(qv, 1, 0);
-        Assert(grid.GetHeroAt(0, 1)?.HeroId == "trieu_van", "TV at (0, 1)");
-        Assert(grid.GetHeroAt(1, 0)?.HeroId == "quan_vu", "QV at (1, 0)");
+        Assert(grid.GetHeroAt(0, 1)?.HeroId == "trieu_van", "Trieu Van should move to (0, 1)");
+        Assert(grid.GetHeroAt(1, 1) == null, "Previous slot (1, 1) should now be empty");
+        Assert(grid.GetAssignedCount() == 2, "2 heroes in formation");
+        GD.Print("✅ Test 2: Hero assignment & Center slots passed.");
 
-        grid.SwapHeroes(0, 1, 1, 0);
+        // 3. Test Max 5 Heroes constraint
+        grid.AssignHero(ms, 1, 0); // 3rd hero
+        grid.AssignHero(gcl, 1, 2); // 4th hero
+        grid.AssignHero(tk, 2, 0); // 5th hero
+        Assert(grid.GetAssignedCount() == 5, "Should have exactly 5 heroes assigned");
+
+        // Try to place a 6th hero in empty slot (2, 2)
+        bool sixthPlaced = grid.AssignHero(lb, 2, 2);
+        Assert(!sixthPlaced, "Should reject placing a 6th hero when 5 already assigned");
+        Assert(grid.GetAssignedCount() == 5, "Still exactly 5 heroes assigned");
+        GD.Print("✅ Test 3: Maximum 5 heroes constraint passed.");
+
+        // 4. Test Swap Heroes
+        grid.SwapHeroes(0, 1, 2, 1);
         Assert(grid.GetHeroAt(0, 1)?.HeroId == "quan_vu", "QV should now be at (0, 1)");
-        Assert(grid.GetHeroAt(1, 0)?.HeroId == "trieu_van", "TV should now be at (1, 0)");
-        GD.Print("✅ Test 3: Hero swapping passed.");
+        Assert(grid.GetHeroAt(2, 1)?.HeroId == "trieu_van", "TV should now be at (2, 1)");
+        GD.Print("✅ Test 4: Hero swapping passed.");
 
-        // 4. Test Remove Hero
+        // 5. Test Remove Hero & ClearAll
         grid.RemoveHero(0, 1);
         Assert(grid.GetHeroAt(0, 1) == null, "Slot (0, 1) should be empty after removal");
-        Assert(grid.GetAssignedCount() == 1, "Only 1 hero remaining");
+        Assert(grid.GetAssignedCount() == 4, "4 heroes remaining");
         grid.ClearAll();
         Assert(grid.GetAssignedCount() == 0, "Grid should be empty after ClearAll");
-        GD.Print("✅ Test 4: Hero removal & clear all passed.");
+        GD.Print("✅ Test 5: Hero removal & clear all passed.");
 
-        // 5. Test HeroFilter
+        // 6. Test HeroFilter
         var filter = new HeroFilter();
         AddChild(filter);
 
         var allHeroes = db.GetAllHeroes().ToList();
         var fireHeroes = allHeroes.Where(h => h.Element == HeroData.ElementType.Fire).ToList();
-        Assert(fireHeroes.Count >= 3, "Should have multiple Fire heroes (Dien Vi, Truong Phi, Chu Du, Bang Thong)");
+        Assert(fireHeroes.Count >= 3, "Should have multiple Fire heroes");
 
         var sortedByPower = allHeroes.OrderByDescending(HeroCard.CalculateCombatPower).ToList();
         Assert(HeroCard.CalculateCombatPower(sortedByPower[0]) >= HeroCard.CalculateCombatPower(sortedByPower[^1]),
             "First hero power should be >= last hero power");
-        GD.Print("✅ Test 5: HeroFilter & Combat power calculation passed.");
+        GD.Print("✅ Test 6: HeroFilter & Combat power calculation passed.");
 
         // Clean up standalone test nodes
         grid.QueueFree();
         filter.QueueFree();
 
-        // 6. Test DeckBuilderController Full Scene Integration
+        // 7. Test DeckBuilderController Full Scene Integration
         var deckBuilder = new DeckBuilderController();
         AddChild(deckBuilder);
 

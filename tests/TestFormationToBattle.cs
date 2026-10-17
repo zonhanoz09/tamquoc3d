@@ -12,6 +12,7 @@ namespace TamQuoc3D.Tests;
 
 /// <summary>
 /// TestFormationToBattle - End-to-end integration test verifying DeckBuilder -> BattleScene transition with custom formation.
+/// Tests deployment in Front Center (0, 1), Mid Center (1, 1), Mid Bottom (1, 2), Back Center (2, 1), and Back Top (2, 0).
 /// </summary>
 public partial class TestFormationToBattle : Node
 {
@@ -24,15 +25,14 @@ public partial class TestFormationToBattle : Node
     {
         GD.Print("\n=== ⚔️ STARTING END-TO-END FORMATION -> BATTLE TEST ===");
 
-        // 1. Prepare custom player formation
-        // Setup: Front = Lu Bo (Dark), Mid Top = Guan Yu, Mid Bot = Ma Sieu, Back Top = Chu Du, Back Bot = Diao Chan
+        // 1. Prepare custom player formation using Mid Center (1, 1) and Back Center (2, 1)
         var customFormation = new List<FormationEntry>
         {
-            new("lu_bo", 0, 1),
-            new("quan_vu", 1, 0),
-            new("ma_sieu", 1, 2),
-            new("chu_du", 2, 0),
-            new("dieu_thuyen", 2, 2)
+            new("lu_bo", 0, 1),         // Tiền quân
+            new("quan_vu", 1, 1),       // Trung quân (Giữa)
+            new("ma_sieu", 1, 2),       // Trung quân (Dưới)
+            new("chu_du", 2, 1),        // Hậu quân (Giữa)
+            new("dieu_thuyen", 2, 0)    // Hậu quân (Trên)
         };
 
         // 2. Set into GameManager
@@ -65,18 +65,18 @@ public partial class TestFormationToBattle : Node
         Assert(battleMgr.Team0[0].SlotRow == 0 && battleMgr.Team0[0].SlotCol == 1, "Lu Bo should be at (0, 1)");
 
         Assert(battleMgr.Team0[1].Data.HeroId == "quan_vu", "Team0[1] should be Quan Vu");
-        Assert(battleMgr.Team0[1].SlotRow == 1 && battleMgr.Team0[1].SlotCol == 0, "Quan Vu should be at (1, 0)");
+        Assert(battleMgr.Team0[1].SlotRow == 1 && battleMgr.Team0[1].SlotCol == 1, "Quan Vu should be at (1, 1) Mid Center");
 
         Assert(battleMgr.Team0[2].Data.HeroId == "ma_sieu", "Team0[2] should be Ma Sieu");
-        Assert(battleMgr.Team0[2].SlotRow == 1 && battleMgr.Team0[2].SlotCol == 2, "Ma Sieu should be at (1, 2)");
+        Assert(battleMgr.Team0[2].SlotRow == 1 && battleMgr.Team0[2].SlotCol == 2, "Ma Sieu should be at (1, 2) Mid Bottom");
 
         Assert(battleMgr.Team0[3].Data.HeroId == "chu_du", "Team0[3] should be Chu Du");
-        Assert(battleMgr.Team0[3].SlotRow == 2 && battleMgr.Team0[3].SlotCol == 0, "Chu Du should be at (2, 0)");
+        Assert(battleMgr.Team0[3].SlotRow == 2 && battleMgr.Team0[3].SlotCol == 1, "Chu Du should be at (2, 1) Back Center");
 
         Assert(battleMgr.Team0[4].Data.HeroId == "dieu_thuyen", "Team0[4] should be Dieu Thuyen");
-        Assert(battleMgr.Team0[4].SlotRow == 2 && battleMgr.Team0[4].SlotCol == 2, "Dieu Thuyen should be at (2, 2)");
+        Assert(battleMgr.Team0[4].SlotRow == 2 && battleMgr.Team0[4].SlotCol == 0, "Dieu Thuyen should be at (2, 0) Back Top");
 
-        GD.Print("✅ All 5 heroes spawned with exact custom formation data!");
+        GD.Print("✅ All 5 heroes spawned with exact custom formation data including Center positions!");
 
         // Wait for 0.5s of battle execution
         await ToSignal(GetTree().CreateTimer(0.5f), SceneTreeTimer.SignalName.Timeout);

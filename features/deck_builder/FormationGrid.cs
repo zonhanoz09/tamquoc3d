@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Godot;
 using TamQuoc3D.Data.Database;
 using TamQuoc3D.Data.Resources;
@@ -6,7 +7,7 @@ using TamQuoc3D.Data.Resources;
 namespace TamQuoc3D.Features.DeckBuilder;
 
 /// <summary>
-/// FormationGrid - Quan ly ma tran bo tran 3x3 (5 o active, 4 o inactive).
+/// FormationGrid - Quan ly ma tran bo tran 3x3 (7 o active: 1 Tien quan, 3 Trung quan, 3 Hau quan).
 /// Ho tro dat tuong, go tuong, hoan doi (swap) 2 o, va xuat du lieu doi hinh.
 /// </summary>
 [GlobalClass]
@@ -50,9 +51,9 @@ public partial class FormationGrid : Control
         // 2. Row Labels
         string[] rowTitles =
         [
-            "⚔️ TIỀN QUÂN (Hàng Đầu)",
-            "🛡️ TRUNG QUÂN (Chủ Lực)",
-            "🏹 HẬU QUÂN (Hỗ Trợ & Trị Liệu)"
+            "⚔️ TIỀN QUÂN (Hàng Đầu - 1 Vị Trí)",
+            "🛡️ TRUNG QUÂN (Chủ Lực - 3 Vị Trí)",
+            "🏹 HẬU QUÂN (Hỗ Trợ & Trị Liệu - 3 Vị Trí)"
         ];
 
         int[] rowY = [60, 190, 320];
@@ -74,18 +75,28 @@ public partial class FormationGrid : Control
             AddChild(rowHeader);
         }
 
-        // 3. 3x3 Slots
+        // 3. 3x3 Slots (Row 0: center only; Row 1 & 2: top, center, bottom)
         for (int r = 0; r < GridRows; r++)
         {
             for (int c = 0; c < GridCols; c++)
             {
-                bool isActive = (r == 0 && c == 1) || (r == 1 && (c == 0 || c == 2)) || (r == 2 && (c == 0 || c == 2));
+                bool isActive = (r == 0 && c == 1) || (r == 1) || (r == 2);
                 string hint = "";
                 if (isActive)
                 {
                     if (r == 0) hint = "+ Tiền quân";
-                    else if (r == 1) hint = c == 0 ? "+ Trung (Trên)" : "+ Trung (Dưới)";
-                    else if (r == 2) hint = c == 0 ? "+ Hậu (Trên)" : "+ Hậu (Dưới)";
+                    else if (r == 1) hint = c switch
+                    {
+                        0 => "+ Trung (Trên)",
+                        1 => "+ Trung (Giữa)",
+                        _ => "+ Trung (Dưới)"
+                    };
+                    else if (r == 2) hint = c switch
+                    {
+                        0 => "+ Hậu (Trên)",
+                        1 => "+ Hậu (Giữa)",
+                        _ => "+ Hậu (Dưới)"
+                    };
                 }
 
                 var slot = new FormationSlot
@@ -139,6 +150,12 @@ public partial class FormationGrid : Control
             {
                 RemoveHero(kvp.Key.row, kvp.Key.col, false);
             }
+        }
+
+        // Toi da 5 tuong xuat tran trong doi hinh
+        if (_assignedHeroes.Count >= 5 && !_assignedHeroes.ContainsKey((row, col)))
+        {
+            return false;
         }
 
         _assignedHeroes[(row, col)] = hero;
