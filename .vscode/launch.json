@@ -1,0 +1,49 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Play (Godot C# Debug)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "godot",
+      "args": [
+        "--path",
+        "${workspaceFolder}"
+      ],
+      "cwd": "${workspaceFolder}",
+      "stopAtEntry": false,
+      "console": "internalConsole",
+      "pipeTransport": {
+        "debuggerPath": "netcoredbg"
+      }
+    },
+    {
+      "name": "Debug Current Scene (Godot C#)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "godot",
+      "args": [
+        "--path",
+        "${workspaceFolder}",
+        "${file}"
+      ],
+      "cwd": "${workspaceFolder}",
+      "stopAtEntry": false,
+      "console": "internalConsole",
+      "pipeTransport": {
+        "debuggerPath": "netcoredbg"
+      }
+    },
+    {
+      "name": "Attach to Godot (netcoredbg)",
+      "type": "coreclr",
+      "request": "attach",
+      "processId": "${command:pickProcess}",
+      "pipeTransport": {
+        "debuggerPath": "netcoredbg"
+      }
+    }
+  ]
+}

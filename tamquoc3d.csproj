@@ -5,5 +5,8 @@
     <Nullable>annotations</Nullable>
     <LangVersion>12</LangVersion>
     <RootNamespace>TamQuoc3D</RootNamespace>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>portable</DebugType>
+    <Optimize Condition="'$(Configuration)' == 'Debug'">false</Optimize>
   </PropertyGroup>
 </Project>

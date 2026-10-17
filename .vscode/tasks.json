@@ -1,0 +1,43 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "build",
+        "${workspaceFolder}/tamquoc3d.csproj",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary"
+      ],
+      "problemMatcher": "$msCompile",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "run-game",
+      "command": "godot",
+      "type": "process",
+      "args": [
+        "--path",
+        "${workspaceFolder}"
+      ],
+      "dependsOn": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "run-headless-test",
+      "command": "godot",
+      "type": "process",
+      "args": [
+        "--headless",
+        "res://tests/TestCampaignMap.tscn"
+      ],
+      "dependsOn": "build",
+      "problemMatcher": []
+    }
+  ]
+}
