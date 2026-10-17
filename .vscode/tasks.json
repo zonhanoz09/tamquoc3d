@@ -25,7 +25,6 @@
         "--path",
         "${workspaceFolder}"
       ],
-      "dependsOn": "build",
       "problemMatcher": []
     },
     {
@@ -36,7 +35,6 @@
         "--headless",
         "res://tests/TestCampaignMap.tscn"
       ],
-      "dependsOn": "build",
       "problemMatcher": []
     }
   ]
