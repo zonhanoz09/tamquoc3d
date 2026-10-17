@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using Godot;
+using TamQuoc3D.Data.Database;
 using TamQuoc3D.Data.Resources;
 
 namespace TamQuoc3D.Core.Autoload;
@@ -23,12 +25,16 @@ public partial class GameManager : Node
 
     public GameState CurrentState { get; set; } = GameState.MainMenu;
     public Godot.Collections.Array<HeroData> PlayerTeam { get; set; } = [];
-    public int Gold { get; set; } = 0;
-    public int Gems { get; set; } = 0;
+    public int Gold { get; set; } = 10000;
+    public int Gems { get; set; } = 500;
     public int Stamina { get; set; } = 100;
     public const int MaxStamina = 120;
 
     public Godot.Collections.Array<HeroData> OwnedHeroes { get; set; } = [];
+    public Godot.Collections.Array<FormationEntry> CurrentFormation { get; set; } = [];
+    public Godot.Collections.Array<FormationPreset> SavedPresets { get; set; } = [];
+    public string BattleContext { get; set; } = "campaign";
+    public string PreviousScenePath { get; set; } = string.Empty;
 
     public static GameManager Instance { get; private set; }
 
@@ -40,10 +46,37 @@ public partial class GameManager : Node
     public override void _Ready()
     {
         GD.Print("🎮 GameManager khởi động - Project Pixel Tactics (.NET 8)");
+        InitializeDefaultData();
+    }
+
+    public void InitializeDefaultData()
+    {
+        // Load all heroes into OwnedHeroes if empty
+        if (OwnedHeroes.Count == 0 && HeroDatabase.Instance != null)
+        {
+            foreach (var h in HeroDatabase.Instance.GetAllHeroes())
+            {
+                OwnedHeroes.Add(h);
+            }
+        }
+
+        // Initialize 3 default preset slots
+        if (SavedPresets.Count == 0)
+        {
+            for (int i = 1; i <= 3; i++)
+            {
+                SavedPresets.Add(new FormationPreset
+                {
+                    PresetName = $"Đội hình {i}",
+                    Entries = []
+                });
+            }
+        }
     }
 
     public void ChangeScene(string path)
     {
+        PreviousScenePath = GetTree().CurrentScene?.SceneFilePath ?? string.Empty;
         EmitSignal(SignalName.SceneChanged, path);
         GetTree().ChangeSceneToFile(path);
     }

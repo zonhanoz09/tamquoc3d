@@ -1,3 +1,4 @@
+using TamQuoc3D.Data.Database;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -46,6 +47,45 @@ public partial class BattleManager : Node
         Team1.Clear();
 
         SetupTeam(party0, 0, Team0);
+        SetupTeam(party1, 1, Team1);
+
+        TurnManager = new TurnManager();
+        TurnManager.Setup(Team0, Team1);
+    }
+
+    public void SetupBattleWithFormation(IList<FormationEntry> playerFormation, IList<HeroData> party1)
+    {
+        Team0.Clear();
+        Team1.Clear();
+
+        foreach (var entry in playerFormation)
+        {
+            var heroData = HeroDatabase.Instance?.GetHero(entry.HeroId);
+            if (heroData == null)
+            {
+                var dbNode = ((SceneTree)Engine.GetMainLoop()).Root.GetNodeOrNull<HeroDatabase>("HeroDatabase");
+                heroData = dbNode?.GetHero(entry.HeroId);
+            }
+            if (heroData == null) continue;
+
+            var bh = new BattleHero(heroData, 0, entry.Row, entry.Col);
+            bh.Died += OnHeroDied;
+            Team0.Add(bh);
+        }
+
+        if (Team0.Count == 0)
+        {
+            var defaultParty = new List<HeroData>
+            {
+                HeroDatabase.Instance?.GetHero("trieu_van"),
+                HeroDatabase.Instance?.GetHero("quan_vu"),
+                HeroDatabase.Instance?.GetHero("ma_sieu"),
+                HeroDatabase.Instance?.GetHero("gia_cat_luong"),
+                HeroDatabase.Instance?.GetHero("tieu_kieu")
+            };
+            SetupTeam(defaultParty, 0, Team0);
+        }
+
         SetupTeam(party1, 1, Team1);
 
         TurnManager = new TurnManager();

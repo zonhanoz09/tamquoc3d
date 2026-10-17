@@ -21,6 +21,14 @@ public partial class EventBus : Node
     [Signal] public delegate void MoraleChangedEventHandler(GodotObject hero, int newMorale);
     [Signal] public delegate void LogMessageEventHandler(string message);
 
+    // Formation Signals
+    [Signal] public delegate void HeroAssignedToSlotEventHandler(string heroId, int row, int col);
+    [Signal] public delegate void HeroRemovedFromSlotEventHandler(int row, int col);
+    [Signal] public delegate void FormationConfirmedEventHandler(Godot.Collections.Array formation);
+    [Signal] public delegate void AutoDeployRequestedEventHandler();
+    [Signal] public delegate void FormationPresetSavedEventHandler(int presetIndex, string presetName);
+    [Signal] public delegate void FormationPresetLoadedEventHandler(int presetIndex);
+
     public override void _EnterTree()
     {
         Instance = this;

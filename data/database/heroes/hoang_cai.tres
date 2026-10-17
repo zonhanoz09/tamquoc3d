@@ -4,7 +4,7 @@
 [ext_resource type="Script" path="res://data/resources/SkillData.cs" id="2_ki4bk"]
 [ext_resource type="Script" path="res://data/resources/HeroData.cs" id="3_xucbq"]
 
-[sub_resource type="Resource" id="Resource_xf04p"]
+[sub_resource type="Resource" id="Resource_q3cfy"]
 script = ExtResource("1_mxm1l")
 HpMax = 2300
 HpCurrent = 2300
@@ -21,7 +21,7 @@ CounterRate = 0.0
 MoraleCurrent = 50
 MoraleMax = 100
 
-[sub_resource type="Resource" id="Resource_aud5w"]
+[sub_resource type="Resource" id="Resource_pbvqu"]
 script = ExtResource("2_ki4bk")
 SkillId = "hc_atk"
 SkillName = "Thiết Tiết Kích"
@@ -33,7 +33,7 @@ IsMagic = false
 TargetCount = 1
 Effects = []
 
-[sub_resource type="Resource" id="Resource_h5slm"]
+[sub_resource type="Resource" id="Resource_kvx7o"]
 script = ExtResource("2_ki4bk")
 SkillId = "hc_rage"
 SkillName = "Khổ Nhục Hỏa Thuyền"
@@ -57,5 +57,5 @@ Title = "Khổ Nhục Tiên Phong"
 Element = 2
 Position = 0
 Rarity = 1
-BaseStats = SubResource("Resource_xf04p")
-Skills = [SubResource("Resource_aud5w"), SubResource("Resource_h5slm")]
+BaseStats = SubResource("Resource_q3cfy")
+Skills = [SubResource("Resource_pbvqu"), SubResource("Resource_kvx7o")]

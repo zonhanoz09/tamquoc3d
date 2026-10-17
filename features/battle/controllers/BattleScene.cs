@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using Godot;
 using TamQuoc3D.Core.Constants;
 using TamQuoc3D.Core.Audio;
+using TamQuoc3D.Core.Autoload;
+using TamQuoc3D.Core.Navigation;
 using TamQuoc3D.Data.Database;
 using TamQuoc3D.Data.Resources;
 using TamQuoc3D.Features.Battle.Entities;
@@ -93,13 +95,13 @@ public partial class BattleScene : Node2D
     }
 
     /// <summary>
-    /// Camera Zoom cận cảnh & Slow-motion nhẹ 0.1s khi Bạo Kích hoặc Kết Liễu (Arcade Impact Feel).
+    /// Camera Zoom c\u1eadn c\u1ea3nh & Slow-motion nh\u1eb9 0.1s khi B\u1ea1o K\u00edch ho\u1eb7c K\u1ebft Li\u1ec5u (Arcade Impact Feel).
     /// </summary>
     public void TriggerCritSlowMoAndZoom(Vector2 targetPos)
     {
         if (_camera == null) return;
 
-        // 1. Zoom in cận cảnh hướng vào vị trí va chạm
+        // 1. Zoom in c\u1eadn c\u1ea3nh h\u01b0\u1edbng v\u00e0o v\u1ecb tr\u00ed va ch\u1ea1m
         if (_zoomTween != null && _zoomTween.IsValid()) _zoomTween.Kill();
         _zoomTween = CreateTween();
 
@@ -110,13 +112,13 @@ public partial class BattleScene : Node2D
                   .SetTrans(Tween.TransitionType.Quad).SetEase(Tween.EaseType.Out);
         _zoomTween.Parallel().TweenProperty(_camera, "position", focusCamPos, 0.08f);
 
-        _zoomTween.TweenInterval(0.10f); // Giữ cận cảnh 0.1s
+        _zoomTween.TweenInterval(0.10f); // Gi\u1eef c\u1eadn c\u1ea3nh 0.1s
 
         _zoomTween.TweenProperty(_camera, "zoom", Vector2.One, 0.20f)
                   .SetTrans(Tween.TransitionType.Quad).SetEase(Tween.EaseType.InOut);
         _zoomTween.Parallel().TweenProperty(_camera, "position", baseCamPos, 0.20f);
 
-        // 2. Slow-motion nhẹ 0.1s thời gian thực
+        // 2. Slow-motion nh\u1eb9 0.1s th\u1eddi gian th\u1ef1c
         Engine.TimeScale = 0.35f;
         GetTree().CreateTimer(0.12, false, false, true).Timeout += () =>
         {
@@ -161,8 +163,8 @@ public partial class BattleScene : Node2D
         // 1. Top HUD Header
         var topBar = new PanelContainer
         {
-            Position = new Vector2(240, 10),
-            Size = new Vector2(800, 50)
+            Position = new Vector2(180, 10),
+            Size = new Vector2(920, 50)
         };
         var sbTop = new StyleBoxFlat
         {
@@ -178,8 +180,16 @@ public partial class BattleScene : Node2D
         {
             Alignment = BoxContainer.AlignmentMode.Center
         };
-        topHbox.AddThemeConstantOverride("separation", 20);
+        topHbox.AddThemeConstantOverride("separation", 16);
         topBar.AddChild(topHbox);
+
+        var backToFormationBtn = new Button
+        {
+            Text = "⬅ Bố Trận",
+            CustomMinimumSize = new Vector2(85, 32)
+        };
+        backToFormationBtn.Pressed += () => SceneNavigator.GoToFormationSelector();
+        topHbox.AddChild(backToFormationBtn);
 
         _roundLabel = new Label
         {
@@ -328,11 +338,20 @@ public partial class BattleScene : Node2D
         _restartBtn = new Button
         {
             Text = "🔄 ĐẤU LẠI",
-            Position = new Vector2(560, 380),
+            Position = new Vector2(460, 380),
             Size = new Vector2(160, 48)
         };
         _restartBtn.Pressed += OnRestartPressed;
         _resultBanner.AddChild(_restartBtn);
+
+        var formationBtn = new Button
+        {
+            Text = "📋 BỐ TRẬN",
+            Position = new Vector2(660, 380),
+            Size = new Vector2(160, 48)
+        };
+        formationBtn.Pressed += () => SceneNavigator.GoToFormationSelector();
+        _resultBanner.AddChild(formationBtn);
     }
 
     private void SetupBattle()
@@ -383,7 +402,14 @@ public partial class BattleScene : Node2D
             GetHero("sai_van_co")
         };
 
-        _battleManager.SetupBattle(playerParty, enemyParty);
+        if (GameManager.Instance != null && GameManager.Instance.CurrentFormation.Count > 0)
+        {
+            _battleManager.SetupBattleWithFormation(GameManager.Instance.CurrentFormation, enemyParty);
+        }
+        else
+        {
+            _battleManager.SetupBattle(playerParty, enemyParty);
+        }
 
         // Spawn Player Visuals
         foreach (var bh in _battleManager.Team0)

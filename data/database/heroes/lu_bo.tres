@@ -4,7 +4,7 @@
 [ext_resource type="Script" path="res://data/resources/SkillData.cs" id="2_f08je"]
 [ext_resource type="Script" path="res://data/resources/HeroData.cs" id="3_gmgxu"]
 
-[sub_resource type="Resource" id="Resource_0b7dw"]
+[sub_resource type="Resource" id="Resource_h0ypf"]
 script = ExtResource("1_dlgk1")
 HpMax = 2100
 HpCurrent = 2100
@@ -21,7 +21,7 @@ CounterRate = 0.0
 MoraleCurrent = 50
 MoraleMax = 100
 
-[sub_resource type="Resource" id="Resource_hv5kf"]
+[sub_resource type="Resource" id="Resource_qvvku"]
 script = ExtResource("2_f08je")
 SkillId = "lb_atk"
 SkillName = "Phương Thiên Họa Kích"
@@ -33,7 +33,7 @@ IsMagic = false
 TargetCount = 1
 Effects = []
 
-[sub_resource type="Resource" id="Resource_e6i4e"]
+[sub_resource type="Resource" id="Resource_88jfq"]
 script = ExtResource("2_f08je")
 SkillId = "lb_rage"
 SkillName = "Vô Song Chiến Thần"
@@ -57,5 +57,5 @@ Title = "Chiến Thần Vô Song"
 Element = 5
 Position = 1
 Rarity = 3
-BaseStats = SubResource("Resource_0b7dw")
-Skills = [SubResource("Resource_hv5kf"), SubResource("Resource_e6i4e")]
+BaseStats = SubResource("Resource_h0ypf")
+Skills = [SubResource("Resource_qvvku"), SubResource("Resource_88jfq")]
