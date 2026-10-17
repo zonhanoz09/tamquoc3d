@@ -1,0 +1,31 @@
+{
+  "mcpServers": {
+    "godot": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@grinry/godot-mcp"
+      ],
+      "env": {
+        "GODOT_PATH": "/home/annhan/.local/bin/godot"
+      }
+    },
+    "pixelart": {
+      "command": "node",
+      "args": [
+        "/home/annhan/Documents/src/tamquoc3d/tools/pixel_art_mcp/server.js"
+      ],
+      "env": {
+        "PYTHONPATH": "/home/annhan/Documents/src/tamquoc3d"
+      }
+    },
+    "postgres": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://tamquoc:tamquoc_secret_2026@localhost:5432/tamquoc_db"
+      ]
+    }
+  }
+}
