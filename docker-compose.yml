@@ -1,0 +1,76 @@
+services:
+  # 1. PostgreSQL Database with 7 Modules Schema & Seed Data
+  postgres:
+    image: postgres:16-alpine
+    container_name: tamquoc-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: tamquoc
+      POSTGRES_PASSWORD: tamquoc_secret
+      POSTGRES_DB: tamquoc_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./data/sql:/docker-entrypoint-initdb.d:ro
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tamquoc -d tamquoc_db"]
+      interval: 4s
+      timeout: 3s
+      retries: 10
+    networks:
+      - tamquoc-net
+
+  # 2. Redis In-Memory Cache & Matchmaking
+  redis:
+    image: redis:7-alpine
+    container_name: tamquoc-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 4s
+      timeout: 3s
+      retries: 10
+    networks:
+      - tamquoc-net
+
+  # 3. Authoritative Game Server & Playable Web Portal
+  game-server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: tamquoc-game-server
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://tamquoc:tamquoc_secret@postgres:5432/tamquoc_db
+      REDIS_URL: redis://redis:6379/0
+      PORT: 8000
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - tamquoc-net
+
+volumes:
+  pgdata:
+    name: tamquoc_pgdata
+  redisdata:
+    name: tamquoc_redisdata
+
+networks:
+  tamquoc-net:
+    name: tamquoc_network
+    driver: bridge
