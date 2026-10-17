@@ -4,7 +4,7 @@
 [ext_resource type="Script" path="res://data/resources/SkillData.cs" id="2_etwo6"]
 [ext_resource type="Script" path="res://data/resources/HeroData.cs" id="3_1f1rx"]
 
-[sub_resource type="Resource" id="Resource_va5r0"]
+[sub_resource type="Resource" id="Resource_u57b7"]
 script = ExtResource("1_d2uay")
 HpMax = 1650
 HpCurrent = 1650
@@ -21,7 +21,7 @@ CounterRate = 0.0
 MoraleCurrent = 50
 MoraleMax = 100
 
-[sub_resource type="Resource" id="Resource_0jt8f"]
+[sub_resource type="Resource" id="Resource_arbd3"]
 script = ExtResource("2_etwo6")
 SkillId = "gcl_atk"
 SkillName = "Bát Trận Đồ"
@@ -33,7 +33,7 @@ IsMagic = true
 TargetCount = 1
 Effects = []
 
-[sub_resource type="Resource" id="Resource_427n1"]
+[sub_resource type="Resource" id="Resource_cirq6"]
 script = ExtResource("2_etwo6")
 SkillId = "gcl_rage"
 SkillName = "Đông Phong Bát Trận"
@@ -57,5 +57,5 @@ Title = "Ngọa Long Tiên Sinh"
 Element = 3
 Position = 2
 Rarity = 3
-BaseStats = SubResource("Resource_va5r0")
-Skills = [SubResource("Resource_0jt8f"), SubResource("Resource_427n1")]
+BaseStats = SubResource("Resource_u57b7")
+Skills = [SubResource("Resource_arbd3"), SubResource("Resource_cirq6")]

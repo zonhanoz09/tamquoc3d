@@ -4,7 +4,7 @@
 [ext_resource type="Script" path="res://data/resources/SkillData.cs" id="2_goew2"]
 [ext_resource type="Script" path="res://data/resources/HeroData.cs" id="3_unj5t"]
 
-[sub_resource type="Resource" id="Resource_taj6q"]
+[sub_resource type="Resource" id="Resource_b5aln"]
 script = ExtResource("1_kr48w")
 HpMax = 1500
 HpCurrent = 1500
@@ -21,7 +21,7 @@ CounterRate = 0.0
 MoraleCurrent = 50
 MoraleMax = 100
 
-[sub_resource type="Resource" id="Resource_l43kt"]
+[sub_resource type="Resource" id="Resource_sygk3"]
 script = ExtResource("2_goew2")
 SkillId = "tk_atk"
 SkillName = "Khúc Nhạc Hồi Sinh"
@@ -33,7 +33,7 @@ IsMagic = true
 TargetCount = 1
 Effects = []
 
-[sub_resource type="Resource" id="Resource_d1trn"]
+[sub_resource type="Resource" id="Resource_vcpb1"]
 script = ExtResource("2_goew2")
 SkillId = "tk_rage"
 SkillName = "Điệu Vũ Thiên Kiều"
@@ -57,5 +57,5 @@ Title = "Giang Nam Đệ Nhất Kiều"
 Element = 2
 Position = 2
 Rarity = 2
-BaseStats = SubResource("Resource_taj6q")
-Skills = [SubResource("Resource_l43kt"), SubResource("Resource_d1trn")]
+BaseStats = SubResource("Resource_b5aln")
+Skills = [SubResource("Resource_sygk3"), SubResource("Resource_vcpb1")]

@@ -4,7 +4,7 @@
 [ext_resource type="Script" path="res://data/resources/SkillData.cs" id="2_6n2r8"]
 [ext_resource type="Script" path="res://data/resources/HeroData.cs" id="3_uwj3g"]
 
-[sub_resource type="Resource" id="Resource_u7fi3"]
+[sub_resource type="Resource" id="Resource_5hoc8"]
 script = ExtResource("1_11fvm")
 HpMax = 1650
 HpCurrent = 1650
@@ -21,7 +21,7 @@ CounterRate = 0.0
 MoraleCurrent = 50
 MoraleMax = 100
 
-[sub_resource type="Resource" id="Resource_x8e8y"]
+[sub_resource type="Resource" id="Resource_j14p6"]
 script = ExtResource("2_6n2r8")
 SkillId = "ht_atk"
 SkillName = "Tiễn Tiệt Không"
@@ -33,7 +33,7 @@ IsMagic = false
 TargetCount = 1
 Effects = []
 
-[sub_resource type="Resource" id="Resource_448gy"]
+[sub_resource type="Resource" id="Resource_806tp"]
 script = ExtResource("2_6n2r8")
 SkillId = "ht_rage"
 SkillName = "Bách Bộ Xuyên Dương"
@@ -57,5 +57,5 @@ Title = "Lão Tướng Thần Xạ"
 Element = 4
 Position = 1
 Rarity = 2
-BaseStats = SubResource("Resource_u7fi3")
-Skills = [SubResource("Resource_x8e8y"), SubResource("Resource_448gy")]
+BaseStats = SubResource("Resource_5hoc8")
+Skills = [SubResource("Resource_j14p6"), SubResource("Resource_806tp")]

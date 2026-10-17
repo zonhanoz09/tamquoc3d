@@ -4,7 +4,7 @@
 [ext_resource type="Script" path="res://data/resources/SkillData.cs" id="2_mte63"]
 [ext_resource type="Script" path="res://data/resources/HeroData.cs" id="3_n2jfw"]
 
-[sub_resource type="Resource" id="Resource_41dcs"]
+[sub_resource type="Resource" id="Resource_xmts6"]
 script = ExtResource("1_kweug")
 HpMax = 2800
 HpCurrent = 2800
@@ -21,7 +21,7 @@ CounterRate = 0.0
 MoraleCurrent = 50
 MoraleMax = 100
 
-[sub_resource type="Resource" id="Resource_7me5h"]
+[sub_resource type="Resource" id="Resource_codw5"]
 script = ExtResource("2_mte63")
 SkillId = "tn_atk"
 SkillName = "Kim Cương Kích"
@@ -33,7 +33,7 @@ IsMagic = false
 TargetCount = 1
 Effects = []
 
-[sub_resource type="Resource" id="Resource_kxecb"]
+[sub_resource type="Resource" id="Resource_vul1k"]
 script = ExtResource("2_mte63")
 SkillId = "tn_rage"
 SkillName = "Trầm Lực Thiết Bích"
@@ -57,5 +57,5 @@ Title = "Thiên Nhân Chi Địch"
 Element = 4
 Position = 0
 Rarity = 2
-BaseStats = SubResource("Resource_41dcs")
-Skills = [SubResource("Resource_7me5h"), SubResource("Resource_kxecb")]
+BaseStats = SubResource("Resource_xmts6")
+Skills = [SubResource("Resource_codw5"), SubResource("Resource_vul1k")]

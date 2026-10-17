@@ -4,7 +4,7 @@
 [ext_resource type="Script" path="res://data/resources/SkillData.cs" id="2_7fks6"]
 [ext_resource type="Script" path="res://data/resources/HeroData.cs" id="3_v53us"]
 
-[sub_resource type="Resource" id="Resource_t1640"]
+[sub_resource type="Resource" id="Resource_64ajj"]
 script = ExtResource("1_i5tvy")
 HpMax = 1950
 HpCurrent = 1950
@@ -21,7 +21,7 @@ CounterRate = 0.0
 MoraleCurrent = 50
 MoraleMax = 100
 
-[sub_resource type="Resource" id="Resource_3ftc7"]
+[sub_resource type="Resource" id="Resource_ji00e"]
 script = ExtResource("2_7fks6")
 SkillId = "qv_atk"
 SkillName = "Thanh Long Yển Nguyệt"
@@ -33,7 +33,7 @@ IsMagic = false
 TargetCount = 1
 Effects = []
 
-[sub_resource type="Resource" id="Resource_c36p1"]
+[sub_resource type="Resource" id="Resource_plkx0"]
 script = ExtResource("2_7fks6")
 SkillId = "qv_rage"
 SkillName = "Qua Ngũ Quan Trảm Tướng"
@@ -57,5 +57,5 @@ Title = "Mỹ Nhiễm Công"
 Element = 3
 Position = 1
 Rarity = 3
-BaseStats = SubResource("Resource_t1640")
-Skills = [SubResource("Resource_3ftc7"), SubResource("Resource_c36p1")]
+BaseStats = SubResource("Resource_64ajj")
+Skills = [SubResource("Resource_ji00e"), SubResource("Resource_plkx0")]
