@@ -1,13 +1,14 @@
 using System;
 using Godot;
 using TamQuoc3D.Core.Autoload;
+using TamQuoc3D.Core.Network;
 using TamQuoc3D.Data.Database;
 using TamQuoc3D.Data.Resources;
 
 namespace TamQuoc3D.Features.Hub.Ui;
 
 /// <summary>
-/// TopBar - Thanh thông tin đỉnh màn hình hiển thị Avatar, Cấp độ, VIP, Danh hiệu, Tiền tệ (Vàng, KNB, Thể lực) và đếm ngược hồi thể lực.
+/// TopBar - Thanh thông tin đỉnh màn hình hiển thị Avatar, Cấp độ, VIP, Danh hiệu, Tiền tệ (Vàng, KNB, Thể lực), đếm ngược hồi thể lực và trạng thái máy chủ.
 /// </summary>
 [GlobalClass]
 public partial class TopBar : PanelContainer
@@ -28,15 +29,31 @@ public partial class TopBar : PanelContainer
     private Label _staminaLabel;
     private ProgressBar _staminaBar;
     private Label _staminaTimerLabel;
+    private Label _serverBadge;
 
     private int _staminaSecondsRemaining = 1483;
     private double _timerAccumulator = 0.0;
+
+    // Delegates for safe detachment
+    private EventBus.GoldChangedEventHandler _onGoldChanged;
+    private EventBus.DiamondChangedEventHandler _onDiamondChanged;
+    private EventBus.StaminaChangedEventHandler _onStaminaChanged;
+    private EventBus.VipLevelChangedEventHandler _onVipChanged;
+    private EventBus.LevelUpEventHandler _onLevelUp;
+    private EventBus.TitleChangedEventHandler _onTitleChanged;
+    private NetworkManager.ServerConnectedEventHandler _onServerConnected;
+    private NetworkManager.DataSyncedEventHandler _onDataSynced;
 
     public override void _Ready()
     {
         BuildLayout();
         ConnectSignals();
         RefreshFromGameManager();
+    }
+
+    public override void _ExitTree()
+    {
+        DisconnectSignals();
     }
 
     public override void _Process(double delta)
@@ -260,11 +277,20 @@ public partial class TopBar : PanelContainer
         var spacer2 = new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill };
         hBox.AddChild(spacer2);
 
-        // --- 3. RIGHT SECTION: QUICK SHORTCUTS ---
+        // --- 3. RIGHT SECTION: QUICK SHORTCUTS & SERVER BADGE ---
         var rightBox = new HBoxContainer();
         rightBox.AddThemeConstantOverride("separation", 10);
         rightBox.Alignment = BoxContainer.AlignmentMode.End;
         hBox.AddChild(rightBox);
+
+        _serverBadge = new Label
+        {
+            Text = "● Server: Đang kết nối...",
+            Modulate = new Color(0.8f, 0.8f, 0.3f),
+            TooltipText = "Trạng thái máy chủ Authoritative Server"
+        };
+        _serverBadge.AddThemeFontSizeOverride("font_size", 11);
+        rightBox.AddChild(_serverBadge);
 
         var mailBtn = CreateIconButton("✉", "Hòm Thư");
         mailBtn.Pressed += () => EmitSignal(SignalName.MailClicked);
@@ -331,12 +357,63 @@ public partial class TopBar : PanelContainer
     {
         if (EventBus.Instance != null)
         {
-            EventBus.Instance.GoldChanged += (delta, total) => UpdateGold(total);
-            EventBus.Instance.DiamondChanged += (delta, total) => UpdateDiamond(total);
-            EventBus.Instance.StaminaChanged += (cur, max) => UpdateStamina(cur, max);
-            EventBus.Instance.VipLevelChanged += UpdateVipBadge;
-            EventBus.Instance.LevelUp += (lvl) => _levelLabel.Text = $"Lv.{lvl}";
-            EventBus.Instance.TitleChanged += (title) => _titleLabel.Text = title;
+            _onGoldChanged = (delta, total) => { if (IsInstanceValid(this) && _goldLabel != null) UpdateGold(total); };
+            _onDiamondChanged = (delta, total) => { if (IsInstanceValid(this) && _diamondLabel != null) UpdateDiamond(total); };
+            _onStaminaChanged = (cur, max) => { if (IsInstanceValid(this) && _staminaLabel != null) UpdateStamina(cur, max); };
+            _onVipChanged = (vip) => { if (IsInstanceValid(this) && _vipBadgeRect != null) UpdateVipBadge(vip); };
+            _onLevelUp = (lvl) => { if (IsInstanceValid(this) && _levelLabel != null) _levelLabel.Text = $"Lv.{lvl}"; };
+            _onTitleChanged = (title) => { if (IsInstanceValid(this) && _titleLabel != null) _titleLabel.Text = title; };
+
+            EventBus.Instance.GoldChanged += _onGoldChanged;
+            EventBus.Instance.DiamondChanged += _onDiamondChanged;
+            EventBus.Instance.StaminaChanged += _onStaminaChanged;
+            EventBus.Instance.VipLevelChanged += _onVipChanged;
+            EventBus.Instance.LevelUp += _onLevelUp;
+            EventBus.Instance.TitleChanged += _onTitleChanged;
+        }
+
+        if (NetworkManager.Instance != null)
+        {
+            _onServerConnected = (isConnected) => { if (IsInstanceValid(this) && _serverBadge != null) UpdateServerBadge(isConnected); };
+            _onDataSynced = () => { if (IsInstanceValid(this)) RefreshFromGameManager(); };
+
+            UpdateServerBadge(NetworkManager.Instance.IsServerOnline);
+            NetworkManager.Instance.ServerConnected += _onServerConnected;
+            NetworkManager.Instance.DataSynced += _onDataSynced;
+        }
+    }
+
+    private void DisconnectSignals()
+    {
+        if (EventBus.Instance != null)
+        {
+            if (_onGoldChanged != null) EventBus.Instance.GoldChanged -= _onGoldChanged;
+            if (_onDiamondChanged != null) EventBus.Instance.DiamondChanged -= _onDiamondChanged;
+            if (_onStaminaChanged != null) EventBus.Instance.StaminaChanged -= _onStaminaChanged;
+            if (_onVipChanged != null) EventBus.Instance.VipLevelChanged -= _onVipChanged;
+            if (_onLevelUp != null) EventBus.Instance.LevelUp -= _onLevelUp;
+            if (_onTitleChanged != null) EventBus.Instance.TitleChanged -= _onTitleChanged;
+        }
+
+        if (NetworkManager.Instance != null)
+        {
+            if (_onServerConnected != null) NetworkManager.Instance.ServerConnected -= _onServerConnected;
+            if (_onDataSynced != null) NetworkManager.Instance.DataSynced -= _onDataSynced;
+        }
+    }
+
+    private void UpdateServerBadge(bool isConnected)
+    {
+        if (_serverBadge == null) return;
+        if (isConnected)
+        {
+            _serverBadge.Text = "● Server: Online";
+            _serverBadge.Modulate = new Color(0.2f, 0.9f, 0.4f);
+        }
+        else
+        {
+            _serverBadge.Text = "● Server: Offline";
+            _serverBadge.Modulate = new Color(0.6f, 0.6f, 0.6f);
         }
     }
 

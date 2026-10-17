@@ -5,6 +5,7 @@ using Godot;
 using TamQuoc3D.Core.Autoload;
 using TamQuoc3D.Core.Constants;
 using TamQuoc3D.Core.Navigation;
+using TamQuoc3D.Core.Network;
 using TamQuoc3D.Data.Database;
 using TamQuoc3D.Data.Resources;
 
@@ -666,6 +667,7 @@ public partial class DeckBuilderController : Control
         EmitSignal(SignalName.FormationConfirmed, array);
         EventBus.Instance?.EmitSignal(EventBus.SignalName.FormationConfirmed, array);
 
+        _ = NetworkManager.Instance?.SaveFormationFromEntriesAsync("PVE_DEFAULT", formation);
         SceneNavigator.GoToBattle(formation);
     }
 

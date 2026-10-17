@@ -25,6 +25,7 @@ config/icon="res://assets/common/icons/icon.png"
 EventBus="*res://core/autoload/EventBus.cs"
 GameManager="*res://core/autoload/GameManager.cs"
 HeroDatabase="*res://data/database/HeroDatabase.cs"
+NetworkManager="*res://core/network/NetworkManager.cs"
 
 [display]
 
