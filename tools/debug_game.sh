@@ -26,6 +26,6 @@ echo "🔨 [1/2] Bien dich C# (.NET 8 Debug)..."
 dotnet build tamquoc3d.csproj /property:GenerateFullPaths=true
 
 # 2. Launch Godot with debug flags
-SCENE="${1:-res://features/hub/HubScene.tscn}"
+SCENE="${1:-res://features/hub/scenes/HubScene.tscn}"
 echo "🚀 [2/2] Khoi chay Godot Debug voi Scene: $SCENE"
 godot --debug --path "$PROJECT_DIR" "$SCENE"

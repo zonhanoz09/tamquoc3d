@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3]
 
-[ext_resource type="Script" path="res://features/hero_collection/HeroCollectionScene.cs" id="1_herocol"]
+[ext_resource type="Script" path="res://features/hero_collection/scenes/HeroCollectionScene.cs" id="1_herocol"]
 
 [node name="HeroCollectionScene" type="Control"]
 layout_mode = 3

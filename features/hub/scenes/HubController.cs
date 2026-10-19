@@ -14,6 +14,7 @@ public partial class HubController : Control
 {
     private HubBackground _background;
     private TopBar _topBar;
+    private AvatarWidget _avatarWidget;
     private ShortcutBar _shortcutBar;
     private QuestPanel _questPanel;
     private ChatBox _chatBox;
@@ -24,8 +25,8 @@ public partial class HubController : Control
     {
         CustomMinimumSize = new Vector2(1280, 720);
         BuildHubLayout();
-        ConnectEvents();
-        ShowWelcomeExperience();
+        //ConnectEvents();
+        //ShowWelcomeExperience();
     }
 
     private void BuildHubLayout()
@@ -34,40 +35,41 @@ public partial class HubController : Control
         _background = new HubBackground();
         AddChild(_background);
 
-        // 2. TopBar (Anchor: Top, Height 60px)
-        _topBar = new TopBar
+        // 2. Player avatar panel below the TopBar
+        _avatarWidget = new AvatarWidget
         {
-            Position = new Vector2(0, 0),
+            Name = "AvatarWidget",
+            Position = new Vector2(8, 60),
             ZIndex = 10
         };
-        AddChild(_topBar);
+        AddChild(_avatarWidget);
 
         // 3. ShortcutBar (10 circular buttons below TopBar)
-        _shortcutBar = new ShortcutBar
-        {
-            Position = new Vector2(0, 68),
-            Size = new Vector2(1280, 76),
-            ZIndex = 10
-        };
-        AddChild(_shortcutBar);
+        // _shortcutBar = new ShortcutBar
+        // {
+        //     Position = new Vector2(0, 68),
+        //     Size = new Vector2(1280, 76),
+        //     ZIndex = 10
+        // };
+        // AddChild(_shortcutBar);
 
-        // 4. QuestPanel (Right side, collapsible)
-        _questPanel = new QuestPanel
-        {
-            Position = new Vector2(1015, 150),
-            ZIndex = 10
-        };
-        AddChild(_questPanel);
+        // 5. QuestPanel (Right side, collapsible)
+        // _questPanel = new QuestPanel
+        // {
+        //     Position = new Vector2(1015, 150),
+        //     ZIndex = 10
+        // };
+        // AddChild(_questPanel);
 
-        // 5. ChatBox (Bottom Left above BottomNav)
-        _chatBox = new ChatBox
-        {
-            Position = new Vector2(16, 508),
-            ZIndex = 10
-        };
-        AddChild(_chatBox);
+        // // 6. ChatBox (Bottom Left above BottomNav)
+        // _chatBox = new ChatBox
+        // {
+        //     Position = new Vector2(16, 508),
+        //     ZIndex = 10
+        // };
+        // AddChild(_chatBox);
 
-        // 6. BottomNavBar (Anchor: Bottom, Height 68px)
+        // 7. BottomNavBar (Anchor: Bottom, Height 68px)
         _bottomNavBar = new BottomNavBar
         {
             Position = new Vector2(0, 652),
@@ -75,9 +77,9 @@ public partial class HubController : Control
         };
         AddChild(_bottomNavBar);
 
-        // 7. Event Notification (CanvasLayer for toasts and slide-in banners)
-        _eventNotification = new EventNotification();
-        AddChild(_eventNotification);
+        // 8. Event Notification (CanvasLayer for toasts and slide-in banners)
+        // _eventNotification = new EventNotification();
+        // AddChild(_eventNotification);
     }
 
     private void ConnectEvents()

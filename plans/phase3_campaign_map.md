@@ -10,7 +10,7 @@
 - Hoàn thiện Chapter 1 (5 ải + 1 boss ải) với data `.tres` đầy đủ
 - Hệ thống đánh giá 3 sao cho mỗi ải (StarRatingSystem)
 - Kết nối: chọn ải → StageInfoPopup → Formation Selector → Battle → trả về kết quả + sao
-- Đồng bộ hai chiều với PostgreSQL `campaign_progress` và Docker FastAPI Game Server.
+- Đồng bộ hai chiều với PostgreSQL `campaign_progress` và Docker ASP.NET Core Game Server.
 
 ---
 
@@ -60,7 +60,7 @@ flowchart TD
 ## ✅ Chi Tiết Từng Task
 
 ### Task 3.1 — Tạo `CampaignScene.tscn`
-- [x] Tạo file: `features/campaign/CampaignScene.tscn`
+- [x] Tạo file: `features/campaign/scenes/CampaignScene.tscn`
 - [x] Root: `Control` full screen
 - [x] `ChapterSelectPanel` — panel chọn chương (slide từ trái)
 - [x] `ChapterMap` — hiển thị bản đồ chapter đang chọn
@@ -78,20 +78,20 @@ flowchart TD
 - [x] `OnBackPressed()`: `SceneNavigator.GoToHub()`
 
 ### Task 3.3 — Tạo `StageNode.cs`
-- [x] Tạo file: `features/campaign/StageNode.cs`
+- [x] Tạo file: `features/campaign/ui/StageNode.cs`
 - [x] Properties: `ChapterId`, `StageId`, `Data`, `BestStars`, `IsUnlocked`, `IsCurrentTarget`
 - [x] Hiển thị icon (thường, boss, resource, locked), số ải ("1-1"), 3 sao vàng/xám
 - [x] Pulse Tween khi là ải mục tiêu tiếp theo
 - [x] Signal `StageClicked(int chapterId, int stageId)`
 
 ### Task 3.4 — Tạo `ChapterMap.cs`
-- [x] Tạo file: `features/campaign/ChapterMap.cs`
+- [x] Tạo file: `features/campaign/ui/ChapterMap.cs`
 - [x] Layout: Waypoints ngoằn ngoèo chiến thuật
 - [x] `Line2D` nối các ải (vàng khi đã mở, xám khi chưa)
 - [x] `TextureRect ChapterBackground` nền riêng cho từng chapter
 
 ### Task 3.5 — Tạo `StageInfoPopup.cs`
-- [x] Tạo file: `features/campaign/StageInfoPopup.cs`
+- [x] Tạo file: `features/campaign/ui/StageInfoPopup.cs`
 - [x] Header: Tên ải, badge phân loại, nút đóng
 - [x] Stats: Lực chiến gợi ý, thể lực tiêu hao
 - [x] Enemy preview: Danh sách tướng địch thu nhỏ
@@ -118,7 +118,7 @@ flowchart TD
 - [x] `EvaluateStarConditions(BattleResult result, StageData stageData)`
 
 ### Task 3.10 — `ChapterSelectPanel.cs`
-- [x] Tạo file: `features/campaign/ChapterSelectPanel.cs`
+- [x] Tạo file: `features/campaign/ui/ChapterSelectPanel.cs`
 - [x] Scroll danh sách chapter, tiến độ sao, điều kiện mở khóa
 - [x] Nút trượt mở / đóng panel
 

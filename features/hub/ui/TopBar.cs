@@ -41,7 +41,7 @@ public partial class TopBar : PanelContainer
     private EventBus.VipLevelChangedEventHandler _onVipChanged;
     private EventBus.LevelUpEventHandler _onLevelUp;
     private EventBus.TitleChangedEventHandler _onTitleChanged;
-    private NetworkManager.ServerConnectedEventHandler _onServerConnected;
+    private NetworkManager.DatabaseConnectionChangedEventHandler _onDatabaseConnectionChanged;
     private NetworkManager.DataSyncedEventHandler _onDataSynced;
 
     public override void _Ready()
@@ -79,7 +79,6 @@ public partial class TopBar : PanelContainer
         // TopBar background texture
         var styleBox = new StyleBoxTexture
         {
-            Texture = GD.Load<Texture2D>("res://assets/ui/hub/topbar_bg.png"),
             ExpandMarginTop = 0,
             ExpandMarginBottom = 0
         };
@@ -117,7 +116,7 @@ public partial class TopBar : PanelContainer
             Size = new Vector2(44, 44),
             ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
             StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
-            Texture = LoadHeroAvatar("lu_bo")
+            Texture = LoadHeroAvatar("default_hero")
         };
         avatarContainer.AddChild(_avatarRect);
 
@@ -151,7 +150,7 @@ public partial class TopBar : PanelContainer
 
         _playerNameLabel = new Label
         {
-            Text = "Chúa Công",
+            Text = "user name",
             Modulate = new Color(1f, 0.95f, 0.8f)
         };
         _playerNameLabel.AddThemeFontSizeOverride("font_size", 14);
@@ -173,106 +172,13 @@ public partial class TopBar : PanelContainer
 
         _levelLabel = new Label
         {
-            Text = "Lv.80",
+            Text = "Lv.1",
             Modulate = new Color(0.4f, 0.9f, 1f)
         };
         _levelLabel.AddThemeFontSizeOverride("font_size", 12);
         row2.AddChild(_levelLabel);
 
-        _titleLabel = new Label
-        {
-            Text = "[Địa Chủ]",
-            Modulate = new Color(1f, 0.85f, 0.2f)
-        };
-        _titleLabel.AddThemeFontSizeOverride("font_size", 12);
-        row2.AddChild(_titleLabel);
-
-        // Spacer to middle
-        var spacer1 = new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        hBox.AddChild(spacer1);
-
-        // --- 2. MIDDLE SECTION: CURRENCY BAR ---
-        var currencyBox = new HBoxContainer();
-        currencyBox.AddThemeConstantOverride("separation", 20);
-        currencyBox.Alignment = BoxContainer.AlignmentMode.Center;
-        hBox.AddChild(currencyBox);
-
-        // Gold Container
-        var goldBox = CreateCurrencyItem("res://assets/ui/hub/currency_icon_gold.png", out _goldLabel);
-        currencyBox.AddChild(goldBox);
-
-        // Diamond Container
-        var diamondBox = CreateCurrencyItem("res://assets/ui/hub/currency_icon_diamond.png", out _diamondLabel);
-        currencyBox.AddChild(diamondBox);
-
-        // Stamina Container (Icon + Progress + Label + Countdown)
-        var staminaBox = new HBoxContainer();
-        staminaBox.AddThemeConstantOverride("separation", 6);
-        staminaBox.Alignment = BoxContainer.AlignmentMode.Center;
-        currencyBox.AddChild(staminaBox);
-
-        var staminaIcon = new TextureRect
-        {
-            CustomMinimumSize = new Vector2(24, 24),
-            Texture = GD.Load<Texture2D>("res://assets/ui/hub/currency_icon_stamina.png"),
-            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
-            StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered
-        };
-        staminaBox.AddChild(staminaIcon);
-
-        var staminaBarContainer = new VBoxContainer();
-        staminaBarContainer.AddThemeConstantOverride("separation", 1);
-        staminaBarContainer.Alignment = BoxContainer.AlignmentMode.Center;
-        staminaBox.AddChild(staminaBarContainer);
-
-        var staminaHeader = new HBoxContainer();
-        staminaHeader.AddThemeConstantOverride("separation", 6);
-        staminaBarContainer.AddChild(staminaHeader);
-
-        _staminaLabel = new Label
-        {
-            Text = "100/145",
-            Modulate = new Color(0.95f, 0.95f, 0.95f)
-        };
-        _staminaLabel.AddThemeFontSizeOverride("font_size", 12);
-        staminaHeader.AddChild(_staminaLabel);
-
-        _staminaTimerLabel = new Label
-        {
-            Text = "24:43",
-            Modulate = new Color(0.7f, 0.7f, 0.75f)
-        };
-        _staminaTimerLabel.AddThemeFontSizeOverride("font_size", 10);
-        staminaHeader.AddChild(_staminaTimerLabel);
-
-        _staminaBar = new ProgressBar
-        {
-            CustomMinimumSize = new Vector2(90, 6),
-            MinValue = 0,
-            MaxValue = 145,
-            Value = 100,
-            ShowPercentage = false
-        };
-        var bgStyle = new StyleBoxFlat
-        {
-            BgColor = new Color(0.12f, 0.08f, 0.15f),
-            CornerRadiusBottomLeft = 3,
-            CornerRadiusBottomRight = 3,
-            CornerRadiusTopLeft = 3,
-            CornerRadiusTopRight = 3
-        };
-        var fillStyle = new StyleBoxFlat
-        {
-            BgColor = new Color(0.85f, 0.25f, 0.28f),
-            CornerRadiusBottomLeft = 3,
-            CornerRadiusBottomRight = 3,
-            CornerRadiusTopLeft = 3,
-            CornerRadiusTopRight = 3
-        };
-        _staminaBar.AddThemeStyleboxOverride("background", bgStyle);
-        _staminaBar.AddThemeStyleboxOverride("fill", fillStyle);
-        staminaBarContainer.AddChild(_staminaBar);
-
+       
         // Spacer to right
         var spacer2 = new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill };
         hBox.AddChild(spacer2);
@@ -283,49 +189,9 @@ public partial class TopBar : PanelContainer
         rightBox.Alignment = BoxContainer.AlignmentMode.End;
         hBox.AddChild(rightBox);
 
-        _serverBadge = new Label
-        {
-            Text = "● Server: Đang kết nối...",
-            Modulate = new Color(0.8f, 0.8f, 0.3f),
-            TooltipText = "Trạng thái máy chủ Authoritative Server"
-        };
-        _serverBadge.AddThemeFontSizeOverride("font_size", 11);
-        rightBox.AddChild(_serverBadge);
-
-        var mailBtn = CreateIconButton("✉", "Hòm Thư");
-        mailBtn.Pressed += () => EmitSignal(SignalName.MailClicked);
-        rightBox.AddChild(mailBtn);
-
         var settingsBtn = CreateIconButton("⚙", "Cài Đặt");
         settingsBtn.Pressed += () => EmitSignal(SignalName.SettingsClicked);
         rightBox.AddChild(settingsBtn);
-    }
-
-    private Control CreateCurrencyItem(string iconPath, out Label labelRef)
-    {
-        var box = new HBoxContainer();
-        box.AddThemeConstantOverride("separation", 6);
-        box.Alignment = BoxContainer.AlignmentMode.Center;
-
-        var icon = new TextureRect
-        {
-            CustomMinimumSize = new Vector2(24, 24),
-            Texture = GD.Load<Texture2D>(iconPath),
-            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
-            StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered
-        };
-        box.AddChild(icon);
-
-        var label = new Label
-        {
-            Text = "0",
-            Modulate = new Color(1f, 0.95f, 0.8f)
-        };
-        label.AddThemeFontSizeOverride("font_size", 13);
-        box.AddChild(label);
-        labelRef = label;
-
-        return box;
     }
 
     private Button CreateIconButton(string text, string tooltip)
@@ -374,11 +240,11 @@ public partial class TopBar : PanelContainer
 
         if (NetworkManager.Instance != null)
         {
-            _onServerConnected = (isConnected) => { if (IsInstanceValid(this) && _serverBadge != null) UpdateServerBadge(isConnected); };
+            _onDatabaseConnectionChanged = (isConnected) => { if (IsInstanceValid(this) && _serverBadge != null) UpdateDatabaseBadge(isConnected); };
             _onDataSynced = () => { if (IsInstanceValid(this)) RefreshFromGameManager(); };
 
-            UpdateServerBadge(NetworkManager.Instance.IsServerOnline);
-            NetworkManager.Instance.ServerConnected += _onServerConnected;
+            UpdateDatabaseBadge(NetworkManager.Instance.IsDatabaseConnected);
+            NetworkManager.Instance.DatabaseConnectionChanged += _onDatabaseConnectionChanged;
             NetworkManager.Instance.DataSynced += _onDataSynced;
         }
     }
@@ -397,22 +263,24 @@ public partial class TopBar : PanelContainer
 
         if (NetworkManager.Instance != null)
         {
-            if (_onServerConnected != null) NetworkManager.Instance.ServerConnected -= _onServerConnected;
+            if (_onDatabaseConnectionChanged != null) NetworkManager.Instance.DatabaseConnectionChanged -= _onDatabaseConnectionChanged;
             if (_onDataSynced != null) NetworkManager.Instance.DataSynced -= _onDataSynced;
         }
     }
 
-    private void UpdateServerBadge(bool isConnected)
+    private void UpdateDatabaseBadge(bool isConnected)
     {
         if (_serverBadge == null) return;
         if (isConnected)
         {
-            _serverBadge.Text = "● Server: Online";
+            _serverBadge.Text = "● DB: Connected";
+            _serverBadge.TooltipText = "Game Server đã kết nối PostgreSQL";
             _serverBadge.Modulate = new Color(0.2f, 0.9f, 0.4f);
         }
         else
         {
-            _serverBadge.Text = "● Server: Offline";
+            _serverBadge.Text = "● DB: Offline";
+            _serverBadge.TooltipText = "Không kết nối được PostgreSQL qua Game Server";
             _serverBadge.Modulate = new Color(0.6f, 0.6f, 0.6f);
         }
     }

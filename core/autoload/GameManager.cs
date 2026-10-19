@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Godot;
 using TamQuoc3D.Data.Database;
 using TamQuoc3D.Data.Resources;
@@ -79,7 +78,7 @@ public partial class GameManager : Node
 
     public override void _Ready()
     {
-        GD.Print("🎮 GameManager khởi động - Project Pixel Tactics (.NET 8)");
+        GD.Print("GameManager khởi động...");
         InitializeDefaultData();
     }
 

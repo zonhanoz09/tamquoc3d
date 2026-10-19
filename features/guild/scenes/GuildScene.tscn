@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3]
 
-[ext_resource type="Script" path="res://features/guild/GuildScene.cs" id="1_guild"]
+[ext_resource type="Script" path="res://features/guild/scenes/GuildScene.cs" id="1_guild"]
 
 [node name="GuildScene" type="Control"]
 layout_mode = 3

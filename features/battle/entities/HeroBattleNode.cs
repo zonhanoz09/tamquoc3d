@@ -227,7 +227,9 @@ public partial class HeroBattleNode : Node2D
         int maxHp = BattleHero.Stats.HpMax;
         HealthBarNode?.UpdateHp(currentHp, maxHp, animate);
 
-        bool isMaxRage = BattleHero.Stats.MoraleCurrent >= GameConstants.MaxMorale;
+        bool hasRageSkill = BattleHero.Data.GetRageSkill() != null;
+        bool isMaxRage = hasRageSkill &&
+                         BattleHero.Stats.MoraleCurrent >= GameConstants.MaxMorale;
         SetSkillReady(isMaxRage);
     }
 

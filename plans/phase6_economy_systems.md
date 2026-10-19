@@ -212,7 +212,7 @@ flowchart TD
 
 ### Task 6.9 — Async Arena
 
-- [ ] Tạo file: `features/arena/AsyncArenaController.cs`
+- [ ] Tạo file: `features/arena/controllers/AsyncArenaController.cs`
 - [ ] **Màn hình Arena**:
   - [ ] Danh sách 10 đối thủ gần rank (tên, rank, lực chiến, đội hình phòng thủ thu nhỏ)
   - [ ] Rank của người chơi + điểm Danh Vọng hiện tại
@@ -232,7 +232,7 @@ flowchart TD
 
 ### Task 6.10 — RTA Arena (Real-Time)
 
-- [ ] Tạo file: `features/arena/RTAController.cs`
+- [ ] Tạo file: `features/arena/controllers/RTAController.cs`
 - [ ] **Matchmaking** (stub/offline trước, online sau):
   - [ ] Nút "Tìm Trận" → simulate tìm đối thủ cùng rank
   - [ ] Countdown 30s, nếu không tìm được → match vs bot
@@ -247,7 +247,7 @@ flowchart TD
 
 ### Task 6.11 — `PickBanScreen.cs`
 
-- [ ] Tạo file: `features/arena/PickBanScreen.cs` (extends `Control`)
+- [ ] Tạo file: `features/arena/scenes/PickBanScreen.cs` (extends `Control`)
 - [ ] Layout:
   - [ ] Phần trên: 5 slot tướng phe Ta + 5 slot tướng phe Địch
   - [ ] Phần giữa: grid 15 tướng để chọn/cấm (dim tướng đã bị cấm/chọn)
@@ -261,7 +261,7 @@ flowchart TD
 
 ### Task 6.12 — `RankingPanel.cs`
 
-- [ ] Tạo file: `features/arena/RankingPanel.cs`
+- [ ] Tạo file: `features/arena/ui/RankingPanel.cs`
 - [ ] Top 100 người chơi server (mock data trước)
 - [ ] Highlight hàng của người chơi hiện tại
 - [ ] Hiển thị: rank, avatar, tên, guild, điểm Danh Vọng, bậc rank

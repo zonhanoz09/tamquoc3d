@@ -1,0 +1,113 @@
+@baseUrl = http://localhost:8000
+@token = {{login.response.body.access_token}}
+
+### Health
+GET {{baseUrl}}/health
+
+### Register (use a unique username for each run)
+# @name register
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "api_test_001",
+  "password": "change-this-password-123",
+  "display_name": "API Test"
+}
+
+### Login
+# @name login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "api_test_001",
+  "password": "change-this-password-123"
+}
+
+### Validate session
+GET {{baseUrl}}/api/auth/session
+Authorization: Bearer {{token}}
+
+### Profile
+GET {{baseUrl}}/api/profile
+Authorization: Bearer {{token}}
+
+### Wallet
+GET {{baseUrl}}/api/wallet
+Authorization: Bearer {{token}}
+
+### Claim stamina
+POST {{baseUrl}}/api/wallet/claim-stamina
+Authorization: Bearer {{token}}
+
+### Owned heroes
+GET {{baseUrl}}/api/heroes
+Authorization: Bearer {{token}}
+
+### Formations
+GET {{baseUrl}}/api/formations
+Authorization: Bearer {{token}}
+
+### Save formation
+POST {{baseUrl}}/api/formations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "formation_type": "PVE_DEFAULT",
+  "grid_layout": {
+    "front": [null, "lu_bo", null],
+    "mid": ["quan_vu", null, "trieu_van"],
+    "back": [null, null, null]
+  }
+}
+
+### Campaign progress
+GET {{baseUrl}}/api/campaign/progress
+Authorization: Bearer {{token}}
+
+### Clear campaign stage
+POST {{baseUrl}}/api/campaign/clear
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "stage_id": "1-1",
+  "stars": 3,
+  "turns": 4,
+  "gold_reward": 500,
+  "diamond_reward": 50,
+  "stamina_cost": 3
+}
+
+### Gacha pull
+POST {{baseUrl}}/api/gacha/pull
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "banner_id": "banner_lu_bo_limited",
+  "pull_count": 1
+}
+
+### Simulate battle
+POST {{baseUrl}}/api/battle/simulate
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "battle_type": "ASYNC_ARENA",
+  "defender_id": "b1ffcd88-8b1c-3df7-aa5c-5aa8ac270b22"
+}
+
+### Mail
+GET {{baseUrl}}/api/mail
+Authorization: Bearer {{token}}
+
+### Database overview
+GET {{baseUrl}}/api/db-overview
+
+### Logout
+POST {{baseUrl}}/api/auth/logout
+Authorization: Bearer {{token}}

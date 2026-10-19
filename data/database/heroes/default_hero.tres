@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="HeroData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://data/resources/HeroStats.cs" id="1_stats"]
+[ext_resource type="Script" path="res://data/resources/HeroData.cs" id="2_hero"]
+
+[sub_resource type="Resource" id="HeroStats_default"]
+script = ExtResource("1_stats")
+HpMax = 1000
+HpCurrent = 1000
+AtkPhys = 100
+AtkMag = 0
+DefPhys = 50
+DefMag = 30
+Speed = 100
+CritRate = 0.05
+CritDmg = 1.5
+DodgeRate = 0.05
+BlockRate = 0.05
+CounterRate = 0.0
+MoraleCurrent = 50
+MoraleMax = 100
+
+[resource]
+script = ExtResource("2_hero")
+HeroId = "default_hero"
+HeroName = "Tân Binh"
+Title = "Tướng Mặc Định"
+Element = 0
+Position = 1
+Rarity = 0
+BaseStats = SubResource("HeroStats_default")
+Skills = []

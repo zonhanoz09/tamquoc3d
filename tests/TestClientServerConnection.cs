@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Godot;
 using TamQuoc3D.Core.Autoload;
 using TamQuoc3D.Core.Network;
+using TamQuoc3D.Data.Database;
 using TamQuoc3D.Data.Resources;
 
 namespace TamQuoc3D.Tests;
@@ -22,67 +23,111 @@ public partial class TestClientServerConnection : Node
         GD.Print("\n=== 🌐 BẮT ĐẦU TEST KẾT NỐI CLIENT GAME VỚI DOCKER GAME SERVER ===");
 
         var net = NetworkManager.Instance;
-        if (net == null)
-        {
-            net = new NetworkManager();
-            AddChild(net);
-        }
+        Assert(net != null, "NetworkManager autoload must exist");
 
-        // 1. Test Healthcheck
-        GD.Print("[1/6] Kiểm tra máy chủ Game Server & PostgreSQL /health...");
+        // 1. Test server/database health and account registration.
+        GD.Print("[1/7] Kiểm tra máy chủ Game Server & PostgreSQL /health...");
         bool isHealthy = await net.CheckHealthAsync();
         Assert(isHealthy, "Máy chủ Game Server phải phản hồi trạng thái healthy!");
+        Assert(net.IsDatabaseConnected, "PostgreSQL phải được xác nhận kết nối qua /health");
         GD.Print("✅ Test 1: Máy chủ Game Server và PostgreSQL đang hoạt động bình thường.");
 
-        // 2. Test Fetch Profile from PostgreSQL
-        GD.Print("[2/6] Tải hồ sơ người chơi từ PostgreSQL (GET /api/profile)...");
+        string testUsername = $"integration_{Guid.NewGuid():N}"[..19];
+        const string testPassword = "IntegrationPass123!";
+        const string testDisplayName = "Integration Tester";
+        GD.Print("[2/7] Tạo tài khoản mới qua API...");
+        var registration = await net.RegisterAsync(testUsername, testPassword, testDisplayName);
+        if (!registration.Success)
+        {
+            Assert(registration.Message.Contains("already registered", StringComparison.OrdinalIgnoreCase),
+                $"Registration failed unexpectedly: {registration.Message}");
+            await net.LogoutAsync();
+            registration = await net.LoginAsync(testUsername, testPassword);
+        }
+        Assert(registration.Success, $"Registration/login failed: {registration.Message}");
+
+        // 3. Test authenticated profile and wallet reads.
+        GD.Print("[3/7] Tải hồ sơ và ví tài khoản đã xác thực từ PostgreSQL...");
         var profile = await net.FetchProfileAsync();
         Assert(profile != null, "Dữ liệu hồ sơ người chơi không được null");
-        Assert(profile.DisplayName == "Long Tướng Quân", "Tên hiển thị phải khớp dữ liệu seed");
-        Assert(profile.VipLevel == 11, "VIP level phải là 11");
-        GD.Print($"✅ Test 2: Hồ sơ người chơi từ DB -> Tên: {profile.DisplayName}, Level: {profile.Level}, VIP: {profile.VipLevel}.");
+        Assert(profile.DisplayName == testDisplayName, "Tên hiển thị phải khớp tài khoản vừa đăng ký");
+        Assert(profile.Level == 1, "Tài khoản mới phải bắt đầu ở cấp 1");
+        Assert(profile.AvatarId == "default_hero", "Tướng mặc định phải được dùng làm avatar ban đầu");
+        GD.Print($"✅ Test 3: Đọc profile của {profile.DisplayName} qua session token.");
 
-        // 3. Test Fetch Wallet from PostgreSQL
-        GD.Print("[3/6] Tải thông tin ví tiền tệ từ PostgreSQL (GET /api/wallet)...");
         var wallet = await net.FetchWalletAsync();
         Assert(wallet != null, "Dữ liệu ví không được null");
-        Assert(wallet.Silver >= 2000000, "Bạc phải >= 2,000,000");
-        Assert(wallet.Gold > 0, "KNB phải > 0");
-        GD.Print($"✅ Test 3: Ví tiền tệ từ DB -> Bạc: {wallet.Silver:N0}, KNB: {wallet.Gold:N0}, Thể Lực: {wallet.Stamina}/{wallet.MaxStamina}.");
+        Assert(wallet.Silver == 5000 && wallet.Gold == 1000, "Tài khoản mới phải nhận đúng ví khởi đầu");
+        GD.Print($"✅ Test ví: Bạc {wallet.Silver:N0}, KNB {wallet.Gold:N0}, thể lực {wallet.Stamina}/{wallet.MaxStamina}.");
+        var heroes = await net.FetchHeroesAsync();
+        Assert(heroes != null && heroes.Count == 1, "Tài khoản mới chỉ được sở hữu một tướng khởi đầu");
+        Assert(heroes[0].HeroId == "default_hero" && heroes[0].IsCommander,
+            "Tướng mặc định phải là tướng duy nhất và được đánh dấu chủ tướng");
+        Assert(heroes[0].HeroName == testDisplayName,
+            "Tên tướng mặc định phải khớp tên hiển thị của tài khoản");
+        Assert(heroes[0].Skills != null && heroes[0].Skills.Count == 0,
+            "Tướng mặc định phải khởi tạo không có skill");
+        var defaultHero = HeroDatabase.Instance?.GetHero("default_hero");
+        Assert(defaultHero != null && defaultHero.Skills.Count == 0 &&
+               defaultHero.BaseStats.HpMax == 1000 && defaultHero.BaseStats.AtkPhys == 100,
+            "Resource tướng mặc định phải có chỉ số cơ bản và không khai báo skill");
+        Assert(GD.Load<Texture2D>("res://assets/heroes/default_hero/portrait.png") != null &&
+               GD.Load<Texture2D>("res://assets/heroes/default_hero/icon.png") != null &&
+               GD.Load<SpriteFrames>("res://assets/heroes/default_hero/sprite_frames.tres") != null,
+            "Asset portrait, icon và animation của tướng mặc định phải được nạp");
 
-        // 4. Test Fetch & Save Formation
-        GD.Print("[4/6] Kiểm tra đọc & ghi trận hình 3x3 lên PostgreSQL...");
+        // 4. Verify authenticated database data is applied to the game state.
+        GD.Print("[4/7] Đồng bộ dữ liệu tài khoản đã đăng nhập vào GameManager...");
+        bool syncOk = await net.SyncPlayerDataAsync();
+        Assert(syncOk, "Đồng bộ profile, wallet và formations phải thành công");
+        Assert(GameManager.Instance.Profile.PlayerId == profile.Id, "Player ID trong game phải lấy từ PostgreSQL");
+        Assert(GameManager.Instance.Gold == wallet.Silver, "Vàng hiển thị phải ánh xạ từ cột silver");
+        Assert(GameManager.Instance.Gems == wallet.Gold, "KNB hiển thị phải ánh xạ từ cột gold");
+        Assert(GameManager.Instance.Stamina == wallet.Stamina, "Thể lực trong game phải lấy từ PostgreSQL");
+        Assert(GameManager.Instance.OwnedHeroes.Count == heroes.Count, "Danh sách tướng trong game phải khớp PostgreSQL");
+        Assert(GameManager.Instance.Profile.OwnedHeroIds.Count == 1 &&
+               GameManager.Instance.Profile.OwnedHeroIds[0] == "default_hero",
+            "Hồ sơ client phải đồng bộ đúng tướng mặc định duy nhất");
+        Assert(GameManager.Instance.OwnedHeroes.Count == 1 &&
+               GameManager.Instance.OwnedHeroes[0].HeroId == "default_hero" &&
+               GameManager.Instance.OwnedHeroes[0].HeroName == testDisplayName &&
+               GameManager.Instance.OwnedHeroes[0].Skills.Count == 0,
+            "GameManager phải nạp tướng không skill, mang tên hiển thị tài khoản");
+        GD.Print("✅ Test 4: GameManager sử dụng đúng dữ liệu của tài khoản mới.");
+
+        // 5. Test authenticated formation persistence.
+        GD.Print("[5/7] Kiểm tra đọc & ghi trận hình tài khoản...");
         var formations = await net.FetchFormationsAsync();
         Assert(formations != null && formations.Count > 0, "Danh sách trận hình từ DB phải có dữ liệu");
 
         var testEntries = new List<FormationEntry>
         {
-            new("lu_bo", 0, 1),
-            new("quan_vu", 1, 0),
-            new("trieu_van", 1, 2),
-            new("gia_cat_luong", 2, 0),
-            new("chu_du", 2, 2)
+            new("default_hero", 1, 1)
         };
         bool saveOk = await net.SaveFormationFromEntriesAsync("PVE_DEFAULT", testEntries);
         Assert(saveOk, "Gửi và lưu trận hình lên PostgreSQL phải thành công!");
-        GD.Print("✅ Test 4: Đồng bộ trận hình 3x3 hai chiều Client <-> PostgreSQL thành công.");
+        GD.Print("✅ Test 5: Đồng bộ trận hình 3x3 hai chiều Client <-> PostgreSQL thành công.");
 
-        // 5. Test Gacha Pull through Server Engine
-        GD.Print("[5/6] Thử nghiệm tính năng Triệu Hồi Gacha qua Server (POST /api/gacha/pull)...");
-        var gachaRes = await net.PullGachaAsync("banner_lu_bo_limited", 2);
-        Assert(gachaRes != null, "Kết quả triệu hồi không được null");
-        Assert(gachaRes.Results != null && gachaRes.Results.Count == 2, "Phải nhận đủ 2 kết quả tướng");
-        GD.Print($"✅ Test 5: Triệu hồi thành công {gachaRes.Results.Count} tướng: {gachaRes.Results[0].HeroId} [{gachaRes.Results[0].Rarity}], {gachaRes.Results[1].HeroId} [{gachaRes.Results[1].Rarity}]. Pity UR: {gachaRes.PityUr}/80.");
+        // 6. Logout invalidates the token; 7. logging in again issues a new token.
+        GD.Print("[6/7] Kiểm tra logout và thu hồi session...");
+        await net.LogoutAsync();
+        Assert(!net.IsAuthenticated, "Client phải xóa session sau logout");
+        GD.Print("✅ Test 6: Logout đã xóa session phía client.");
 
-        // 6. Test Authoritative Combat Simulation
-        GD.Print("[6/6] Thử nghiệm máy chủ tính toán trận đấu (POST /api/battle/simulate)...");
-        var battleRes = await net.SimulateBattleAsync("ASYNC_ARENA");
-        Assert(battleRes != null, "Kết quả chiến đấu không được null");
-        Assert(!string.IsNullOrEmpty(battleRes.ReplayId), "Phải có mã Replay ID được lưu trong DB");
-        Assert(battleRes.Seed > 0, "Phải có Seed RNG ngẫu nhiên của máy chủ");
-        GD.Print($"✅ Test 6: Máy chủ mô phỏng trận đấu thành công (Replay ID: {battleRes.ReplayId}, Seed: {battleRes.Seed}, Số hiệp: {battleRes.Rounds}, Thắng: {battleRes.AttackerWin}).");
+        GD.Print("[7/7] Đăng nhập lại bằng tài khoản đã đăng ký...");
+        var invalidLogin = await net.LoginAsync(testUsername, "IncorrectPass123!");
+        Assert(!invalidLogin.Success, "Đăng nhập với mật khẩu sai phải bị từ chối");
+        var login = await net.LoginAsync(testUsername, testPassword);
+        Assert(login.Success, $"Login failed: {login.Message}");
+        Assert(net.IsAuthenticated, "Đăng nhập phải thiết lập session token");
+        var restored = await net.TryRestoreSessionAsync();
+        Assert(restored.Success, "Saved bearer token phải được kiểm tra và phục hồi thành công");
+        var loggedInProfile = await net.FetchProfileAsync();
+        Assert(loggedInProfile?.DisplayName == testDisplayName, "Session đăng nhập phải trỏ đúng tài khoản");
+        await net.LogoutAsync();
+        GD.Print("✅ Test 7: Login cấp session hợp lệ và chỉ đọc đúng tài khoản.");
 
-        GD.Print("\n🎉 TOÀN BỘ BỘ KIỂM THỬ KẾT NỐI CLIENT - SERVER ĐÃ VƯỢT QUA 100% THÀNH CÔNG!\n");
+        GD.Print("\n🎉 TOÀN BỘ 7 KIỂM THỬ KẾT NỐI CLIENT - SERVER ĐÃ VƯỢT QUA!\n");
         GetTree().Quit(0);
     }
 

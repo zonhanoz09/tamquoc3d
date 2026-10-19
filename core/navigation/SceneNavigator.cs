@@ -12,13 +12,14 @@ namespace TamQuoc3D.Core.Navigation;
 /// </summary>
 public static class SceneNavigator
 {
-    public const string HubScenePath = "res://features/hub/HubScene.tscn";
-    public const string DeckBuilderScenePath = "res://features/deck_builder/DeckBuilderScene.tscn";
-    public const string BattleScenePath = "res://features/battle/BattleScene.tscn";
-    public const string CampaignScenePath = "res://features/campaign/CampaignScene.tscn";
-    public const string ArenaScenePath = "res://features/arena/ArenaScene.tscn";
-    public const string HeroCollectionScenePath = "res://features/hero_collection/HeroCollectionScene.tscn";
-    public const string GuildScenePath = "res://features/guild/GuildScene.tscn";
+    public const string LoginScenePath = "res://features/auth/scenes/LoginScene.tscn";
+    public const string HubScenePath = "res://features/hub/scenes/HubScene.tscn";
+    public const string DeckBuilderScenePath = "res://features/deck_builder/scenes/DeckBuilderScene.tscn";
+    public const string BattleScenePath = "res://features/battle/scenes/BattleScene.tscn";
+    public const string CampaignScenePath = "res://features/campaign/scenes/CampaignScene.tscn";
+    public const string ArenaScenePath = "res://features/arena/scenes/ArenaScene.tscn";
+    public const string HeroCollectionScenePath = "res://features/hero_collection/scenes/HeroCollectionScene.tscn";
+    public const string GuildScenePath = "res://features/guild/scenes/GuildScene.tscn";
     public const string TowerScenePath = "res://features/tower/TowerScene.tscn";
     public const string LabyrinthScenePath = "res://features/labyrinth/LabyrinthScene.tscn";
     public const string ShopScenePath = "res://features/shop/ShopScene.tscn";

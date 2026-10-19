@@ -7,25 +7,25 @@ triggers:
   - redis
   - docker
   - sql
-  - fastapi
+  - asp.net
   - backend
 ---
 
 # PostgreSQL 16 & Redis 7 Backend Skill
 
-This skill governs database design, schema migrations, Docker operations, and FastAPI server implementations for **Tam Quoc 3D**.
+This skill governs database design, schema migrations, Docker operations, and ASP.NET Core API implementations for **Tam Quoc 3D**.
 
 ## 1. System Topology & Infrastructure
 The backend is packaged and containerized with Docker Compose:
 - **`tamquoc-postgres`** (PostgreSQL 16-alpine on port `5432`):
-  - Database: `tamquoc_db`, User: `tamquoc`, Pass: `tamquoc_secret_2026`.
+  - Database: `tamquoc_db`; credentials are supplied through Docker Compose environment variables.
 - **`tamquoc-redis`** (Redis 7-alpine on port `6379`):
-  - In-memory caching, rate limiting, and session management.
-- **`tamquoc-game-server`** (FastAPI / Python 3.11 on port `8000`):
-  - REST API, deterministic combat validator, Web Game Portal.
+  - In-memory caching and availability checks.
+- **`tamquoc-game-server`** (ASP.NET Core 8 / C# on port `8000`):
+  - REST API, player services, authentication and deterministic battle simulation.
 
 ## 2. PostgreSQL 7 Core Game Modules Schema Reference
-All tables reside in [`data/sql/01_schema.sql`](file:///home/annhan/Documents/src/tamquoc3d/data/sql/01_schema.sql):
+Core player/system tables reside in [`data/sql/01_schema.sql`](file:///home/annhan/Documents/src/tamquoc3d/data/sql/01_schema.sql); shared hero, skill, and talent definitions are created and seeded by `data/sql/00_hero_catalog.sql`:
 
 1. **Module 1: Auth & Wallets**:
    - `users`: Core UUID identity, status (`ACTIVE`, `BANNED`, `SUSPENDED`).
@@ -33,7 +33,9 @@ All tables reside in [`data/sql/01_schema.sql`](file:///home/annhan/Documents/sr
    - `user_profiles`: `display_name`, `avatar_id`, `level`, `exp`, `vip_level`, `combat_power`.
    - `user_wallets`: `silver`, `gold`, `paid_gold`, `stamina`, `max_stamina`, `arena_tokens`.
 2. **Module 2: Heroes & Formations**:
-   - `user_heroes`: Owned heroes, `star` (1-6), `level`, `skill_levels` (JSONB), `unlocked_talents` (JSONB).
+   - `user_heroes`: Owned heroes, `star` (1-6), `level`, and `is_commander`.
+   - `hero_definitions`, `hero_skills`, `hero_talents`: Shared hero catalog and combat definitions.
+   - `user_hero_skills`, `user_hero_talents`: Per-owned-hero skill levels and unlocked talents.
    - `user_formations`: 3x3 grid layout (Front, Mid, Back) for `PVE_DEFAULT`, `ARENA_DEFENSE`, `GUILD_BOSS`.
 3. **Module 3: Inventories & Equipments**:
    - `user_inventories`: Stackable items (`item_id`, `quantity`).

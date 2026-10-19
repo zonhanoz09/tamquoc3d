@@ -12,7 +12,7 @@ triggers:
 
 # Network Sync & Client-Server Protocol Skill
 
-This skill defines the networking patterns, API contracts, and client-server synchronization protocols between Godot 4.3 C# and the FastAPI game backend.
+This skill defines the networking patterns, API contracts, and client-server synchronization protocols between Godot 4.3 C# and the ASP.NET Core 8 game backend.
 
 ## 1. NetworkManager Architecture
 - **Location**: [`core/network/NetworkManager.cs`](file:///home/annhan/Documents/src/tamquoc3d/core/network/NetworkManager.cs)
@@ -24,7 +24,7 @@ This skill defines the networking patterns, API contracts, and client-server syn
 
 ### Health & Status:
 - `GET /health`:
-  - Response: `{"status": "ok", "postgres": "connected", "redis": "connected", "timestamp": "..."}`
+  - Response: `{"status": "healthy", "database_connected": true, "redis_connected": true, "game_version": "1.0.0", "timestamp": 0}`
 
 ### Player Profile:
 - `GET /api/profile`:

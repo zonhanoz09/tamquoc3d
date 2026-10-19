@@ -30,7 +30,7 @@ In Godot 4.3 with C# Mono:
 - [`tests/TestHubScreen.tscn`](file:///home/annhan/Documents/src/tamquoc3d/tests/TestHubScreen.tscn): Verifies TopBar, BottomNavBar, ShortcutBar, EventBus notifications.
 - [`tests/TestFormationSelector.tscn`](file:///home/annhan/Documents/src/tamquoc3d/tests/TestFormationSelector.tscn): Verifies 3x3 formation grid placement, hero assignments, and slot validation.
 - [`tests/TestFormationToBattle.tscn`](file:///home/annhan/Documents/src/tamquoc3d/tests/TestFormationToBattle.tscn): Verifies transition from Deck Builder to Battle Arena with hero stats.
-- [`tests/TestClientServerConnection.tscn`](file:///home/annhan/Documents/src/tamquoc3d/tests/TestClientServerConnection.tscn): Verifies full 6-step integration with Docker FastAPI + PostgreSQL.
+- [`tests/TestClientServerConnection.tscn`](file:///home/annhan/Documents/src/tamquoc3d/tests/TestClientServerConnection.tscn): Verifies full integration with the ASP.NET Core API + PostgreSQL.
 
 ## 3. Creating a New Headless Test Scene
 1. Create C# script inheriting from `Node2D`:

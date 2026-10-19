@@ -9,4 +9,7 @@
     <DebugType>portable</DebugType>
     <Optimize Condition="'$(Configuration)' == 'Debug'">false</Optimize>
   </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="server/**/*.cs" />
+  </ItemGroup>
 </Project>

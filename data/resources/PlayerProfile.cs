@@ -18,6 +18,7 @@ public partial class PlayerProfile : Resource
     [Export] public string PlayerName { get; set; } = "Chúa Công";
     [Export] public int Level { get; set; } = 80;
     [Export] public int VipLevel { get; set; } = 11;
+    [Export] public long CombatPower { get; set; }
     [Export] public string CurrentTitle { get; set; } = "[Địa Chủ]";
     [Export] public long Gold { get; set; } = 2145370; // 214 vạn
     [Export] public int Diamond { get; set; } = 15000;   // 150 vạn / 15k knb
@@ -26,7 +27,7 @@ public partial class PlayerProfile : Resource
     [Export] public long StaminaRefillTimeUnix { get; set; } = 0;
     [Export] public int GuildId { get; set; } = 101;
     [Export] public string GuildName { get; set; } = "Long Hổ Môn";
-    [Export] public string AvatarHeroId { get; set; } = "lu_bo";
+    [Export] public string AvatarHeroId { get; set; } = "default_hero";
     [Export] public int ArenaRank { get; set; } = 8;
     [Export] public int TowerMaxFloor { get; set; } = 68;
     [Export] public Godot.Collections.Array<string> OwnedHeroIds { get; set; } = [];
@@ -55,10 +56,10 @@ public partial class PlayerProfile : Resource
             StaminaRefillTime = DateTime.Now.AddMinutes(24).AddSeconds(43),
             GuildId = 101,
             GuildName = "Long Hổ Môn",
-            AvatarHeroId = "lu_bo",
+            AvatarHeroId = "default_hero",
             ArenaRank = 8,
             TowerMaxFloor = 68,
-            OwnedHeroIds = ["lu_bo", "quan_vu", "trieu_van", "gia_cat_luong", "chu_du", "dieu_thuyen"]
+            OwnedHeroIds = ["default_hero"]
         };
         return profile;
     }
@@ -74,6 +75,7 @@ public partial class PlayerProfile : Resource
                 PlayerName = PlayerName,
                 Level = Level,
                 VipLevel = VipLevel,
+                CombatPower = CombatPower,
                 CurrentTitle = CurrentTitle,
                 Gold = Gold,
                 Diamond = Diamond,
@@ -124,6 +126,7 @@ public partial class PlayerProfile : Resource
                 PlayerName = dto.PlayerName,
                 Level = dto.Level,
                 VipLevel = dto.VipLevel,
+                CombatPower = dto.CombatPower,
                 CurrentTitle = dto.CurrentTitle,
                 Gold = dto.Gold,
                 Diamond = dto.Diamond,
@@ -161,6 +164,7 @@ public partial class PlayerProfile : Resource
         public string PlayerName { get; set; }
         public int Level { get; set; }
         public int VipLevel { get; set; }
+        public long CombatPower { get; set; }
         public string CurrentTitle { get; set; }
         public long Gold { get; set; }
         public int Diamond { get; set; }

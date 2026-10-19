@@ -5,7 +5,7 @@
 
 -- 1. Tài khoản mẫu
 INSERT INTO users (id, status, created_at, updated_at)
-VALUES 
+VALUES
     ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'ACTIVE', NOW(), NOW()),
     ('b1ffcd88-8b1c-3df7-aa5c-5aa8ac270b22', 'ACTIVE', NOW(), NOW())
 ON CONFLICT (id) DO NOTHING;
@@ -33,17 +33,55 @@ VALUES
 ON CONFLICT (user_id) DO NOTHING;
 
 -- 2.1 Võ tướng sở hữu
-INSERT INTO user_heroes (user_id, hero_id, star, level, exp, skill_levels, unlocked_talents)
-VALUES 
-    ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'lu_bo', 6, 80, 500000, '{"normal": 15, "skill": 15, "passive": 12}'::jsonb, '["vo_song", "no_hoa"]'::jsonb),
-    ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'quan_vu', 5, 80, 480000, '{"normal": 14, "skill": 14, "passive": 11}'::jsonb, '["nghia_khi", "yem_nguyet"]'::jsonb),
-    ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'trieu_van', 5, 78, 410000, '{"normal": 13, "skill": 13, "passive": 10}'::jsonb, '["long_dam"]'::jsonb),
-    ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'gia_cat_luong', 5, 80, 460000, '{"normal": 15, "skill": 15, "passive": 14}'::jsonb, '["dong_phong", "bat_tran"]'::jsonb),
-    ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'chu_du', 4, 75, 320000, '{"normal": 10, "skill": 10, "passive": 9}'::jsonb, '["hoa_thao"]'::jsonb),
-    ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'dieu_thuyen', 4, 75, 310000, '{"normal": 10, "skill": 10, "passive": 8}'::jsonb, '["be_nguyet"]'::jsonb),
-    ('b1ffcd88-8b1c-3df7-aa5c-5aa8ac270b22', 'dien_vi', 5, 78, 420000, '{"normal": 13, "skill": 13, "passive": 10}'::jsonb, '["hung_dung"]'::jsonb),
-    ('b1ffcd88-8b1c-3df7-aa5c-5aa8ac270b22', 'tao_nhan', 5, 79, 440000, '{"normal": 14, "skill": 14, "passive": 12}'::jsonb, '["thiet_bich"]'::jsonb)
+INSERT INTO user_heroes (user_id, hero_id, star, level, exp, is_commander)
+VALUES
+    ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'lu_bo', 6, 80, 500000, true),
+    ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'quan_vu', 5, 80, 480000, false),
+    ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'trieu_van', 5, 78, 410000, false),
+    ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'gia_cat_luong', 5, 80, 460000, false),
+    ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'chu_du', 4, 75, 320000, false),
+    ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'dieu_thuyen', 4, 75, 310000, false),
+    ('b1ffcd88-8b1c-3df7-aa5c-5aa8ac270b22', 'dien_vi', 5, 78, 420000, false),
+    ('b1ffcd88-8b1c-3df7-aa5c-5aa8ac270b22', 'tao_nhan', 5, 79, 440000, true)
 ON CONFLICT (user_id, hero_id) DO NOTHING;
+
+INSERT INTO user_hero_skills (user_hero_id, hero_id, skill_id, level)
+SELECT uh.id, uh.hero_id, hs.skill_id,
+       CASE hs.skill_slot
+           WHEN 'NORMAL' THEN seed.normal_level
+           ELSE seed.rage_level
+       END
+FROM (VALUES
+    ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'::uuid, 'lu_bo', 15, 15),
+    ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'::uuid, 'quan_vu', 14, 14),
+    ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'::uuid, 'trieu_van', 13, 13),
+    ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'::uuid, 'gia_cat_luong', 15, 15),
+    ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'::uuid, 'chu_du', 10, 10),
+    ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'::uuid, 'dieu_thuyen', 10, 10),
+    ('b1ffcd88-8b1c-3df7-aa5c-5aa8ac270b22'::uuid, 'dien_vi', 13, 13),
+    ('b1ffcd88-8b1c-3df7-aa5c-5aa8ac270b22'::uuid, 'tao_nhan', 14, 14)
+) AS seed(user_id, hero_id, normal_level, rage_level)
+JOIN user_heroes uh ON uh.user_id = seed.user_id AND uh.hero_id = seed.hero_id
+JOIN hero_skills hs ON hs.hero_id = uh.hero_id
+ON CONFLICT (user_hero_id, skill_id) DO NOTHING;
+
+INSERT INTO user_hero_talents (user_hero_id, hero_id, talent_id)
+SELECT uh.id, uh.hero_id, talent.talent_id
+FROM (VALUES
+    ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'::uuid, 'lu_bo', 'vo_song'),
+    ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'::uuid, 'lu_bo', 'no_hoa'),
+    ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'::uuid, 'quan_vu', 'nghia_khi'),
+    ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'::uuid, 'quan_vu', 'yem_nguyet'),
+    ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'::uuid, 'trieu_van', 'long_dam'),
+    ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'::uuid, 'gia_cat_luong', 'dong_phong'),
+    ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'::uuid, 'gia_cat_luong', 'bat_tran'),
+    ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'::uuid, 'chu_du', 'hoa_thao'),
+    ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'::uuid, 'dieu_thuyen', 'be_nguyet'),
+    ('b1ffcd88-8b1c-3df7-aa5c-5aa8ac270b22'::uuid, 'dien_vi', 'hung_dung'),
+    ('b1ffcd88-8b1c-3df7-aa5c-5aa8ac270b22'::uuid, 'tao_nhan', 'thiet_bich')
+) AS talent(user_id, hero_id, talent_id)
+JOIN user_heroes uh ON uh.user_id = talent.user_id AND uh.hero_id = talent.hero_id
+ON CONFLICT (user_hero_id, talent_id) DO NOTHING;
 
 -- 2.2 Đội hình 3x3
 INSERT INTO user_formations (user_id, formation_type, grid_layout, is_active)

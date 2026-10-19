@@ -220,7 +220,14 @@ public partial class BattleManager : Node
         SkillData skill = isRage ? hero.Data.GetRageSkill() : hero.Data.GetNormalAttack();
         if (skill == null)
         {
-            skill = hero.Data.GetNormalAttack();
+            skill = new SkillData
+            {
+                SkillId = "basic_attack",
+                SkillName = "Tấn công cơ bản",
+                Type = SkillData.SkillType.Melee,
+                DamageMultiplier = 1.0f,
+                TargetCount = 1
+            };
             isRage = false;
         }
 

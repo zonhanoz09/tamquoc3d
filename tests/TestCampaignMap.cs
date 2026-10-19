@@ -189,6 +189,32 @@ public partial class TestCampaignMap : Node2D
             return true; // Still pass if offline
         }
 
+        const string testUsername = "campaign_tester";
+        const string testPassword = "CampaignPass123!";
+        if (NetworkManager.Instance.IsAuthenticated)
+        {
+            await NetworkManager.Instance.LogoutAsync();
+        }
+
+        var login = await NetworkManager.Instance.LoginAsync(testUsername, testPassword);
+        if (!login.Success && login.Message.Contains("incorrect", StringComparison.OrdinalIgnoreCase))
+        {
+            var registration = await NetworkManager.Instance.RegisterAsync(
+                testUsername,
+                testPassword,
+                "Campaign Tester");
+            if (!registration.Success)
+            {
+                GD.PrintErr($"  ❌ Không thể tạo test account: {registration.Message}");
+                return false;
+            }
+        }
+        else if (!login.Success)
+        {
+            GD.PrintErr($"  ❌ Không thể đăng nhập test account: {login.Message}");
+            return false;
+        }
+
         var progress = await NetworkManager.Instance.FetchCampaignProgressAsync();
         if (progress == null)
         {
@@ -196,7 +222,11 @@ public partial class TestCampaignMap : Node2D
             return false;
         }
 
-        GD.Print($"  ✅ Đã tải thành công {progress.Count} bản ghi tiến trình vượt ải từ PostgreSQL (Stage đầu: {progress[0].StageId}, Stars: {progress[0].Stars}⭐).");
+        string progressSummary = progress.Count > 0
+            ? $"Stage đầu: {progress[0].StageId}, Stars: {progress[0].Stars}⭐"
+            : "chưa có ải hoàn thành";
+        GD.Print($"  ✅ Đã tải thành công {progress.Count} bản ghi tiến trình vượt ải từ PostgreSQL ({progressSummary}).");
+        await NetworkManager.Instance.LogoutAsync();
         return true;
     }
 }

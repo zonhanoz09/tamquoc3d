@@ -60,7 +60,7 @@ flowchart TD
 
 ### Task 5.1 — Tạo `HeroCollectionScene.tscn`
 
-- [ ] Tạo file: `features/hero_collection/HeroCollectionScene.tscn`
+- [ ] Tạo file: `features/hero_collection/scenes/HeroCollectionScene.tscn`
 - [ ] Root: `Control` full screen
 - [ ] Layout: 2 panel — trái `HeroGrid` (60% width), phải `HeroDetailPanel` (40% width)
 - [ ] `HeroFilter` — thanh lọc phía trên `HeroGrid`
@@ -93,7 +93,7 @@ flowchart TD
 
 ### Task 5.3 — Tạo `HeroGrid.cs`
 
-- [ ] Tạo file: `features/hero_collection/HeroGrid.cs` (extends `GridContainer`)
+- [ ] Tạo file: `features/hero_collection/ui/HeroGrid.cs` (extends `GridContainer`)
 - [ ] `Columns = 5` (5 card mỗi hàng)
 - [ ] `void PopulateGrid(List<HeroData> heroes)`: Spawn card
 - [ ] `void FilterGrid(List<HeroData> filteredHeroes)`: Ẩn/hiện card theo filter
@@ -104,7 +104,7 @@ flowchart TD
 
 ### Task 5.5 — Tạo `HeroDetailPanel.cs`
 
-- [ ] Tạo file: `features/hero_collection/HeroDetailPanel.cs` (extends `PanelContainer`)
+- [ ] Tạo file: `features/hero_collection/ui/HeroDetailPanel.cs` (extends `PanelContainer`)
 - [ ] Sub-nodes **Header**:
   - [ ] `AnimatedSprite2D HeroSprite` — sprite idle của tướng (24 frame)
   - [ ] `TextureRect Portrait` — portrait lớn (128x128)
@@ -144,7 +144,7 @@ flowchart TD
 
 ### Task 5.6 — Tạo `HeroStarUpPanel.cs`
 
-- [ ] Tạo file: `features/hero_collection/HeroStarUpPanel.cs` (extends `PanelContainer`)
+- [ ] Tạo file: `features/hero_collection/ui/HeroStarUpPanel.cs` (extends `PanelContainer`)
 - [ ] Popup overlay khi click Nâng Sao
 - [ ] Hiển thị:
   - [ ] Sao hiện tại → Sao tiếp theo (animation)
@@ -158,7 +158,7 @@ flowchart TD
 
 ### Task 5.7 — Tạo `HeroLevelUpPanel.cs`
 
-- [ ] Tạo file: `features/hero_collection/HeroLevelUpPanel.cs` (extends `PanelContainer`)
+- [ ] Tạo file: `features/hero_collection/ui/HeroLevelUpPanel.cs` (extends `PanelContainer`)
 - [ ] Slider hoặc input số: chọn số cấp muốn tăng (1 → max có thể)
 - [ ] Hiển thị:
   - [ ] Level hiện tại → Level sau
@@ -171,7 +171,7 @@ flowchart TD
 
 ### Task 5.8 — Tạo `GemSocketPanel.cs`
 
-- [ ] Tạo file: `features/hero_collection/GemSocketPanel.cs` (extends `PanelContainer`)
+- [ ] Tạo file: `features/hero_collection/ui/GemSocketPanel.cs` (extends `PanelContainer`)
 - [ ] 6 ô socket ngọc (Bảo thạch) trên hình tướng
 - [ ] Mỗi socket: loại ngọc (Tấn công / Phòng thủ / Tốc độ / Bạo kích / Né tránh / HP)
 - [ ] Click ô → popup chọn ngọc từ túi đồ

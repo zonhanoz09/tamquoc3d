@@ -67,7 +67,7 @@ flowchart TD
 
 ### Task 2.1 — Tạo `HubScene.tscn`
 
-- [x] Tạo file: `features/hub/HubScene.tscn` & `HubController.cs`
+- [x] Tạo file: `features/hub/scenes/HubScene.tscn` & `features/hub/scenes/HubController.cs`
 - [x] Root node: `Control` (full screen)
 - [x] Thêm layer nền: `HubBackground` (z-index = 0)
 - [x] Thêm `TopBar` (Anchor: Top, height 60px, z-index = 10)
@@ -174,7 +174,7 @@ flowchart TD
 
 ### Task 2.6 — Tạo `HubBackground.cs`
 
-- [x] Tạo file: `features/hub/HubBackground.cs` (extends `Node2D`)
+- [x] Tạo file: `features/hub/ui/HubBackground.cs` (extends `Node2D`)
 - [x] `Sprite2D BackgroundSprite` — nền cảnh hoàng cung / đại bản doanh (`hub_courtyard_bg.png`)
 - [x] `CpuParticles2D AmbientEffects` — hiệu ứng ambient (tàn lửa, lá bay)
 - [x] `Node2D PlayerCharacter` — nhân vật player đứng ở hub (idle animation AnimatedSprite2D)
@@ -202,7 +202,7 @@ flowchart TD
 
 ### Task 2.8 — Tạo `EventNotification.cs`
 
-- [x] Tạo file: `features/hub/EventNotification.cs` (extends `CanvasLayer`)
+- [x] Tạo file: `features/hub/ui/EventNotification.cs` (extends `CanvasLayer`)
 - [x] Hiển thị popup sự kiện đang diễn ra (banner hình ảnh + nút Tham gia)
 - [x] `ShowEventBanner(EventData eventData)`: Slide-in từ phải
 - [x] `DismissEventBanner()`: Slide-out hoặc close button

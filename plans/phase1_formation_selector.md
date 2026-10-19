@@ -55,7 +55,7 @@ flowchart TD
 
 ### Task 1.1 — Tạo `DeckBuilderScene.tscn`
 
-- [x] Tạo file scene: `features/deck_builder/DeckBuilderScene.tscn`
+- [x] Tạo file scene: `features/deck_builder/scenes/DeckBuilderScene.tscn`
 - [x] Thêm root node `Control` (CanvasLayer)
 - [x] Layout 2 cột: trái = `HeroListPanel`, phải = `FormationPanel`
 - [x] Thêm node `HBoxContainer` chia đôi màn hình (tỉ lệ 40%/60%)
@@ -102,7 +102,7 @@ flowchart TD
 
 ### Task 1.3 — Tạo `HeroCard.cs`
 
-- [x] Tạo file: `features/deck_builder/HeroCard.cs` (extends `Control`)
+- [x] Tạo file: `features/deck_builder/ui/HeroCard.cs` (extends `Control`)
 - [x] Properties: `string HeroId`, `HeroData Data`, `bool IsSelected`, `bool IsInFormation`
 - [x] Sub-nodes:
   - [x] `TextureRect Portrait` — hiện `portrait.png` của tướng
@@ -122,7 +122,7 @@ flowchart TD
 
 ### Task 1.4 — Tạo `FormationGrid.cs`
 
-- [x] Tạo file: `features/deck_builder/FormationGrid.cs` (extends `Control`)
+- [x] Tạo file: `features/deck_builder/ui/FormationGrid.cs` (extends `Control`)
 - [x] Khởi tạo 9 `FormationSlot` theo layout 3x3:
   ```
   Row 0: [❌ trống] [✅ Tiền quân] [❌ trống]
@@ -141,7 +141,7 @@ flowchart TD
 
 ### Task 1.5 — Tạo `FormationSlot.cs`
 
-- [x] Tạo file: `features/deck_builder/FormationSlot.cs` (extends `Control`)
+- [x] Tạo file: `features/deck_builder/ui/FormationSlot.cs` (extends `Control`)
 - [x] Properties: `int Row`, `int Col`, `bool IsActive`, `bool IsOccupied`, `string OccupiedHeroId`
 - [x] Sub-nodes:
   - [x] `TextureRect Background` — `slot_empty.png` / `slot_filled.png` / `slot_inactive.png`
@@ -159,7 +159,7 @@ flowchart TD
 
 ### Task 1.6 — Tạo `HeroFilter.cs`
 
-- [x] Tạo file: `features/deck_builder/HeroFilter.cs` (extends `HBoxContainer`)
+- [x] Tạo file: `features/deck_builder/ui/HeroFilter.cs` (extends `HBoxContainer`)
 - [x] Dropdown **Hệ nguyên tố**: Tất cả / Hỏa / Thủy / Phong / Quang / Ám
 - [x] Dropdown **Vai trò / Vị trí**: Tất cả / Tiền quân / Trung quân / Hậu quân
 - [x] Dropdown **Sắp xếp**: Lực Chiến ↓ / Tên A-Z / Phẩm (UR→R) / Hệ
@@ -208,11 +208,11 @@ flowchart TD
 - [x] `GoToBattle(IEnumerable<FormationEntry> formation, object config)`:
   - Lưu `formation` vào `GameManager.CurrentFormation`
   - Đặt trạng thái `GameManager.CurrentState = Battle`
-  - Chuyển scene sang `res://features/battle/BattleScene.tscn`
+  - Chuyển scene sang `res://features/battle/scenes/BattleScene.tscn`
 - [x] `GoToFormationSelector(string context)`:
   - Lưu `context` vào `GameManager.BattleContext`
   - Đặt `GameManager.CurrentState = DeckBuilder`
-  - Chuyển scene sang `res://features/deck_builder/DeckBuilderScene.tscn`
+  - Chuyển scene sang `res://features/deck_builder/scenes/DeckBuilderScene.tscn`
 - [x] `GoBack()`: Quay lại scene trước đó
 
 ---

@@ -120,11 +120,11 @@ public partial class TestHubScreen : Node
         // --- 7. Test SceneNavigator Routing & Stack ---
         GD.Print("[7/9] Testing SceneNavigator stack & routes...");
         SceneNavigator.ClearHistory();
-        Assert(SceneNavigator.HubScenePath == "res://features/hub/HubScene.tscn", "HubScenePath valid");
-        Assert(SceneNavigator.DeckBuilderScenePath == "res://features/deck_builder/DeckBuilderScene.tscn", "DeckBuilderScenePath valid");
-        Assert(SceneNavigator.CampaignScenePath == "res://features/campaign/CampaignScene.tscn", "CampaignScenePath valid");
-        Assert(SceneNavigator.ArenaScenePath == "res://features/arena/ArenaScene.tscn", "ArenaScenePath valid");
-        Assert(SceneNavigator.HeroCollectionScenePath == "res://features/hero_collection/HeroCollectionScene.tscn", "HeroCollectionScenePath valid");
+        Assert(SceneNavigator.HubScenePath == "res://features/hub/scenes/HubScene.tscn", "HubScenePath valid");
+        Assert(SceneNavigator.DeckBuilderScenePath == "res://features/deck_builder/scenes/DeckBuilderScene.tscn", "DeckBuilderScenePath valid");
+        Assert(SceneNavigator.CampaignScenePath == "res://features/campaign/scenes/CampaignScene.tscn", "CampaignScenePath valid");
+        Assert(SceneNavigator.ArenaScenePath == "res://features/arena/scenes/ArenaScene.tscn", "ArenaScenePath valid");
+        Assert(SceneNavigator.HeroCollectionScenePath == "res://features/hero_collection/scenes/HeroCollectionScene.tscn", "HeroCollectionScenePath valid");
         GD.Print("✅ Test 7: SceneNavigator routes passed.");
 
         // --- 8. Test EventNotification ---
@@ -150,6 +150,11 @@ public partial class TestHubScreen : Node
 
         // Wait for frames and render
         await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        var avatarWidget = hub.GetNodeOrNull<AvatarWidget>("AvatarWidget");
+        Assert(avatarWidget?.GetChildCount() == 1, "Hub must display the avatar image.");
+        Assert(
+            avatarWidget?.GetChild(0) is TextureRect { Texture: not null },
+            "Hub avatar texture must be loaded.");
         await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
         await ToSignal(GetTree().CreateTimer(0.6f), SceneTreeTimer.SignalName.Timeout);
 

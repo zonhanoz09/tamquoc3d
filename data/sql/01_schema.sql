@@ -47,6 +47,25 @@ CREATE TABLE IF NOT EXISTS user_auth_providers (
 
 CREATE INDEX IF NOT EXISTS idx_auth_user ON user_auth_providers(user_id);
 
+-- Username/password credentials and revocable bearer sessions.
+CREATE TABLE IF NOT EXISTS user_password_credentials (
+    user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    username VARCHAR(32) NOT NULL UNIQUE,
+    password_salt BYTEA NOT NULL,
+    password_hash BYTEA NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS user_sessions (
+    token_hash CHAR(64) PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    expires_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_sessions_user ON user_sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_sessions_expires ON user_sessions(expires_at);
+
 -- 1.3 Hồ sơ hiển thị người chơi
 CREATE TABLE IF NOT EXISTS user_profiles (
     user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
@@ -86,26 +105,71 @@ FOR EACH ROW EXECUTE FUNCTION update_modified_column();
 -- MODULE 2: TƯỚNG, KỸ NĂNG & TRẬN HÌNH (HEROES & FORMATIONS)
 -- ==============================================================================
 
--- 2.1 Danh sách tướng người chơi sở hữu
+-- 2.1 Trạng thái sở hữu và phát triển tướng theo người chơi.
 CREATE TABLE IF NOT EXISTS user_heroes (
     id BIGSERIAL PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    hero_id VARCHAR(50) NOT NULL,
+    hero_id VARCHAR(50) NOT NULL REFERENCES hero_definitions(hero_id),
+    custom_name VARCHAR(100) NOT NULL DEFAULT '',
     star INT NOT NULL DEFAULT 1 CHECK (star BETWEEN 1 AND 6),
     level INT NOT NULL DEFAULT 1 CHECK (level >= 1),
     exp BIGINT NOT NULL DEFAULT 0 CHECK (exp >= 0),
-    skill_levels JSONB NOT NULL DEFAULT '{
-        "normal": 1,
-        "skill": 1,
-        "passive": 1
-    }'::jsonb,
-    unlocked_talents JSONB NOT NULL DEFAULT '[]'::jsonb,
+    is_commander BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    CONSTRAINT uq_user_hero UNIQUE(user_id, hero_id)
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT uq_user_hero UNIQUE(user_id, hero_id),
+    CONSTRAINT uq_user_hero_identity UNIQUE(id, hero_id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_user_heroes_user ON user_heroes(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_heroes_hero ON user_heroes(hero_id);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_user_heroes_commander
+    ON user_heroes(user_id) WHERE is_commander;
+
+DROP TRIGGER IF EXISTS trg_user_heroes_updated_at ON user_heroes;
+CREATE TRIGGER trg_user_heroes_updated_at
+BEFORE UPDATE ON user_heroes
+FOR EACH ROW EXECUTE FUNCTION update_modified_column();
+
+-- 2.1.1 Cấp độ kỹ năng là dữ liệu tiến trình của bản sao tướng thuộc người chơi.
+CREATE TABLE IF NOT EXISTS user_hero_skills (
+    user_hero_id BIGINT NOT NULL,
+    hero_id VARCHAR(50) NOT NULL,
+    skill_id VARCHAR(50) NOT NULL,
+    level INT NOT NULL DEFAULT 1 CHECK (level >= 1),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (user_hero_id, skill_id),
+    CONSTRAINT fk_user_hero_skills_owner
+        FOREIGN KEY (user_hero_id, hero_id)
+        REFERENCES user_heroes(id, hero_id) ON DELETE CASCADE,
+    CONSTRAINT fk_user_hero_skills_definition
+        FOREIGN KEY (hero_id, skill_id)
+        REFERENCES hero_skills(hero_id, skill_id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_hero_skills_skill ON user_hero_skills(hero_id, skill_id);
+
+DROP TRIGGER IF EXISTS trg_user_hero_skills_updated_at ON user_hero_skills;
+CREATE TRIGGER trg_user_hero_skills_updated_at
+BEFORE UPDATE ON user_hero_skills
+FOR EACH ROW EXECUTE FUNCTION update_modified_column();
+
+-- 2.1.2 Chỉ lưu talent đã mở khóa; nội dung talent nằm trong hero_talents.
+CREATE TABLE IF NOT EXISTS user_hero_talents (
+    user_hero_id BIGINT NOT NULL,
+    hero_id VARCHAR(50) NOT NULL,
+    talent_id VARCHAR(50) NOT NULL,
+    unlocked_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (user_hero_id, talent_id),
+    CONSTRAINT fk_user_hero_talents_owner
+        FOREIGN KEY (user_hero_id, hero_id)
+        REFERENCES user_heroes(id, hero_id) ON DELETE CASCADE,
+    CONSTRAINT fk_user_hero_talents_definition
+        FOREIGN KEY (hero_id, talent_id)
+        REFERENCES hero_talents(hero_id, talent_id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_hero_talents_definition ON user_hero_talents(hero_id, talent_id);
 
 -- 2.2 Bố cục trận hình 3 hàng (Front, Mid, Back)
 CREATE TABLE IF NOT EXISTS user_formations (

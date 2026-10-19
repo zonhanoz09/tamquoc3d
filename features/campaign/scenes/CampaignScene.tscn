@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3]
 
-[ext_resource type="Script" path="res://features/campaign/CampaignScene.cs" id="1_campaign"]
+[ext_resource type="Script" path="res://features/campaign/scenes/CampaignScene.cs" id="1_campaign"]
 
 [node name="CampaignScene" type="Control"]
 layout_mode = 3

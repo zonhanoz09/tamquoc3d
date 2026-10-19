@@ -48,11 +48,9 @@ services:
     environment:
       DATABASE_URL: postgresql://tamquoc:tamquoc_secret@postgres:5432/tamquoc_db
       REDIS_URL: redis://redis:6379/0
-      PORT: 8000
+      ASPNETCORE_URLS: http://+:8000
     ports:
       - "8000:8000"
-    volumes:
-      - ./server:/app
     depends_on:
       postgres:
         condition: service_healthy
