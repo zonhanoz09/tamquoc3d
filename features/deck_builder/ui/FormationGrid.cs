@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TamQuoc3D.Core.Constants;
 using System.Linq;
 using Godot;
 using TamQuoc3D.Data.Database;
@@ -153,7 +154,7 @@ public partial class FormationGrid : Control
         }
 
         // Toi da 5 tuong xuat tran trong doi hinh
-        if (_assignedHeroes.Count >= 5 && !_assignedHeroes.ContainsKey((row, col)))
+        if (_assignedHeroes.Count >= GameConstants.MaxTeamSize && !_assignedHeroes.ContainsKey((row, col)))
         {
             return false;
         }

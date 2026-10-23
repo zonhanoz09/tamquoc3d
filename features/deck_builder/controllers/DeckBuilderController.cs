@@ -650,7 +650,7 @@ public partial class DeckBuilderController : Control
     {
         int count = _formationGrid.GetAssignedCount();
         _startBattleBtn.Disabled = count == 0;
-        _startBattleBtn.Text = count >= 5 ? "⚔️ XUẤT TRẬN" : $"⚔️ XUẤT TRẬN ({count}/5)";
+        _startBattleBtn.Text = count >= GameConstants.MaxTeamSize ? "⚔️ XUẤT TRẬN" : $"⚔️ XUẤT TRẬN ({count}/{GameConstants.MaxTeamSize})";
     }
 
     private void OnStartBattlePressed()

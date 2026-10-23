@@ -12,6 +12,8 @@ public sealed class GameService(
     IConfiguration configuration,
     ILogger<GameService> logger) : IGameService
 {
+    private readonly RedisCache _cache = new(configuration);
+
     /// <summary>Hero level is derived from total EXP: +1 level per 300 EXP, capped at 60.</summary>
     internal static int LevelFromExp(long exp) => (int)Math.Min(60, 1 + Math.Max(0, exp) / 300);
 
@@ -57,6 +59,14 @@ public sealed class GameService(
 
     public async Task<object> GetProfileAsync(Guid userId, CancellationToken cancellationToken)
     {
+        var cacheKey = $"profile:{userId}";
+        var cached = await _cache.GetAsync(cacheKey, cancellationToken);
+        if (cached is not null)
+        {
+            var cachedProfile = JsonSerializer.Deserialize<Dictionary<string, object?>>(cached);
+            if (cachedProfile is not null) return cachedProfile;
+        }
+
         var profile = await QuerySingleAsync("""
             SELECT u.id, u.status, p.display_name, p.avatar_id, p.frame_id,
                    p.level, p.exp, p.vip_level, p.combat_power, p.last_login_at
@@ -64,7 +74,9 @@ public sealed class GameService(
             JOIN user_profiles p ON p.user_id = u.id
             WHERE u.id = @user_id;
             """, cancellationToken, ("user_id", userId));
-        return profile ?? throw new KeyNotFoundException("Player not found.");
+        if (profile is null) throw new KeyNotFoundException("Player not found.");
+        await _cache.SetAsync(cacheKey, JsonSerializer.Serialize(profile), 60, cancellationToken);
+        return profile;
     }
 
     public async Task<object> GetWalletAsync(Guid userId, CancellationToken cancellationToken)
@@ -167,11 +179,25 @@ public sealed class GameService(
         return updated ?? throw new InvalidOperationException("Formation save did not return a record.");
     }
 
-    public Task<IReadOnlyList<object>> GetCampaignProgressAsync(Guid userId, CancellationToken cancellationToken) =>
-        QueryListAsync("""
+    public async Task<IReadOnlyList<object>> GetCampaignProgressAsync(
+        Guid userId,
+        CancellationToken cancellationToken)
+    {
+        var cacheKey = $"campaign:{userId}";
+        var cached = await _cache.GetAsync(cacheKey, cancellationToken);
+        if (cached is not null)
+        {
+            var cachedRows = JsonSerializer.Deserialize<List<object>>(cached);
+            if (cachedRows is not null) return cachedRows;
+        }
+
+        var rows = await QueryListAsync("""
             SELECT stage_id, stars, first_clear_claimed, clear_count, best_record_turns, updated_at
             FROM campaign_progress WHERE user_id = @user_id ORDER BY stage_id ASC;
             """, cancellationToken, ("user_id", userId));
+        await _cache.SetAsync(cacheKey, JsonSerializer.Serialize(rows), 60, cancellationToken);
+        return rows;
+    }
 
     public async Task<object> ClearCampaignStageAsync(
         Guid userId,
@@ -307,6 +333,7 @@ public sealed class GameService(
         }
 
         await transaction.CommitAsync(cancellationToken);
+        await _cache.DeleteAsync($"campaign:{userId}", cancellationToken);
         return new
         {
             status = "cleared",
@@ -318,6 +345,7 @@ public sealed class GameService(
             exp_granted = firstClear ? firstClearExp : normalExp
         };
     }
+
 
     public async Task<object> StarUpHeroAsync(
         Guid userId,

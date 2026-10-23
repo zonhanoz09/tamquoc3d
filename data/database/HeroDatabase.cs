@@ -98,8 +98,13 @@ public partial class HeroDatabase : Node
     private void RegisterAndSave(HeroData hero)
     {
         Register(hero);
-        string savePath = $"res://data/database/heroes/{hero.HeroId}.tres";
-        ResourceSaver.Save(hero, savePath);
+        // Chi ghi .tres khi chay trong editor: ban export res:// la read-only,
+        // va viec ghi de file da curate cung la nguon rewrite ngoai y muon.
+        if (OS.HasFeature("editor"))
+        {
+            string savePath = $"res://data/database/heroes/{hero.HeroId}.tres";
+            ResourceSaver.Save(hero, savePath);
+        }
     }
 
     // ── TIỀN QUÂN ──

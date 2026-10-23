@@ -150,12 +150,21 @@ public partial class GameManager : Node
         InitializeDefaultData();
     }
 
+    /// <summary>
+    /// True khi dang dung du lieu demo offline (chua co phien dang nhap luu tren may).
+    /// Khi da co session, danh sach tuong se do server dong bo - khong seed toan bo
+    /// tuong vao OwnedHeroes nua de tranh hien thi sai truoc khi SyncPlayerData chay.
+    /// </summary>
+    public bool UsesDemoData { get; private set; }
+
     public void InitializeDefaultData()
     {
         Profile = PlayerProfile.Load();
 
-        // Load all heroes into OwnedHeroes if empty
-        if (OwnedHeroes.Count == 0 && HeroDatabase.Instance != null)
+        UsesDemoData = !FileAccess.FileExists("user://auth_session.json");
+
+        // Load all heroes into OwnedHeroes if empty (chi che do demo offline)
+        if (UsesDemoData && OwnedHeroes.Count == 0 && HeroDatabase.Instance != null)
         {
             foreach (var h in HeroDatabase.Instance.GetAllHeroes())
             {

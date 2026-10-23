@@ -323,12 +323,14 @@ public partial class NetworkManager : Node
             }
 
             var savedSession = JsonSerializer.Deserialize<SavedSessionDto>(file.GetAsText(), _jsonOptions);
+            string restoredToken = savedSession == null ? string.Empty : ResolveSavedToken(savedSession);
             if (savedSession == null || string.IsNullOrWhiteSpace(savedSession.UserId) ||
-                string.IsNullOrWhiteSpace(savedSession.AccessToken))
+                string.IsNullOrWhiteSpace(restoredToken))
             {
                 ClearSavedSession();
                 return new AuthOperationResult(false, string.Empty);
             }
+            savedSession.AccessToken = restoredToken;
 
             ActivateSession(savedSession.UserId, savedSession.AccessToken, persist: false);
             using var response = await _http.GetAsync($"{BaseUrl}/api/auth/session");
@@ -387,8 +389,16 @@ public partial class NetworkManager : Node
         _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
         if (persist)
         {
+            // Format v2: token khong con luu dang plaintext - duoc XOR voi khoa
+            // suy ra tu user_id + machine id cua thiet bi (chi mo duoc tren may nay).
             string json = JsonSerializer.Serialize(
-                new SavedSessionDto { UserId = userId, AccessToken = accessToken },
+                new SavedSessionDto
+                {
+                    UserId = userId,
+                    AccessToken = string.Empty,
+                    Version = 2,
+                    TokenProtected = ProtectToken(userId, accessToken)
+                },
                 _jsonOptions);
             using var file = FileAccess.Open(SessionPath, FileAccess.ModeFlags.Write);
             if (file == null)
@@ -398,6 +408,58 @@ public partial class NetworkManager : Node
             }
             file.StoreString(json);
         }
+    }
+
+    /// <summary>
+    /// Khoa bao ve token: SHA-256(user_id + "|" + machine unique id), XOR lap lai.
+    /// Muc dich: file session bi sao chep sang may khac se khong dung duoc,
+    /// va token khong nam dang plaintext tren dia. Khong thay the duoc bao mat
+    /// phia server (token van het han + thu hoi duoc qua /api/auth/logout).
+    /// </summary>
+    private static string ProtectToken(string userId, string token)
+    {
+        var key = TokenKey(userId);
+        var bytes = Encoding.UTF8.GetBytes(token);
+        for (int i = 0; i < bytes.Length; i++)
+        {
+            bytes[i] = (byte)(bytes[i] ^ key[i % key.Length]);
+        }
+        return Convert.ToBase64String(bytes);
+    }
+
+    private static string UnprotectToken(string userId, string protectedToken)
+    {
+        try
+        {
+            var key = TokenKey(userId);
+            var bytes = Convert.FromBase64String(protectedToken);
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                bytes[i] = (byte)(bytes[i] ^ key[i % key.Length]);
+            }
+            return Encoding.UTF8.GetString(bytes);
+        }
+        catch (FormatException)
+        {
+            return string.Empty;
+        }
+    }
+
+    private static byte[] TokenKey(string userId)
+    {
+        string material = $"{userId}|{OS.GetUniqueId()}";
+        return System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(material));
+    }
+
+    private static string ResolveSavedToken(SavedSessionDto saved)
+    {
+        if (saved.Version >= 2 && !string.IsNullOrWhiteSpace(saved.TokenProtected))
+        {
+            return UnprotectToken(saved.UserId, saved.TokenProtected);
+        }
+        // v1 (plaintext) - van chap nhan de khong dang xuat nguoi dung cu;
+        // ActivateSession(persist) se ghi lai dang v2 o lan dang nhap tiep theo.
+        return saved.AccessToken ?? string.Empty;
     }
 
     private void ClearSavedSession()
@@ -911,6 +973,8 @@ public partial class NetworkManager : Node
     {
         public string UserId { get; set; }
         public string AccessToken { get; set; }
+        public int Version { get; set; } = 1;
+        public string TokenProtected { get; set; }
     }
 
     public class HealthDto

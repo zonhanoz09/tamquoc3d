@@ -35,8 +35,19 @@ public partial class TestCutInScene : Node2D
         // Wait for slide-in animation to reach center (durIn = 0.20s, hold = 0.45s)
         await ToSignal(GetTree().CreateTimer(0.35f), SceneTreeTimer.SignalName.Timeout);
 
-        var img = GetViewport().GetTexture().GetImage();
-        img.SavePng("/home/annhan/.gemini/antigravity-acp/brain/e35a8943-7e35-41e5-bb56-e9936734cac2/live_cutin_cinematic_preview.png");
-        GD.Print("SAVED_CUTIN_SCREENSHOT");
+        // Headless khong co viewport texture that - bo qua screenshot, van pass
+        // neu cinematic chay khong exception. Chay co man hinh se luu anh preview.
+        var viewportTexture = GetViewport().GetTexture();
+        var img = viewportTexture?.GetImage();
+        if (img != null)
+        {
+            img.SavePng("user://cutin_preview.png");
+            GD.Print("🎉 CUT-IN SCENE TEST PASSED (screenshot: user://cutin_preview.png)");
+        }
+        else
+        {
+            GD.Print("🎉 CUT-IN SCENE TEST PASSED (headless: screenshot skipped)");
+        }
+        GetTree().Quit(0);
     }
 }
