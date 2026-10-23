@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  build-dotnet:
+    name: Build server + client (dotnet)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Build game server
+        run: dotnet build server/TamQuoc3D.Server.csproj --nologo -c Release
+
+      - name: Build Godot client (C#)
+        run: dotnet build tamquoc3d.csproj --nologo -c Release
+
+  godot-headless-tests:
+    name: Godot headless test scenes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Download Godot 4.3 Mono
+        run: |
+          curl -sSL -o /tmp/godot.zip https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_mono_linux_x86_64.zip
+          mkdir -p /tmp/godot-bin && unzip -q -o /tmp/godot.zip -d /tmp/godot-bin
+          echo "GODOT=/tmp/godot-bin/Godot_v4.3-stable_mono_linux_x86_64/Godot_v4.3-stable_mono_linux.x86_64" >> "$GITHUB_ENV"
+
+      - name: Import project
+        run: '"$GODOT" --headless --path . --import --quit'
+
+      - name: Build C# assemblies for Godot
+        run: dotnet build tamquoc3d.csproj --nologo
+
+      # Only self-contained scenes that quit on their own run in CI.
+      # Excluded on purpose:
+      # - TestCutInScene: manual screenshot tool, never calls Quit() (hangs).
+      # - TestClientServerConnection: integration test, needs the live game
+      #   server + PostgreSQL running (docker compose up) - run it locally.
+      - name: Run test scenes
+        run: |
+          for scene in tests/TestFormationSelector.tscn tests/TestFormationToBattle.tscn tests/TestCampaignMap.tscn tests/TestHubScreen.tscn; do
+            echo "== $scene =="
+            timeout 120 "$GODOT" --headless --path . "res://$scene" || exit 1
+          done

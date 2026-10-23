@@ -5,9 +5,9 @@ services:
     container_name: tamquoc-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: tamquoc
-      POSTGRES_PASSWORD: tamquoc_secret
-      POSTGRES_DB: tamquoc_db
+      POSTGRES_USER: ${POSTGRES_USER:-tamquoc}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env (see .env.example)}
+      POSTGRES_DB: ${POSTGRES_DB:-tamquoc_db}
     ports:
       - "5432:5432"
     volumes:
@@ -46,7 +46,7 @@ services:
     container_name: tamquoc-game-server
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://tamquoc:tamquoc_secret@postgres:5432/tamquoc_db
+      DATABASE_URL: postgresql://${POSTGRES_USER:-tamquoc}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env (see .env.example)}@postgres:5432/${POSTGRES_DB:-tamquoc_db}
       REDIS_URL: redis://redis:6379/0
       ASPNETCORE_URLS: http://+:8000
     ports:

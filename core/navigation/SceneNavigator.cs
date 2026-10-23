@@ -159,6 +159,16 @@ public static class SceneNavigator
 
         if (_isTransitioning) return;
 
+        // Guard: never navigate to a scene that does not exist yet (Tower/Labyrinth/Shop/Gacha).
+        // Crashing ChangeSceneToFile on a missing path breaks the whole session; notify instead.
+        if (!ResourceLoader.Exists(scenePath))
+        {
+            GD.PushWarning($"[SceneNavigator] Scene chua duoc xay dung, bo qua dieu huong: {scenePath}");
+            EventBus.Instance?.EmitSignal(EventBus.SignalName.SystemNotification,
+                "Sắp ra mắt", "Tính năng này đang được phát triển.", "info");
+            return;
+        }
+
         string current = tree.CurrentScene?.SceneFilePath;
         if (addToHistory && !string.IsNullOrEmpty(current) && current != scenePath)
         {
