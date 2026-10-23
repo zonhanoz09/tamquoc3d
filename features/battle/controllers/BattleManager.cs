@@ -41,6 +41,25 @@ public partial class BattleManager : Node
     /// </summary>
     public System.Func<BattleHero, Godot.Collections.Dictionary, Task> ActionAwaiter { get; set; }
 
+    /// <summary>
+    /// Che do dieu khien: false = Auto (AI tu chon chieu + muc tieu nhu truoc),
+    /// true = Manual (luot cua tuong phe nguoi choi cho UI chon qua PlayerActionProvider).
+    /// </summary>
+    public bool ManualMode { get; set; } = false;
+
+    /// <summary>Hanh dong nguoi choi chon trong che do Manual.</summary>
+    public sealed class PlayerAction
+    {
+        public SkillData Skill { get; set; }
+        public BattleHero PrimaryTarget { get; set; }
+    }
+
+    /// <summary>
+    /// Callback lay hanh dong tu UI khi ManualMode bat va toi luot phe nguoi choi.
+    /// Tra ve null = de AI tu danh luot nay.
+    /// </summary>
+    public System.Func<BattleHero, Task<PlayerAction>> PlayerActionProvider { get; set; }
+
     public void SetupBattle(IList<HeroData> party0, IList<HeroData> party1)
     {
         Team0.Clear();
@@ -250,23 +269,47 @@ public partial class BattleManager : Node
             return;
         }
 
-        // Chọn skill
-        bool isRage = hero.Stats.CanCastRage();
-        SkillData skill = isRage ? hero.Data.GetRageSkill() : hero.Data.GetNormalAttack();
-        if (skill == null)
+        // Chọn skill + mục tiêu: Manual (người chơi chọn) hoặc Auto (AI như trước)
+        SkillData skill;
+        List<BattleHero> targets;
+        bool isRage;
+
+        PlayerAction manualAction = null;
+        if (ManualMode && hero.Team == 0 && PlayerActionProvider != null)
         {
-            skill = new SkillData
-            {
-                SkillId = "basic_attack",
-                SkillName = "Tấn công cơ bản",
-                Type = SkillData.SkillType.Melee,
-                DamageMultiplier = 1.0f,
-                TargetCount = 1
-            };
-            isRage = false;
+            manualAction = await PlayerActionProvider(hero);
         }
 
-        var targets = SelectTargets(hero, skill);
+        if (manualAction?.Skill != null)
+        {
+            skill = manualAction.Skill;
+            isRage = skill.IsRageSkill && hero.Stats.CanCastRage();
+            if (skill.IsRageSkill && !isRage)
+            {
+                // Chưa đủ nộ cho chiêu đã chọn -> hạ xuống đánh thường, giữ nguyên mục tiêu
+                skill = hero.Data.GetNormalAttack() ?? skill;
+                isRage = false;
+            }
+            targets = ResolveManualTargets(hero, skill, manualAction.PrimaryTarget);
+        }
+        else
+        {
+            isRage = hero.Stats.CanCastRage();
+            skill = isRage ? hero.Data.GetRageSkill() : hero.Data.GetNormalAttack();
+            if (skill == null)
+            {
+                skill = new SkillData
+                {
+                    SkillId = "basic_attack",
+                    SkillName = "Tấn công cơ bản",
+                    Type = SkillData.SkillType.Melee,
+                    DamageMultiplier = 1.0f,
+                    TargetCount = 1
+                };
+                isRage = false;
+            }
+            targets = SelectTargets(hero, skill);
+        }
         if (targets.Count == 0)
         {
             EmitSignal(SignalName.HeroTurnEnded, hero);
@@ -366,6 +409,34 @@ public partial class BattleManager : Node
         DecrementStatus(hero);
         EmitSignal(SignalName.HeroTurnEnded, hero);
         EventBus.Instance?.EmitSignal(EventBus.SignalName.HeroTurnEnded, hero);
+    }
+
+    /// <summary>
+    /// Quy doi lua chon cua nguoi choi thanh danh sach muc tieu cu the:
+    /// chiêu đơn mục tiêu dùng đúng mục tiêu đã click; chiêu AoE / hỗ trợ diện rộng
+    /// giữ nguyên logic chọn mục tiêu mặc định của SelectTargets.
+    /// </summary>
+    private List<BattleHero> ResolveManualTargets(BattleHero attacker, SkillData skill, BattleHero primary)
+    {
+        if (skill.Type is SkillData.SkillType.AoeAll or SkillData.SkillType.AoeRow or SkillData.SkillType.AoeColumn)
+        {
+            return SelectTargets(attacker, skill);
+        }
+
+        if (skill.Type is SkillData.SkillType.Heal or SkillData.SkillType.Buff)
+        {
+            if (skill.TargetCount <= 1 && primary != null && primary.IsAlive && primary.Team == attacker.Team)
+            {
+                return [primary];
+            }
+            return SelectTargets(attacker, skill);
+        }
+
+        if (primary != null && primary.IsAlive && primary.Team != attacker.Team)
+        {
+            return [primary];
+        }
+        return SelectTargets(attacker, skill);
     }
 
     private List<BattleHero> SelectTargets(BattleHero attacker, SkillData skill)

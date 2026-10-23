@@ -9,6 +9,7 @@ using TamQuoc3D.Core.Network;
 using TamQuoc3D.Data.Database;
 using TamQuoc3D.Data.Resources;
 using TamQuoc3D.Features.Battle.Entities;
+using TamQuoc3D.Features.Battle.UI;
 using TamQuoc3D.Features.Battle.Grid;
 
 namespace TamQuoc3D.Features.Battle.Controllers;
@@ -42,11 +43,25 @@ public partial class BattleScene : Node2D
     private Button _pauseBtn;
     private Button _restartBtn;
     private PanelContainer _logPanel;
-    private HBoxContainer _timelineContainer;
+    private TurnTimeline _timelineContainer;
     private Control _resultBanner;
     private Label _resultDetailLabel;
     private Button _campaignBtn;
     private bool _campaignResultRecorded = false;
+
+    // Manual mode (Phase 2): panel chon chieu + trang thai cho click muc tieu
+    private Button _modeBtn;
+    private PanelContainer _manualPanel;
+    private Label _manualPrompt;
+    private Button _skillBtn;
+    private Button _rageBtn;
+    private Button _autoTurnBtn;
+    private System.Threading.Tasks.TaskCompletionSource<SkillData> _skillTcs;
+    private System.Threading.Tasks.TaskCompletionSource<BattleHero> _targetTcs;
+    private bool _targetingAllies = false;
+    private SkillData _manualHeroSkillNormal;
+    private SkillData _manualHeroSkillRage;
+    private readonly System.Collections.Generic.List<(HeroBattleNode Node, Color Modulate)> _highlighted = [];
 
     private readonly List<string> _logLines = [];
     private const int MaxLogLines = 100;
@@ -204,12 +219,8 @@ public partial class BattleScene : Node2D
         _roundLabel.AddThemeColorOverride("font_color", new Color(1.0f, 0.85f, 0.3f));
         topHbox.AddChild(_roundLabel);
 
-        // Timeline Action Order
-        _timelineContainer = new HBoxContainer
-        {
-            Alignment = BoxContainer.AlignmentMode.Center
-        };
-        _timelineContainer.AddThemeConstantOverride("separation", 8);
+        // Timeline Action Order (component TurnTimeline - Phase 4 HUD)
+        _timelineContainer = new TurnTimeline();
         topHbox.AddChild(_timelineContainer);
 
         // Control Buttons
@@ -228,6 +239,71 @@ public partial class BattleScene : Node2D
         };
         _pauseBtn.Pressed += OnPauseToggle;
         topHbox.AddChild(_pauseBtn);
+
+        _modeBtn = new Button
+        {
+            Text = "Chế độ: Auto",
+            CustomMinimumSize = new Vector2(105, 32)
+        };
+        _modeBtn.Pressed += OnModeToggle;
+        topHbox.AddChild(_modeBtn);
+
+        // 1b. Manual Mode Panel (hien khi toi luot nguoi choi o che do Thu cong)
+        _manualPanel = new PanelContainer
+        {
+            Position = new Vector2(340, 596),
+            Size = new Vector2(600, 104),
+            Visible = false
+        };
+        var sbManual = new StyleBoxFlat
+        {
+            BgColor = new Color(0.08f, 0.1f, 0.16f, 0.95f),
+            BorderColor = new Color(0.85f, 0.7f, 0.25f)
+        };
+        sbManual.SetBorderWidthAll(2);
+        sbManual.SetCornerRadiusAll(8);
+        sbManual.ContentMarginLeft = 12;
+        sbManual.ContentMarginRight = 12;
+        sbManual.ContentMarginTop = 8;
+        sbManual.ContentMarginBottom = 8;
+        _manualPanel.AddThemeStyleboxOverride("panel", sbManual);
+        _uiLayer.AddChild(_manualPanel);
+
+        var manualVBox = new VBoxContainer();
+        manualVBox.AddThemeConstantOverride("separation", 8);
+        _manualPanel.AddChild(manualVBox);
+
+        _manualPrompt = new Label
+        {
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Text = ""
+        };
+        _manualPrompt.AddThemeFontSizeOverride("font_size", 15);
+        _manualPrompt.AddThemeColorOverride("font_color", new Color(1.0f, 0.9f, 0.6f));
+        manualVBox.AddChild(_manualPrompt);
+
+        var manualHBox = new HBoxContainer
+        {
+            Alignment = BoxContainer.AlignmentMode.Center
+        };
+        manualHBox.AddThemeConstantOverride("separation", 10);
+        manualVBox.AddChild(manualHBox);
+
+        _skillBtn = new Button { CustomMinimumSize = new Vector2(180, 40) };
+        _skillBtn.Pressed += () => _skillTcs?.TrySetResult(_manualHeroSkillNormal);
+        manualHBox.AddChild(_skillBtn);
+
+        _rageBtn = new Button { CustomMinimumSize = new Vector2(180, 40) };
+        _rageBtn.Pressed += () => _skillTcs?.TrySetResult(_manualHeroSkillRage);
+        manualHBox.AddChild(_rageBtn);
+
+        _autoTurnBtn = new Button
+        {
+            Text = "🤖 Tự đánh lượt này",
+            CustomMinimumSize = new Vector2(160, 40)
+        };
+        _autoTurnBtn.Pressed += () => _skillTcs?.TrySetResult(null);
+        manualHBox.AddChild(_autoTurnBtn);
 
         // 2. Retro Combat Battle Log Box (Góc trên bên trái, xếp gọn gàng không che khuất tướng)
         _logPanel = new PanelContainer
@@ -391,6 +467,7 @@ public partial class BattleScene : Node2D
         _battleManager.HeroTurnStarted += OnHeroTurnStarted;
         _battleManager.HeroTurnEnded += OnHeroTurnEnded;
         _battleManager.ActionAwaiter = OnHeroActedAsync;
+        _battleManager.PlayerActionProvider = ProvidePlayerActionAsync;
         _battleManager.HeroDied += OnHeroDied;
 
         StartBattleWithRoster();
@@ -482,31 +559,10 @@ public partial class BattleScene : Node2D
 
     private void UpdateTimeline()
     {
-        foreach (var c in _timelineContainer.GetChildren())
-        {
-            c.QueueFree();
-        }
-
-        if (_battleManager?.TurnManager == null) return;
-
-        var queue = _battleManager.TurnManager.TurnQueue;
-        int curIdx = Mathf.Clamp(_battleManager.TurnManager.CurrentTurnIndex, 0, queue.Count);
-        for (int i = curIdx; i < queue.Count; i++)
-        {
-            var bh = queue[i];
-            if (!bh.IsAlive || !bh.Stats.IsAlive()) continue;
-
-            var avatarRect = new TextureRect();
-            var pTex = GD.Load<Texture2D>($"res://assets/heroes/{bh.Data.HeroId}/icon.png");
-            if (pTex != null)
-            {
-                avatarRect.Texture = pTex;
-            }
-            avatarRect.CustomMinimumSize = new Vector2(32, 32);
-            avatarRect.ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize;
-            avatarRect.Modulate = bh.Team == 0 ? new Color(0.2f, 0.8f, 1.0f) : new Color(1.0f, 0.3f, 0.3f);
-            _timelineContainer.AddChild(avatarRect);
-        }
+        if (_timelineContainer == null || _battleManager?.TurnManager == null) return;
+        _timelineContainer.Refresh(
+            _battleManager.TurnManager.TurnQueue,
+            _battleManager.TurnManager.CurrentTurnIndex);
     }
 
     private void OnRoundStarted(int rNum)
@@ -877,6 +933,11 @@ public partial class BattleScene : Node2D
             _battleManager.BattleSpeed = 2.0f;
             _speedBtn.Text = "Tốc độ: x2";
         }
+        else if (Mathf.IsEqualApprox(_battleManager.BattleSpeed, 2.0f))
+        {
+            _battleManager.BattleSpeed = 3.0f;
+            _speedBtn.Text = "Tốc độ: x3";
+        }
         else
         {
             _battleManager.BattleSpeed = 1.0f;
@@ -899,5 +960,122 @@ public partial class BattleScene : Node2D
         if (_campaignBtn != null) _campaignBtn.Visible = false;
         _battleManager.IsBattleActive = false;
         StartBattleWithRoster();
+    }
+
+    // ===================== Manual Mode (Phase 2) =====================
+
+    private void OnModeToggle()
+    {
+        _battleManager.ManualMode = !_battleManager.ManualMode;
+        _modeBtn.Text = _battleManager.ManualMode ? "Chế độ: Thủ công" : "Chế độ: Auto";
+        OnLog(_battleManager.ManualMode
+            ? "[color=#fde68a]🎯 Chế độ THỦ CÔNG: bạn sẽ chọn chiêu + mục tiêu cho từng lượt tướng phe mình.[/color]"
+            : "[color=#94a3b8]🤖 Chế độ AUTO: AI tự đánh toàn bộ.[/color]");
+    }
+
+    /// <summary>
+    /// BattleManager goi ham nay khi toi luot tuong phe nguoi choi o che do Manual:
+    /// hien panel chon chieu, sau do cho click chon muc tieu tren san dau.
+    /// Tra ve null neu nguoi choi bam "Tu danh luot nay".
+    /// </summary>
+    private async System.Threading.Tasks.Task<BattleManager.PlayerAction> ProvidePlayerActionAsync(BattleHero hero)
+    {
+        _manualHeroSkillNormal = hero.Data.GetNormalAttack();
+        _manualHeroSkillRage = hero.Data.GetRageSkill();
+
+        _manualPrompt.Text = $"🎯 Lượt của {hero.Data.HeroName} (Nộ: {hero.Stats.MoraleCurrent}/100) — chọn chiêu:";
+        _skillBtn.Text = $"⚔️ {_manualHeroSkillNormal?.SkillName ?? "Đánh thường"}";
+        _skillBtn.Disabled = false;
+        _rageBtn.Text = $"🔥 {_manualHeroSkillRage?.SkillName ?? "Nộ chiêu"}";
+        _rageBtn.Disabled = _manualHeroSkillRage == null || !hero.Stats.CanCastRage();
+        _autoTurnBtn.Disabled = false;
+        _manualPanel.Visible = true;
+
+        _skillTcs = new System.Threading.Tasks.TaskCompletionSource<SkillData>();
+        var skill = await _skillTcs.Task;
+        if (skill == null)
+        {
+            _manualPanel.Visible = false;
+            return null; // AI tu danh luot nay
+        }
+
+        if (!NeedsManualTarget(skill))
+        {
+            _manualPanel.Visible = false;
+            return new BattleManager.PlayerAction { Skill = skill, PrimaryTarget = null };
+        }
+
+        _targetingAllies = skill.Type is SkillData.SkillType.Heal or SkillData.SkillType.Buff;
+        _manualPrompt.Text = _targetingAllies
+            ? $"💚 Chọn đồng minh để dùng «{skill.SkillName}»:"
+            : $"🎯 Chọn mục tiêu cho «{skill.SkillName}»:";
+        _skillBtn.Disabled = true;
+        _rageBtn.Disabled = true;
+        _autoTurnBtn.Disabled = true;
+        HighlightValidTargets(_targetingAllies);
+
+        _targetTcs = new System.Threading.Tasks.TaskCompletionSource<BattleHero>();
+        var target = await _targetTcs.Task;
+
+        ClearTargetHighlights();
+        _manualPanel.Visible = false;
+        return new BattleManager.PlayerAction { Skill = skill, PrimaryTarget = target };
+    }
+
+    private static bool NeedsManualTarget(SkillData skill)
+    {
+        return skill.Type is SkillData.SkillType.Melee
+            or SkillData.SkillType.Ranged
+            or SkillData.SkillType.Flank
+            or SkillData.SkillType.Heal
+            or SkillData.SkillType.Buff;
+    }
+
+    private void HighlightValidTargets(bool allies)
+    {
+        ClearTargetHighlights();
+        var visuals = allies ? _playerVisuals : _enemyVisuals;
+        foreach (var node in visuals)
+        {
+            if (node?.BattleHero == null || !node.BattleHero.IsAlive) continue;
+            _highlighted.Add((node, node.Modulate));
+            node.Modulate = new Color(1.35f, 1.25f, 0.55f);
+        }
+    }
+
+    private void ClearTargetHighlights()
+    {
+        foreach (var (node, modulate) in _highlighted)
+        {
+            if (GodotObject.IsInstanceValid(node)) node.Modulate = modulate;
+        }
+        _highlighted.Clear();
+    }
+
+    public override void _UnhandledInput(InputEvent @event)
+    {
+        if (_targetTcs == null || _targetTcs.Task.IsCompleted) return;
+        if (@event is not InputEventMouseButton mb || !mb.Pressed || mb.ButtonIndex != MouseButton.Left) return;
+
+        var clickPos = GetGlobalMousePosition();
+        var visuals = _targetingAllies ? _playerVisuals : _enemyVisuals;
+        HeroBattleNode best = null;
+        float bestDist = 64.0f;
+        foreach (var node in visuals)
+        {
+            if (node?.BattleHero == null || !node.BattleHero.IsAlive) continue;
+            float d = clickPos.DistanceTo(node.Position + new Vector2(0, -32));
+            if (d < bestDist)
+            {
+                bestDist = d;
+                best = node;
+            }
+        }
+
+        if (best != null)
+        {
+            _targetTcs.TrySetResult(best.BattleHero);
+            GetViewport().SetInputAsHandled();
+        }
     }
 }
