@@ -34,11 +34,20 @@ public static class CombatFormulas
         return 1.0f;
     }
 
-    public static (int damage, bool isCrit, bool isDodge, bool isBlock) CalculateDamage(BattleHero attacker, BattleHero defender, SkillData skill)
+    // RNG tiem vao (Phase 5): khi BattleManager truyen seed RNG, moi phep tinh
+    // deu deterministic - nen tang cho replay & chong gian lan phia server sau nay.
+    // Khong truyen = dung GD.Randf nhu truoc (hieu ung ngoai tran dau).
+    private static float NextFloat(System.Random rng) =>
+        rng != null ? (float)rng.NextDouble() : GD.Randf();
+
+    private static float NextVariance(System.Random rng) =>
+        rng != null ? 0.95f + (float)rng.NextDouble() * 0.10f : (float)GD.RandRange(0.95, 1.05);
+
+    public static (int damage, bool isCrit, bool isDodge, bool isBlock) CalculateDamage(BattleHero attacker, BattleHero defender, SkillData skill, System.Random rng = null)
     {
         // 1. Tinh Ne Tranh (Dodge)
         float dodgeChance = defender.Stats.DodgeRate;
-        if (GD.Randf() < dodgeChance)
+        if (NextFloat(rng) < dodgeChance)
         {
             return (0, false, true, false);
         }
@@ -55,11 +64,11 @@ public static class CombatFormulas
         baseDmg *= elemMult;
 
         // 4. Do bien thien ngau nhien (Variance 95% - 105%)
-        float variance = (float)GD.RandRange(0.95, 1.05);
+        float variance = NextVariance(rng);
         baseDmg *= variance;
 
         // 5. Tinh Bao Kich (Crit)
-        bool isCrit = GD.Randf() < attacker.Stats.CritRate;
+        bool isCrit = NextFloat(rng) < attacker.Stats.CritRate;
         if (isCrit)
         {
             baseDmg *= attacker.Stats.CritDmg;
@@ -67,7 +76,7 @@ public static class CombatFormulas
 
         // 6. Tinh Do Don (Block)
         bool isBlock = false;
-        if (GD.Randf() < defender.Stats.BlockRate)
+        if (NextFloat(rng) < defender.Stats.BlockRate)
         {
             isBlock = true;
             baseDmg *= 0.5f; // Giam 50% sat thuong
@@ -77,11 +86,11 @@ public static class CombatFormulas
         return (finalDmg, isCrit, false, isBlock);
     }
 
-    public static int CalculateHeal(BattleHero healer, BattleHero target, SkillData skill)
+    public static int CalculateHeal(BattleHero healer, BattleHero target, SkillData skill, System.Random rng = null)
     {
         float atk = healer.Stats.AtkMag > 0 ? healer.Stats.AtkMag : healer.Stats.AtkPhys;
         float baseHeal = atk * skill.DamageMultiplier * 1.5f;
-        float variance = (float)GD.RandRange(0.95, 1.05);
+        float variance = NextVariance(rng);
         return Mathf.Max(1, Mathf.RoundToInt(baseHeal * variance));
     }
 }

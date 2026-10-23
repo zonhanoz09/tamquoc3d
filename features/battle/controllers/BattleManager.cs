@@ -47,6 +47,25 @@ public partial class BattleManager : Node
     /// </summary>
     public bool ManualMode { get; set; } = false;
 
+    /// <summary>Seed cua tran hien tai (ghi vao log; cung seed + cung doi hinh = cung ket qua).</summary>
+    public int BattleSeed { get; private set; }
+
+    /// <summary>Dat truoc de ep seed (test/replay). Null = sinh seed moi moi tran.</summary>
+    public int? SeedOverride { get; set; }
+
+    private System.Random _rng;
+
+    private void InitRng()
+    {
+        BattleSeed = SeedOverride ?? (int)(System.DateTime.UtcNow.Ticks % int.MaxValue);
+        _rng = new System.Random(BattleSeed);
+    }
+
+    private TurnManager CreateTurnManager()
+    {
+        return new TurnManager { Rng = _rng };
+    }
+
     /// <summary>Hanh dong nguoi choi chon trong che do Manual.</summary>
     public sealed class PlayerAction
     {
@@ -62,25 +81,27 @@ public partial class BattleManager : Node
 
     public void SetupBattle(IList<HeroData> party0, IList<HeroData> party1)
     {
+        InitRng();
         Team0.Clear();
         Team1.Clear();
 
         SetupTeam(party0, 0, Team0);
         SetupTeam(party1, 1, Team1);
 
-        TurnManager = new TurnManager();
+        TurnManager = CreateTurnManager();
         TurnManager.Setup(Team0, Team1);
     }
 
     public void SetupBattleWithFormation(IList<FormationEntry> playerFormation, IList<HeroData> party1)
     {
+        InitRng();
         Team0.Clear();
         Team1.Clear();
 
         BuildPlayerTeam(playerFormation);
         SetupTeam(party1, 1, Team1);
 
-        TurnManager = new TurnManager();
+        TurnManager = CreateTurnManager();
         TurnManager.Setup(Team0, Team1);
     }
 
@@ -90,6 +111,7 @@ public partial class BattleManager : Node
     /// </summary>
     public void SetupBattleWithFormations(IList<FormationEntry> playerFormation, IList<EnemyEntry> enemyFormation)
     {
+        InitRng();
         Team0.Clear();
         Team1.Clear();
 
@@ -107,7 +129,7 @@ public partial class BattleManager : Node
             Team1.Add(bh);
         }
 
-        TurnManager = new TurnManager();
+        TurnManager = CreateTurnManager();
         TurnManager.Setup(Team0, Team1);
     }
 
@@ -117,6 +139,7 @@ public partial class BattleManager : Node
     /// </summary>
     public void SetupTowerBattle(IList<FormationEntry> playerFormation, int floor)
     {
+        InitRng();
         Team0.Clear();
         Team1.Clear();
 
@@ -150,7 +173,7 @@ public partial class BattleManager : Node
             }
         }
 
-        TurnManager = new TurnManager();
+        TurnManager = CreateTurnManager();
         TurnManager.Setup(Team0, Team1);
     }
 
@@ -257,6 +280,7 @@ public partial class BattleManager : Node
         EmitSignal(SignalName.BattleStarted);
         EventBus.Instance?.EmitSignal(EventBus.SignalName.BattleStarted);
         Log("⚔️ [color=#ffd700][b]TRẬN CHIẾN BẮT ĐẦU![/b][/color] (Đấu Trường Đấu Hạng)");
+        Log($"🎲 Battle Seed: {BattleSeed} (cùng seed + cùng đội hình = cùng kết quả)");
 
         while (IsBattleActive && IsInsideTree())
         {
@@ -397,7 +421,7 @@ public partial class BattleManager : Node
         {
             if (isSupport)
             {
-                int heal = CombatFormulas.CalculateHeal(hero, target, skill);
+                int heal = CombatFormulas.CalculateHeal(hero, target, skill, _rng);
                 target.Stats.Heal(heal);
                 Log($"  💚 {FormatHero(hero)} hồi phục [color=#4ade80][b]+{heal} HP[/b][/color] cho {FormatHero(target)}");
 
@@ -411,7 +435,7 @@ public partial class BattleManager : Node
             }
             else
             {
-                var (dmg, isCrit, isDodge, isBlock) = CombatFormulas.CalculateDamage(hero, target, skill);
+                var (dmg, isCrit, isDodge, isBlock) = CombatFormulas.CalculateDamage(hero, target, skill, _rng);
 
                 if (!isDodge)
                 {
@@ -548,16 +572,16 @@ public partial class BattleManager : Node
         var targetFront = aliveEnemies.Where(h => h.PositionType == BattlePosition.Front).ToList();
         if (targetFront.Count > 0)
         {
-            return [targetFront[GD.RandRange(0, targetFront.Count - 1)]];
+            return [targetFront[_rng?.Next(targetFront.Count) ?? GD.RandRange(0, targetFront.Count - 1)]];
         }
 
         var targetMid = aliveEnemies.Where(h => h.PositionType == BattlePosition.Mid).ToList();
         if (targetMid.Count > 0)
         {
-            return [targetMid[GD.RandRange(0, targetMid.Count - 1)]];
+            return [targetMid[_rng?.Next(targetMid.Count) ?? GD.RandRange(0, targetMid.Count - 1)]];
         }
 
-        return [aliveEnemies[GD.RandRange(0, aliveEnemies.Count - 1)]];
+        return [aliveEnemies[_rng?.Next(aliveEnemies.Count) ?? GD.RandRange(0, aliveEnemies.Count - 1)]];
     }
 
     private static bool HasStatus(BattleHero hero, SkillData.EffectType effType)

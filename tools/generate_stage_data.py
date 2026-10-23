@@ -152,7 +152,7 @@ OverrideLevel = {lvl}
 {"".join(sub_resources)}
 [resource]
 script = ExtResource("1_stage")
-ChapterId = 1
+ChapterId = {stage.get("chapter", 1)}
 StageId = {stage["id"]}
 StageKey = "{stage["key"]}"
 StageName = "{stage["name"]}"
@@ -170,7 +170,9 @@ NormalExp = {stage["norm_exp"]}
 Star2Condition = {stage["star2"]}
 Star3Condition = {stage["star3"]}
 """
-    path = os.path.join(STAGES_DIR, stage["filename"])
+    out_dir = stage.get("dir", STAGES_DIR)
+    os.makedirs(out_dir, exist_ok=True)
+    path = os.path.join(out_dir, stage["filename"])
     with open(path, "w", encoding="utf-8") as f:
         f.write(content)
     print(f"  -> Generated {path}")
@@ -222,11 +224,161 @@ UnlockRequirement = 12
         f.write(ch2_content)
     print("  -> Generated chapter_02.tres")
 
+CHAPTER2_STAGES = [
+    {
+        "filename": "stage_02_01.tres", "chapter": 2, "dir": "data/database/stages/ch02",
+        "id": 7, "key": "2-1", "name": "Liên Minh Tôn Lưu",
+        "desc": "Tôn Quyền và Lưu Bị kết minh tại Sài Tang, chuẩn bị nghênh chiến đại quân Tào Tháo.",
+        "type": 0, "power": 9500, "stamina": 5,
+        "enemies": [("hoang_cai", 0, 1, 22), ("chu_du", 1, 0, 22), ("bang_thong", 1, 2, 22), ("tieu_kieu", 2, 1, 22)],
+        "first_gold": 3500, "first_dia": 350, "first_exp": 1400,
+        "norm_gold": 900, "norm_exp": 600, "star2": 4, "star3": 8
+    },
+    {
+        "filename": "stage_02_02.tres", "chapter": 2, "dir": "data/database/stages/ch02",
+        "id": 8, "key": "2-2", "name": "Thuyền Cỏ Mượn Tên",
+        "desc": "Gia Cát Lượng dùng thuyền cỏ mượn mười vạn mũi tên giữa sương mù sông Trường Giang.",
+        "type": 0, "power": 11500, "stamina": 5,
+        "enemies": [("tao_nhan", 0, 0, 25), ("dien_vi", 0, 2, 25), ("hoang_trung", 1, 1, 25), ("sai_van_co", 2, 0, 25), ("chu_du", 2, 2, 25)],
+        "first_gold": 4200, "first_dia": 420, "first_exp": 1700,
+        "norm_gold": 1100, "norm_exp": 720, "star2": 4, "star3": 9
+    },
+    {
+        "filename": "stage_02_03.tres", "chapter": 2, "dir": "data/database/stages/ch02",
+        "id": 9, "key": "2-3", "name": "Khổ Nhục Kế",
+        "desc": "Hoàng Cái chịu đòn roi trá hàng, kho lửa Xích Bích chờ thời cơ bùng cháy.",
+        "type": 2, "power": 13500, "stamina": 6,
+        "enemies": [("hoang_cai", 0, 1, 28), ("dien_vi", 1, 0, 28), ("truong_phi", 1, 2, 28), ("bang_thong", 2, 1, 28)],
+        "first_gold": 5000, "first_dia": 500, "first_exp": 2000,
+        "norm_gold": 1300, "norm_exp": 850, "star2": 4, "star3": 9
+    },
+    {
+        "filename": "stage_02_04.tres", "chapter": 2, "dir": "data/database/stages/ch02",
+        "id": 10, "key": "2-4", "name": "Hỏa Thiêu Ô Sào",
+        "desc": "Đột kích kho lương địch giữa đêm, lửa cháy rực trời làm rối loạn quân tâm.",
+        "type": 0, "power": 16000, "stamina": 6,
+        "enemies": [("dien_vi", 0, 0, 30), ("tao_nhan", 0, 2, 30), ("trieu_van", 1, 1, 30), ("dieu_thuyen", 2, 0, 30), ("gia_cat_luong", 2, 2, 30)],
+        "first_gold": 5800, "first_dia": 580, "first_exp": 2300,
+        "norm_gold": 1500, "norm_exp": 1000, "star2": 5, "star3": 10
+    },
+    {
+        "filename": "stage_02_05.tres", "chapter": 2, "dir": "data/database/stages/ch02",
+        "id": 11, "key": "2-5", "name": "Liên Hoàn Thuyền",
+        "desc": "Chiến thuyền địch xích sắt nối liền, chỉ chờ một mồi lửa đông nam phong.",
+        "type": 3, "power": 19000, "stamina": 7,
+        "enemies": [("truong_phi", 0, 1, 32), ("quan_vu", 1, 0, 32), ("ma_sieu", 1, 2, 32), ("chu_du", 2, 0, 32), ("bang_thong", 2, 2, 32)],
+        "first_gold": 6800, "first_dia": 680, "first_exp": 2600,
+        "norm_gold": 1750, "norm_exp": 1100, "star2": 5, "star3": 10
+    },
+    {
+        "filename": "stage_02_boss.tres", "chapter": 2, "dir": "data/database/stages/ch02",
+        "id": 12, "key": "2-6", "name": "Tào Tháo — Ngụy Vương",
+        "desc": "Tào Tháo thân chinh dẫn thủy quân quyết chiến Xích Bích, thế trận một mất một còn!",
+        "type": 1, "power": 24000, "stamina": 8,
+        "enemies": [("dien_vi", 0, 0, 35), ("truong_phi", 0, 2, 35), ("tao_nhan", 1, 1, 38), ("lu_bo", 2, 0, 35), ("dieu_thuyen", 2, 2, 35)],
+        "first_gold": 8000, "first_dia": 800, "first_exp": 3000,
+        "norm_gold": 2000, "norm_exp": 1200, "star2": 5, "star3": 11
+    }
+]
+
+CHAPTER3_STAGES = [
+    {
+        "filename": "stage_03_01.tres", "chapter": 3, "dir": "data/database/stages/ch03",
+        "id": 13, "key": "3-1", "name": "Tiến Quân Giang Lăng",
+        "desc": "Thừa thắng truy kích, đại quân tiến xuống Giang Lăng củng cố thế chân vạc.",
+        "type": 0, "power": 26000, "stamina": 7,
+        "enemies": [("truong_phi", 0, 1, 38), ("hoang_trung", 1, 0, 38), ("ma_sieu", 1, 2, 38), ("tieu_kieu", 2, 1, 38)],
+        "first_gold": 9000, "first_dia": 900, "first_exp": 3200,
+        "norm_gold": 2200, "norm_exp": 1400, "star2": 5, "star3": 10
+    },
+    {
+        "filename": "stage_03_02.tres", "chapter": 3, "dir": "data/database/stages/ch03",
+        "id": 14, "key": "3-2", "name": "Đoạt Lấy Kinh Châu",
+        "desc": "Kinh Châu bốn chiến, các lộ chư hầu cùng dòm ngó miếng mồi béo bở.",
+        "type": 0, "power": 30000, "stamina": 7,
+        "enemies": [("quan_vu", 0, 0, 40), ("dien_vi", 0, 2, 40), ("gia_cat_luong", 1, 1, 40), ("chu_du", 2, 0, 40), ("bang_thong", 2, 2, 40)],
+        "first_gold": 10500, "first_dia": 1050, "first_exp": 3700,
+        "norm_gold": 2600, "norm_exp": 1600, "star2": 5, "star3": 11
+    },
+    {
+        "filename": "stage_03_03.tres", "chapter": 3, "dir": "data/database/stages/ch03",
+        "id": 15, "key": "3-3", "name": "Hợp Phì Đại Chiến",
+        "desc": "Trương Liêu uy chấn Hạp Phì, tám trăm tử sĩ phá vòng vây mười vạn quân.",
+        "type": 2, "power": 34000, "stamina": 8,
+        "enemies": [("tao_nhan", 0, 1, 42), ("truong_phi", 1, 0, 42), ("dien_vi", 1, 2, 42), ("dieu_thuyen", 2, 1, 42)],
+        "first_gold": 12000, "first_dia": 1200, "first_exp": 4200,
+        "norm_gold": 3000, "norm_exp": 1800, "star2": 5, "star3": 11
+    },
+    {
+        "filename": "stage_03_04.tres", "chapter": 3, "dir": "data/database/stages/ch03",
+        "id": 16, "key": "3-4", "name": "Định Quân Sơn",
+        "desc": "Hoàng Trung lão tướng một đao chém Hạ Hầu Uyên trên đỉnh Định Quân Sơn.",
+        "type": 0, "power": 38000, "stamina": 8,
+        "enemies": [("hoang_cai", 0, 0, 45), ("hoang_trung", 0, 2, 45), ("trieu_van", 1, 1, 45), ("ma_sieu", 2, 0, 45), ("tieu_kieu", 2, 2, 45)],
+        "first_gold": 14000, "first_dia": 1400, "first_exp": 4800,
+        "norm_gold": 3500, "norm_exp": 2100, "star2": 6, "star3": 12
+    },
+    {
+        "filename": "stage_03_05.tres", "chapter": 3, "dir": "data/database/stages/ch03",
+        "id": 17, "key": "3-5", "name": "Thủy Yêm Thất Quân",
+        "desc": "Quan Vũ uy chấn Hoa Hạ, nước lũ nhấn chìm bảy đạo quân Tào trong đêm mưa.",
+        "type": 3, "power": 42000, "stamina": 9,
+        "enemies": [("quan_vu", 0, 1, 48), ("truong_phi", 1, 0, 48), ("dien_vi", 1, 2, 48), ("chu_du", 2, 0, 48), ("gia_cat_luong", 2, 2, 48)],
+        "first_gold": 16000, "first_dia": 1600, "first_exp": 5400,
+        "norm_gold": 4000, "norm_exp": 2400, "star2": 6, "star3": 12
+    },
+    {
+        "filename": "stage_03_boss.tres", "chapter": 3, "dir": "data/database/stages/ch03",
+        "id": 18, "key": "3-6", "name": "Quyết Chiến Hứa Xương",
+        "desc": "Trận quyết chiến cuối cùng trước cổng Hứa Xương - thiên hạ về một mối!",
+        "type": 1, "power": 48000, "stamina": 10,
+        "enemies": [("truong_phi", 0, 0, 50), ("quan_vu", 0, 2, 50), ("lu_bo", 1, 1, 55), ("gia_cat_luong", 2, 0, 50), ("chu_du", 2, 2, 50)],
+        "first_gold": 18000, "first_dia": 1800, "first_exp": 6000,
+        "norm_gold": 4500, "norm_exp": 2600, "star2": 6, "star3": 13
+    }
+]
+
+def generate_chapter_file(chapter_id, name, subtitle, bg, stages, total_stars, unlock, filename):
+    lines = [f'[gd_resource type="Resource" script_class="ChapterData" load_steps={len(stages) + 2} format=3]', ""]
+    lines.append('[ext_resource type="Script" path="res://data/resources/ChapterData.cs" id="1_ch"]')
+    refs = []
+    for i, s in enumerate(stages):
+        ext_id = f"{i + 2}_s{i + 1}"
+        refs.append(f'ExtResource("{ext_id}")')
+        lines.append(f'[ext_resource type="Resource" path="res://{s["dir"]}/{s["filename"]}" id="{ext_id}"]')
+    lines.append("")
+    lines.append("[resource]")
+    lines.append('script = ExtResource("1_ch")')
+    lines.append(f"ChapterId = {chapter_id}")
+    lines.append(f'ChapterName = "{name}"')
+    lines.append(f'Subtitle = "{subtitle}"')
+    lines.append(f'BackgroundImage = "{bg}"')
+    lines.append('BgmTrack = ""')
+    lines.append(f"Stages = [{', '.join(refs)}]")
+    lines.append(f"TotalStars = {total_stars}")
+    lines.append(f"UnlockRequirement = {unlock}")
+    content = "\n".join(lines) + "\n"
+    with open(os.path.join(CHAPTERS_DIR, filename), "w", encoding="utf-8") as f:
+        f.write(content)
+    print(f"  -> Generated {filename}")
+
 def main():
     print("📜 Generating Stages & Chapters Data...")
     for s in stages_info:
         generate_stage_tres(s)
     generate_chapters()
+    for s in CHAPTER2_STAGES:
+        generate_stage_tres(s)
+    for s in CHAPTER3_STAGES:
+        generate_stage_tres(s)
+    generate_chapter_file(2, "Chương 2: Quyết Chiến Xích Bích",
+        "Hỏa thiêu liên hoàn thuyền, định thế chân vạc",
+        "res://assets/ui/activities/campaign/chapter_bg_ch02.png",
+        CHAPTER2_STAGES, 18, 12, "chapter_02.tres")
+    generate_chapter_file(3, "Chương 3: Định Đỉnh Giang Sơn",
+        "Tam phân thiên hạ, nhất thống giang sơn",
+        "res://assets/ui/activities/campaign/chapter_bg_ch02.png",
+        CHAPTER3_STAGES, 18, 24, "chapter_03.tres")
     print("✅ All data .tres files generated!")
 
 if __name__ == "__main__":

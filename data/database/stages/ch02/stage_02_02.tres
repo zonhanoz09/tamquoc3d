@@ -1,0 +1,55 @@
+[gd_resource type="Resource" script_class="StageData" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://data/resources/StageData.cs" id="1_stage"]
+[ext_resource type="Script" path="res://data/resources/EnemyEntry.cs" id="1_enemy"]
+
+[sub_resource type="Resource" id="Resource_00001"]
+script = ExtResource("1_enemy")
+HeroId = "tao_nhan"
+Row = 0
+Col = 0
+OverrideLevel = 25
+[sub_resource type="Resource" id="Resource_00002"]
+script = ExtResource("1_enemy")
+HeroId = "dien_vi"
+Row = 0
+Col = 2
+OverrideLevel = 25
+[sub_resource type="Resource" id="Resource_00003"]
+script = ExtResource("1_enemy")
+HeroId = "hoang_trung"
+Row = 1
+Col = 1
+OverrideLevel = 25
+[sub_resource type="Resource" id="Resource_00004"]
+script = ExtResource("1_enemy")
+HeroId = "sai_van_co"
+Row = 2
+Col = 0
+OverrideLevel = 25
+[sub_resource type="Resource" id="Resource_00005"]
+script = ExtResource("1_enemy")
+HeroId = "chu_du"
+Row = 2
+Col = 2
+OverrideLevel = 25
+
+[resource]
+script = ExtResource("1_stage")
+ChapterId = 2
+StageId = 8
+StageKey = "2-2"
+StageName = "Thuyền Cỏ Mượn Tên"
+Description = "Gia Cát Lượng dùng thuyền cỏ mượn mười vạn mũi tên giữa sương mù sông Trường Giang."
+Type = 0
+RecommendedPower = 11500
+StaminaCost = 5
+EnemyFormation = [SubResource("Resource_00001"), SubResource("Resource_00002"), SubResource("Resource_00003"), SubResource("Resource_00004"), SubResource("Resource_00005")]
+FirstClearGold = 4200
+FirstClearDiamond = 420
+FirstClearExp = 1700
+FirstClearItems = []
+NormalGold = 1100
+NormalExp = 720
+Star2Condition = 4
+Star3Condition = 9

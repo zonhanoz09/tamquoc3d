@@ -1,0 +1,55 @@
+[gd_resource type="Resource" script_class="StageData" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://data/resources/StageData.cs" id="1_stage"]
+[ext_resource type="Script" path="res://data/resources/EnemyEntry.cs" id="1_enemy"]
+
+[sub_resource type="Resource" id="Resource_00001"]
+script = ExtResource("1_enemy")
+HeroId = "quan_vu"
+Row = 0
+Col = 1
+OverrideLevel = 48
+[sub_resource type="Resource" id="Resource_00002"]
+script = ExtResource("1_enemy")
+HeroId = "truong_phi"
+Row = 1
+Col = 0
+OverrideLevel = 48
+[sub_resource type="Resource" id="Resource_00003"]
+script = ExtResource("1_enemy")
+HeroId = "dien_vi"
+Row = 1
+Col = 2
+OverrideLevel = 48
+[sub_resource type="Resource" id="Resource_00004"]
+script = ExtResource("1_enemy")
+HeroId = "chu_du"
+Row = 2
+Col = 0
+OverrideLevel = 48
+[sub_resource type="Resource" id="Resource_00005"]
+script = ExtResource("1_enemy")
+HeroId = "gia_cat_luong"
+Row = 2
+Col = 2
+OverrideLevel = 48
+
+[resource]
+script = ExtResource("1_stage")
+ChapterId = 3
+StageId = 17
+StageKey = "3-5"
+StageName = "Thủy Yêm Thất Quân"
+Description = "Quan Vũ uy chấn Hoa Hạ, nước lũ nhấn chìm bảy đạo quân Tào trong đêm mưa."
+Type = 3
+RecommendedPower = 42000
+StaminaCost = 9
+EnemyFormation = [SubResource("Resource_00001"), SubResource("Resource_00002"), SubResource("Resource_00003"), SubResource("Resource_00004"), SubResource("Resource_00005")]
+FirstClearGold = 16000
+FirstClearDiamond = 1600
+FirstClearExp = 5400
+FirstClearItems = []
+NormalGold = 4000
+NormalExp = 2400
+Star2Condition = 6
+Star3Condition = 12

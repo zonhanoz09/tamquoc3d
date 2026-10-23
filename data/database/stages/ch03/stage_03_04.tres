@@ -1,0 +1,55 @@
+[gd_resource type="Resource" script_class="StageData" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://data/resources/StageData.cs" id="1_stage"]
+[ext_resource type="Script" path="res://data/resources/EnemyEntry.cs" id="1_enemy"]
+
+[sub_resource type="Resource" id="Resource_00001"]
+script = ExtResource("1_enemy")
+HeroId = "hoang_cai"
+Row = 0
+Col = 0
+OverrideLevel = 45
+[sub_resource type="Resource" id="Resource_00002"]
+script = ExtResource("1_enemy")
+HeroId = "hoang_trung"
+Row = 0
+Col = 2
+OverrideLevel = 45
+[sub_resource type="Resource" id="Resource_00003"]
+script = ExtResource("1_enemy")
+HeroId = "trieu_van"
+Row = 1
+Col = 1
+OverrideLevel = 45
+[sub_resource type="Resource" id="Resource_00004"]
+script = ExtResource("1_enemy")
+HeroId = "ma_sieu"
+Row = 2
+Col = 0
+OverrideLevel = 45
+[sub_resource type="Resource" id="Resource_00005"]
+script = ExtResource("1_enemy")
+HeroId = "tieu_kieu"
+Row = 2
+Col = 2
+OverrideLevel = 45
+
+[resource]
+script = ExtResource("1_stage")
+ChapterId = 3
+StageId = 16
+StageKey = "3-4"
+StageName = "Định Quân Sơn"
+Description = "Hoàng Trung lão tướng một đao chém Hạ Hầu Uyên trên đỉnh Định Quân Sơn."
+Type = 0
+RecommendedPower = 38000
+StaminaCost = 8
+EnemyFormation = [SubResource("Resource_00001"), SubResource("Resource_00002"), SubResource("Resource_00003"), SubResource("Resource_00004"), SubResource("Resource_00005")]
+FirstClearGold = 14000
+FirstClearDiamond = 1400
+FirstClearExp = 4800
+FirstClearItems = []
+NormalGold = 3500
+NormalExp = 2100
+Star2Condition = 6
+Star3Condition = 12

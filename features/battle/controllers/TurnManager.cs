@@ -10,6 +10,10 @@ namespace TamQuoc3D.Features.Battle.Controllers;
 /// </summary>
 public class TurnManager
 {
+
+    /// <summary>RNG co seed do BattleManager tiem vao (Phase 5 - deterministic combat).</summary>
+    public System.Random Rng { get; set; }
+
     public List<BattleHero> Team0 { get; private set; } = [];
     public List<BattleHero> Team1 { get; private set; } = [];
 
@@ -37,7 +41,7 @@ public class TurnManager
         int spd1 = GetTeamTotalSpeed(Team1);
         if (spd0 > spd1) return 0;
         if (spd1 > spd0) return 1;
-        return GD.Randf() < 0.5f ? 0 : 1;
+        return (Rng != null ? (float)Rng.NextDouble() : GD.Randf()) < 0.5f ? 0 : 1;
     }
 
     public void BuildRoundQueue()

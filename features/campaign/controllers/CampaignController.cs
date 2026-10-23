@@ -53,7 +53,8 @@ public partial class CampaignController : Control
         string[] paths =
         [
             "res://data/database/chapters/chapter_01.tres",
-            "res://data/database/chapters/chapter_02.tres"
+            "res://data/database/chapters/chapter_02.tres",
+            "res://data/database/chapters/chapter_03.tres"
         ];
 
         foreach (var p in paths)
@@ -253,8 +254,9 @@ public partial class CampaignController : Control
                 int maxCleared = 0;
                 foreach (var p in serverProgress)
                 {
-                    // Parse "stage_1_1" or "1-1"
-                    int sId = ParseStageId(p.StageId);
+                    // StageKey ("2-1") -> StageId toan cuc duy nhat qua bang tra chuong;
+                    // ParseStageId chi la du phong (no tra ve so cuoi, trung giua cac chuong)
+                    int sId = ResolveStageIdByKey(p.StageId);
                     if (sId > 0)
                     {
                         _stageStars[sId] = p.Stars;
@@ -356,16 +358,43 @@ public partial class CampaignController : Control
 
     private void RecalculateChapterStars()
     {
-        int ch1Total = 0;
-        for (int i = 1; i <= 6; i++)
+        // Tong sao theo tung chuong tu danh sach StageData thuc te (moi chuong 6 ai)
+        foreach (var chapter in _chapters)
         {
-            if (_stageStars.TryGetValue(i, out int st))
+            if (chapter == null) continue;
+            int total = 0;
+            foreach (var stage in chapter.Stages)
             {
-                ch1Total += st;
+                if (stage != null && _stageStars.TryGetValue(stage.StageId, out int st))
+                {
+                    total += st;
+                }
+            }
+            _chapterStars[chapter.ChapterId] = total;
+        }
+    }
+
+    /// <summary>
+    /// Anh xa StageKey tren server ("1-1", "2-1", "3-6") sang StageId toan cuc
+    /// duy nhat cua client (1-18). Khong tim thay thi roi ve ParseStageId.
+    /// </summary>
+    private int ResolveStageIdByKey(string stageKey)
+    {
+        if (!string.IsNullOrEmpty(stageKey))
+        {
+            foreach (var chapter in _chapters)
+            {
+                if (chapter == null) continue;
+                foreach (var stage in chapter.Stages)
+                {
+                    if (stage != null && stage.StageKey == stageKey)
+                    {
+                        return stage.StageId;
+                    }
+                }
             }
         }
-        _chapterStars[1] = ch1Total;
-        _chapterStars[2] = 0;
+        return ParseStageId(stageKey);
     }
 
     private void RefreshWalletDisplay()
