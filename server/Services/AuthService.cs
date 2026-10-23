@@ -83,7 +83,12 @@ public sealed class AuthService(NpgsqlDataSource dataSource) : IAuthService
 
             await using (var createHeroes = new NpgsqlCommand("""
                 INSERT INTO user_heroes (user_id, hero_id, custom_name, star, level, is_commander)
-                VALUES (@user_id, 'default_hero', @display_name, 1, 1, TRUE);
+                VALUES (@user_id, 'default_hero', @display_name, 1, 1, TRUE),
+                       (@user_id, 'quan_vu', '', 1, 1, FALSE),
+                       (@user_id, 'trieu_van', '', 1, 1, FALSE),
+                       (@user_id, 'ma_sieu', '', 1, 1, FALSE),
+                       (@user_id, 'gia_cat_luong', '', 1, 1, FALSE),
+                       (@user_id, 'tieu_kieu', '', 1, 1, FALSE);
                 """, connection, transaction))
             {
                 createHeroes.Parameters.AddWithValue("user_id", userId);
@@ -91,15 +96,40 @@ public sealed class AuthService(NpgsqlDataSource dataSource) : IAuthService
                 await createHeroes.ExecuteNonQueryAsync(cancellationToken);
             }
 
+            // Starter heroes start with both skills at level 1
+            await using (var createHeroSkills = new NpgsqlCommand("""
+                INSERT INTO user_hero_skills (user_hero_id, hero_id, skill_id, level)
+                SELECT uh.id, uh.hero_id, hs.skill_id, 1
+                FROM user_heroes uh
+                JOIN hero_skills hs ON hs.hero_id = uh.hero_id
+                WHERE uh.user_id = @user_id
+                ON CONFLICT DO NOTHING;
+                """, connection, transaction))
+            {
+                createHeroSkills.Parameters.AddWithValue("user_id", userId);
+                await createHeroSkills.ExecuteNonQueryAsync(cancellationToken);
+            }
+
             await using (var createFormation = new NpgsqlCommand("""
                 INSERT INTO user_formations (user_id, formation_type, grid_layout, is_active)
                 VALUES (@user_id, 'PVE_DEFAULT',
-                    '{"front":[null,null,null],"mid":[null,"default_hero",null],"back":[null,null,null]}'::jsonb,
+                    '{"front":[null,"quan_vu",null],"mid":["trieu_van",null,"ma_sieu"],"back":[null,"gia_cat_luong","tieu_kieu"]}'::jsonb,
                     TRUE);
                 """, connection, transaction))
             {
                 createFormation.Parameters.AddWithValue("user_id", userId);
                 await createFormation.ExecuteNonQueryAsync(cancellationToken);
+            }
+
+            // Arena + tower profiles exist from day one so the player appears
+            // in matchmaking and tower progress reads never miss a row.
+            await using (var createMeta = new NpgsqlCommand("""
+                INSERT INTO arena_profiles (user_id) VALUES (@user_id);
+                INSERT INTO tower_progress (user_id) VALUES (@user_id);
+                """, connection, transaction))
+            {
+                createMeta.Parameters.AddWithValue("user_id", userId);
+                await createMeta.ExecuteNonQueryAsync(cancellationToken);
             }
 
             var token = await IssueSessionAsync(connection, transaction, userId, cancellationToken);

@@ -13,6 +13,14 @@ public interface IGameService
     Task<object> UpdateFormationAsync(Guid userId, FormationUpdateRequest request, CancellationToken cancellationToken);
     Task<IReadOnlyList<object>> GetCampaignProgressAsync(Guid userId, CancellationToken cancellationToken);
     Task<object> ClearCampaignStageAsync(Guid userId, CampaignClearRequest request, CancellationToken cancellationToken);
+    Task<IReadOnlyList<object>> GetShopItemsAsync(CancellationToken cancellationToken);
+    Task<object> BuyShopItemAsync(Guid userId, ShopBuyRequest request, CancellationToken cancellationToken);
+    Task<IReadOnlyList<object>> GetInventoryAsync(Guid userId, CancellationToken cancellationToken);
+    Task<object> UseItemAsync(Guid userId, UseItemRequest request, CancellationToken cancellationToken);
+    Task<object> GetArenaProfileAsync(Guid userId, CancellationToken cancellationToken);
+    Task<IReadOnlyList<object>> GetArenaOpponentsAsync(Guid userId, CancellationToken cancellationToken);
+    Task<object> GetTowerProgressAsync(Guid userId, CancellationToken cancellationToken);
+    Task<object> ClearTowerFloorAsync(Guid userId, TowerClearRequest request, CancellationToken cancellationToken);
     Task<object> StarUpHeroAsync(Guid userId, HeroStarUpRequest request, CancellationToken cancellationToken);
     Task<object> PullGachaAsync(Guid userId, GachaPullRequest request, CancellationToken cancellationToken);
     Task<object> SimulateBattleAsync(Guid userId, BattleSimulationRequest request, CancellationToken cancellationToken);

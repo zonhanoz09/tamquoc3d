@@ -51,6 +51,33 @@ public sealed record HeroStarUpRequest
     public required string HeroId { get; init; }
 }
 
+/// <summary>Shop purchase. Price and grant are derived server-side from shop_items.</summary>
+public sealed record ShopBuyRequest
+{
+    [Required, StringLength(50, MinimumLength = 1)]
+    public required string ItemId { get; init; }
+
+    [Range(1, 10)]
+    public int Quantity { get; init; } = 1;
+}
+
+/// <summary>Use a consumable from the inventory (currently: EXP book 'sach_exp').</summary>
+public sealed record UseItemRequest
+{
+    [Required, StringLength(50, MinimumLength = 1)]
+    public required string ItemId { get; init; }
+
+    [Required, StringLength(50, MinimumLength = 1)]
+    public required string HeroId { get; init; }
+}
+
+/// <summary>Tower floor clear reported by the client after a real client-side battle.</summary>
+public sealed record TowerClearRequest
+{
+    [Range(1, 200)]
+    public required int Floor { get; init; }
+}
+
 /// <summary>Requested gacha banner and number of pulls.</summary>
 public sealed record GachaPullRequest
 {

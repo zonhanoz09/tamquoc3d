@@ -50,6 +50,82 @@ public static class PlayerEndpoints
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status401Unauthorized);
 
+        player.MapGet("/shop/items", async (
+                IGameService service,
+                CancellationToken ct) => TypedResults.Ok(await service.GetShopItemsAsync(ct)))
+            .WithName("GetShopItems")
+            .WithSummary("List the server-defined shop catalog.")
+            .ProducesProblem(StatusCodes.Status401Unauthorized);
+
+        player.MapPost("/shop/buy", async (
+                ShopBuyRequest request,
+                ClaimsPrincipal principal,
+                IGameService service,
+                CancellationToken ct) =>
+                TypedResults.Ok(await service.BuyShopItemAsync(AuthEndpoints.GetUserId(principal), request, ct)))
+            .WithName("BuyShopItem")
+            .WithSummary("Buy a shop item at the server-side price.")
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status401Unauthorized);
+
+        player.MapGet("/inventory", async (
+                ClaimsPrincipal principal,
+                IGameService service,
+                CancellationToken ct) =>
+                TypedResults.Ok(await service.GetInventoryAsync(AuthEndpoints.GetUserId(principal), ct)))
+            .WithName("GetInventory")
+            .WithSummary("List inventory items with quantity > 0.")
+            .ProducesProblem(StatusCodes.Status401Unauthorized);
+
+        player.MapPost("/inventory/use", async (
+                UseItemRequest request,
+                ClaimsPrincipal principal,
+                IGameService service,
+                CancellationToken ct) =>
+                TypedResults.Ok(await service.UseItemAsync(AuthEndpoints.GetUserId(principal), request, ct)))
+            .WithName("UseItem")
+            .WithSummary("Use a consumable inventory item on a hero.")
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status401Unauthorized);
+
+        player.MapGet("/arena/profile", async (
+                ClaimsPrincipal principal,
+                IGameService service,
+                CancellationToken ct) =>
+                TypedResults.Ok(await service.GetArenaProfileAsync(AuthEndpoints.GetUserId(principal), ct)))
+            .WithName("GetArenaProfile")
+            .WithSummary("Get the player's arena rank profile and team power.")
+            .ProducesProblem(StatusCodes.Status401Unauthorized);
+
+        player.MapGet("/arena/opponents", async (
+                ClaimsPrincipal principal,
+                IGameService service,
+                CancellationToken ct) =>
+                TypedResults.Ok(await service.GetArenaOpponentsAsync(AuthEndpoints.GetUserId(principal), ct)))
+            .WithName("GetArenaOpponents")
+            .WithSummary("List nearby-MMR arena opponents with real team power.")
+            .ProducesProblem(StatusCodes.Status401Unauthorized);
+
+        player.MapGet("/tower/progress", async (
+                ClaimsPrincipal principal,
+                IGameService service,
+                CancellationToken ct) =>
+                TypedResults.Ok(await service.GetTowerProgressAsync(AuthEndpoints.GetUserId(principal), ct)))
+            .WithName("GetTowerProgress")
+            .WithSummary("Get the player's tower progress.")
+            .ProducesProblem(StatusCodes.Status401Unauthorized);
+
+        player.MapPost("/tower/clear", async (
+                TowerClearRequest request,
+                ClaimsPrincipal principal,
+                IGameService service,
+                CancellationToken ct) =>
+                TypedResults.Ok(await service.ClearTowerFloorAsync(AuthEndpoints.GetUserId(principal), request, ct)))
+            .WithName("ClearTowerFloor")
+            .WithSummary("Claim the server-side reward for the next tower floor.")
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status401Unauthorized);
+
         player.MapGet("/formations", async (ClaimsPrincipal principal, IGameService service, CancellationToken ct) =>
                 TypedResults.Ok(await service.GetFormationsAsync(AuthEndpoints.GetUserId(principal), ct)))
             .WithName("GetFormations")

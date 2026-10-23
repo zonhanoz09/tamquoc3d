@@ -48,6 +48,7 @@ public partial class BattleScene : Node2D
     private Label _resultDetailLabel;
     private Button _campaignBtn;
     private bool _campaignResultRecorded = false;
+    private bool _towerResultRecorded = false;
 
     // Manual mode (Phase 2): panel chon chieu + trang thai cho click muc tieu
     private Button _modeBtn;
@@ -434,7 +435,11 @@ public partial class BattleScene : Node2D
             Size = new Vector2(160, 48),
             Visible = false
         };
-        _campaignBtn.Pressed += () => SceneNavigator.GoToCampaign();
+        _campaignBtn.Pressed += () =>
+        {
+            if (GameManager.Instance?.BattleContext == "tower") SceneNavigator.GoToTower();
+            else SceneNavigator.GoToCampaign();
+        };
         _resultBanner.AddChild(_campaignBtn);
 
         _restartBtn = new Button
@@ -508,8 +513,15 @@ public partial class BattleScene : Node2D
         var gm = GameManager.Instance;
         var stage = gm?.CurrentStage;
         bool isCampaignStage = stage != null && gm.BattleContext == "campaign" && stage.EnemyFormation.Count > 0;
+        bool isTowerBattle = gm != null && gm.BattleContext == "tower" && gm.CurrentTowerFloor > 0;
 
-        if (isCampaignStage)
+        if (isTowerBattle)
+        {
+            // Tran Thap Thi Luyen: dich sinh theo tang (BattleManager.SetupTowerBattle)
+            var formation = gm.CurrentFormation ?? new Godot.Collections.Array<FormationEntry>();
+            _battleManager.SetupTowerBattle(formation, gm.CurrentTowerFloor);
+        }
+        else if (isCampaignStage)
         {
             // Tran chien dich: dich lay dung EnemyFormation cua ai dang thach dau,
             // khong con dung doi dich hardcode cho moi ai.
@@ -834,9 +846,24 @@ public partial class BattleScene : Node2D
         // khong chi dung lai o banner (truoc day khong noi nao emit StageCompleted).
         var gm = GameManager.Instance;
         bool isCampaignStage = gm?.CurrentStage != null && gm.BattleContext == "campaign";
-        if (isCampaignStage)
+        bool isTowerBattle = gm != null && gm.BattleContext == "tower" && gm.CurrentTowerFloor > 0;
+        if (isTowerBattle)
         {
             _campaignBtn.Visible = true;
+            _campaignBtn.Text = "🗼 VỀ THÁP THÍ LUYỆN";
+            if (winner == 0)
+            {
+                _ = RecordTowerResultAsync();
+            }
+            else
+            {
+                _resultDetailLabel.Text = $"Chưa qua được tầng {gm.CurrentTowerFloor}. Nâng cấp tướng rồi thử lại!";
+            }
+        }
+        else if (isCampaignStage)
+        {
+            _campaignBtn.Visible = true;
+            _campaignBtn.Text = "🏰 CHIẾN DỊCH";
             if (winner == 0)
             {
                 _ = RecordCampaignResultAsync();
@@ -845,6 +872,63 @@ public partial class BattleScene : Node2D
             {
                 _resultDetailLabel.Text = "Thất bại — không tốn Thể Lực. Bố trí lại đội hình rồi thử lại!";
             }
+        }
+    }
+
+    /// <summary>
+    /// Ghi nhan thang tang thap: online nhan thuong tu server (chong nhay tang),
+    /// offline cong thuong cong thuc 100 Bac/tang (+20 KC moi 5 tang) vao vi local.
+    /// </summary>
+    private async System.Threading.Tasks.Task RecordTowerResultAsync()
+    {
+        if (_towerResultRecorded) return;
+        _towerResultRecorded = true;
+
+        try
+        {
+            var gm = GameManager.Instance;
+            if (gm == null) return;
+            int floor = gm.CurrentTowerFloor;
+
+            int silver;
+            int gold;
+            NetworkManager.TowerClearResultDto dto = null;
+            var network = NetworkManager.Instance;
+            if (network != null && network.IsServerOnline && network.IsAuthenticated)
+            {
+                dto = await network.ClearTowerFloorAsync(floor);
+            }
+
+            if (dto != null)
+            {
+                silver = dto.RewardSilver;
+                gold = dto.RewardGold;
+                gm.TowerHighestFloor = dto.HighestFloor;
+                if (dto.Status == "already_cleared")
+                {
+                    _resultDetailLabel.Text = $"Tầng {floor} đã từng qua — không nhận lại thưởng. Hãy lên tầng {dto.HighestFloor + 1}!";
+                    return;
+                }
+            }
+            else if (floor <= gm.TowerHighestFloor)
+            {
+                _resultDetailLabel.Text = $"Tầng {floor} đã từng qua — không nhận lại thưởng (offline). Hãy lên tầng {gm.TowerHighestFloor + 1}!";
+                return;
+            }
+            else
+            {
+                silver = 100 * floor;
+                gold = floor % 5 == 0 ? 20 : 0;
+                if (silver > 0) gm.AddGold(silver);
+                if (gold > 0) gm.AddGems(gold);
+                gm.TowerHighestFloor = floor;
+            }
+
+            _resultDetailLabel.Text = $"Qua tầng {floor}!   •   +{silver} Bạc" + (gold > 0 ? $"   •   +{gold} Kim Cương" : "");
+        }
+        catch (Exception ex)
+        {
+            GD.PrintErr($"[BattleScene] RecordTowerResult failed: {ex.Message}");
         }
     }
 
@@ -956,6 +1040,7 @@ public partial class BattleScene : Node2D
         Engine.TimeScale = 1.0f;
         _resultBanner.Visible = false;
         _campaignResultRecorded = false;
+        _towerResultRecorded = false;
         if (_resultDetailLabel != null) _resultDetailLabel.Text = "";
         if (_campaignBtn != null) _campaignBtn.Visible = false;
         _battleManager.IsBattleActive = false;

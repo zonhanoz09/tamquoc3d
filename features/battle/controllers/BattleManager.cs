@@ -111,6 +111,49 @@ public partial class BattleManager : Node
         TurnManager.Setup(Team0, Team1);
     }
 
+    /// <summary>
+    /// Dung tran Thap Thi Luyen: dich sinh theo tang (so luong 3-5, chi so scale
+    /// +12%/tang, seed co dinh theo tang de nhat quan), doi nguoi choi theo doi hinh.
+    /// </summary>
+    public void SetupTowerBattle(IList<FormationEntry> playerFormation, int floor)
+    {
+        Team0.Clear();
+        Team1.Clear();
+
+        BuildPlayerTeam(playerFormation);
+
+        var allHeroes = new List<HeroData>();
+        if (HeroDatabase.Instance != null)
+        {
+            allHeroes.AddRange(HeroDatabase.Instance.GetAllHeroes());
+        }
+
+        if (allHeroes.Count > 0)
+        {
+            var rng = new System.Random(floor * 7919 + 17);
+            int count = System.Math.Min(5, 3 + floor / 8);
+            float scale = 1.0f + 0.12f * (floor - 1);
+            var slots = new[] { (0, 1), (1, 0), (1, 2), (2, 0), (2, 2) };
+            for (int i = 0; i < count; i++)
+            {
+                var data = allHeroes[rng.Next(allHeroes.Count)];
+                var (row, col) = slots[i];
+                var bh = new BattleHero(data, 1, row, col);
+                bh.Died += OnHeroDied;
+                bh.Stats.HpMax = (int)(bh.Stats.HpMax * scale);
+                bh.Stats.HpCurrent = bh.Stats.HpMax;
+                bh.Stats.AtkPhys = (int)(bh.Stats.AtkPhys * scale);
+                bh.Stats.AtkMag = (int)(bh.Stats.AtkMag * scale);
+                bh.Stats.DefPhys = (int)(bh.Stats.DefPhys * scale);
+                bh.Stats.DefMag = (int)(bh.Stats.DefMag * scale);
+                Team1.Add(bh);
+            }
+        }
+
+        TurnManager = new TurnManager();
+        TurnManager.Setup(Team0, Team1);
+    }
+
     private void BuildPlayerTeam(IList<FormationEntry> playerFormation)
     {
         foreach (var entry in playerFormation)

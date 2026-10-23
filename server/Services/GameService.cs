@@ -555,41 +555,74 @@ public sealed class GameService(
             throw new InvalidGameRequestException("Battle type is invalid.");
         }
 
-        var seed = Random.Shared.Next(100_000, 1_000_000);
-        var random = new Random(seed);
-        var combatLog = new List<string>();
-        var round = 1;
-        var attackerHp = 12_000;
-        var defenderHp = 9_500;
-        string[] attackerHeroes = ["lu_bo", "quan_vu", "trieu_van", "gia_cat_luong", "chu_du"];
-        string[] defenderHeroes = ["dien_vi", "tao_nhan"];
+        var isArena = request.BattleType == "ASYNC_ARENA";
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
 
-        while (round <= 5 && attackerHp > 0 && defenderHp > 0)
+        var attackerTeam = await LoadTeamAsync(connection, userId, cancellationToken);
+        if (attackerTeam.Count == 0)
         {
-            combatLog.Add($"=== Hiệp {round} ===");
-            var actor = attackerHeroes[random.Next(attackerHeroes.Length)];
-            var damage = random.Next(1200, 2401);
-            var critical = random.NextDouble() < 0.25;
-            if (critical)
-            {
-                damage = (int)(damage * 1.8);
-            }
-            defenderHp = Math.Max(0, defenderHp - damage);
-            combatLog.Add($"⚔️ {actor} tấn công đối phương, gây {damage} sát thương!{(critical ? " (BẠO KÍCH! 🔥)" : string.Empty)}");
-            if (defenderHp <= 0)
-            {
-                break;
-            }
-
-            var defenderActor = defenderHeroes[random.Next(defenderHeroes.Length)];
-            var defenderDamage = random.Next(800, 1501);
-            attackerHp = Math.Max(0, attackerHp - defenderDamage);
-            combatLog.Add($"🛡️ {defenderActor} phản công, gây {defenderDamage} sát thương lên đội Chúa Công!");
-            round++;
+            throw new InvalidGameRequestException("Player has no heroes to battle with.");
         }
 
-        var attackerWon = defenderHp <= 0;
-        combatLog.Add(attackerWon ? "=== Kết Quả: CHIẾN THẮNG HUY HOÀNG! 🏆 ===" : "=== Kết Quả: THẤT BẠI TRONG GANG TẤC! ===");
+        var seed = Random.Shared.Next(100_000, 1_000_000);
+        var random = new Random(seed);
+
+        var defenderId = ParseOptionalGuid(request.DefenderId);
+        var realDefender = defenderId.HasValue && defenderId.Value != userId;
+        List<TeamHero> defenderTeam;
+        string defenderName;
+        if (realDefender)
+        {
+            defenderTeam = await LoadTeamAsync(connection, defenderId!.Value, cancellationToken);
+            if (defenderTeam.Count == 0)
+            {
+                realDefender = false;
+                defenderTeam = await LoadNpcTeamAsync(connection, random, attackerTeam.Sum(h => h.Power), cancellationToken);
+                defenderName = "Đội Thủ Vệ Hoàng Gia (NPC)";
+                defenderId = null;
+            }
+            else
+            {
+                defenderName = await GetDisplayNameAsync(connection, defenderId.Value, cancellationToken) ?? "Đối thủ";
+            }
+        }
+        else
+        {
+            defenderTeam = await LoadNpcTeamAsync(connection, random, attackerTeam.Sum(h => h.Power), cancellationToken);
+            defenderName = "Đội Thủ Vệ Hoàng Gia (NPC)";
+            defenderId = null;
+        }
+
+        var (attackerWon, rounds, combatLog) = SimulateTeams(attackerTeam, defenderTeam, random);
+
+        var rewardSilver = 0;
+        var rewardTokens = 0;
+        int? mmrAfter = null;
+        if (isArena)
+        {
+            rewardSilver = attackerWon ? 300 : 50;
+            rewardTokens = attackerWon ? 3 : 1;
+            await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+            await EnsureArenaProfileAsync(connection, transaction, userId, cancellationToken);
+            if (realDefender && defenderId.HasValue)
+            {
+                await EnsureArenaProfileAsync(connection, transaction, defenderId.Value, cancellationToken);
+            }
+            await ExecAsync(connection, transaction,
+                "UPDATE user_wallets SET silver = silver + @s, arena_tokens = arena_tokens + @tk, updated_at = NOW() WHERE user_id = @u;",
+                cancellationToken, ("s", rewardSilver), ("tk", rewardTokens), ("u", userId));
+            await ApplyArenaResultAsync(connection, transaction, userId, attackerWon, cancellationToken);
+            if (realDefender && defenderId.HasValue)
+            {
+                await ApplyArenaResultAsync(connection, transaction, defenderId.Value, !attackerWon, cancellationToken);
+            }
+            await using var mmrCommand = new NpgsqlCommand(
+                "SELECT mmr FROM arena_profiles WHERE user_id = @u;", connection, transaction);
+            mmrCommand.Parameters.AddWithValue("u", userId);
+            mmrAfter = Convert.ToInt32(await mmrCommand.ExecuteScalarAsync(cancellationToken));
+            await transaction.CommitAsync(cancellationToken);
+        }
+
         var logJson = JsonSerializer.Serialize(combatLog);
         var replay = await QuerySingleAsync("""
             INSERT INTO battle_replays
@@ -599,7 +632,7 @@ public sealed class GameService(
             """, cancellationToken,
             ("battle_type", request.BattleType),
             ("attacker_id", userId),
-            ("defender_id", ParseOptionalGuid(request.DefenderId)),
+            ("defender_id", (object?)defenderId ?? DBNull.Value),
             ("attacker_won", attackerWon),
             ("seed", seed),
             ("input_actions", logJson));
@@ -609,8 +642,585 @@ public sealed class GameService(
             replay_id = (replay as Dictionary<string, object?>)?["id"],
             seed,
             attacker_win = attackerWon,
-            rounds = round,
-            log = combatLog
+            rounds,
+            log = combatLog,
+            defender_name = defenderName,
+            attacker_power = attackerTeam.Sum(h => h.Power),
+            defender_power = defenderTeam.Sum(h => h.Power),
+            rewards = new { silver = rewardSilver, arena_tokens = rewardTokens },
+            mmr_after = mmrAfter
+        };
+    }
+
+    // ==================== Phase 4: Shop / Inventory / Arena / Tower ====================
+
+    private sealed class TeamHero
+    {
+        public required string HeroId { get; init; }
+        public required string Name { get; init; }
+        public int HpMax { get; set; }
+        public int Atk { get; init; }
+        public int Speed { get; init; }
+        public double CritRate { get; init; }
+        public long Power { get; init; }
+        public int Hp { get; set; }
+    }
+
+    private static double ProgressionScale(int level, int star) =>
+        (1 + 0.05 * (level - 1)) * (1 + 0.10 * (star - 1));
+
+    private static long ComputePower(int hp, int atkPhys, int atkMag, int defPhys, int defMag, int speed, int level, int star) =>
+        (long)Math.Round((hp / 10.0 + (atkPhys + atkMag) * 2.0 + defPhys + defMag + speed) * ProgressionScale(level, star));
+
+    private static async Task ExecAsync(
+        NpgsqlConnection connection,
+        NpgsqlTransaction? transaction,
+        string sql,
+        CancellationToken cancellationToken,
+        params (string Name, object Value)[] parameters)
+    {
+        await using var command = transaction is null
+            ? new NpgsqlCommand(sql, connection)
+            : new NpgsqlCommand(sql, connection, transaction);
+        foreach (var (name, value) in parameters)
+        {
+            command.Parameters.AddWithValue(name, value);
+        }
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Load a player's battle team: heroes from the saved PVE formation first,
+    /// remaining slots filled by highest combat power (max 5).
+    /// </summary>
+    private async Task<List<TeamHero>> LoadTeamAsync(
+        NpgsqlConnection connection,
+        Guid userId,
+        CancellationToken cancellationToken)
+    {
+        var formationIds = new List<string>();
+        await using (var formationCommand = new NpgsqlCommand(
+            "SELECT grid_layout::text FROM user_formations WHERE user_id = @u AND formation_type = 'PVE_DEFAULT';",
+            connection))
+        {
+            formationCommand.Parameters.AddWithValue("u", userId);
+            if (await formationCommand.ExecuteScalarAsync(cancellationToken) is string layoutJson)
+            {
+                using var doc = JsonDocument.Parse(layoutJson);
+                foreach (var row in doc.RootElement.EnumerateObject())
+                {
+                    foreach (var cell in row.Value.EnumerateArray())
+                    {
+                        if (cell.ValueKind == JsonValueKind.String && cell.GetString() is { Length: > 0 } heroId)
+                        {
+                            formationIds.Add(heroId);
+                        }
+                    }
+                }
+            }
+        }
+
+        var heroes = new List<TeamHero>();
+        await using var command = new NpgsqlCommand("""
+            SELECT uh.hero_id, d.hero_name, uh.level, uh.star,
+                   (d.base_stats->>'hp_max')::int, (d.base_stats->>'atk_phys')::int, (d.base_stats->>'atk_mag')::int,
+                   (d.base_stats->>'def_phys')::int, (d.base_stats->>'def_mag')::int, (d.base_stats->>'speed')::int,
+                   COALESCE((d.base_stats->>'crit_rate')::float, 0.05)
+            FROM user_heroes uh
+            JOIN hero_definitions d ON d.hero_id = uh.hero_id
+            WHERE uh.user_id = @u;
+            """, connection);
+        command.Parameters.AddWithValue("u", userId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            var level = reader.GetInt32(2);
+            var star = reader.GetInt32(3);
+            var hp = reader.GetInt32(4);
+            var atkPhys = reader.GetInt32(5);
+            var atkMag = reader.GetInt32(6);
+            var defPhys = reader.GetInt32(7);
+            var defMag = reader.GetInt32(8);
+            var speed = reader.GetInt32(9);
+            var scale = ProgressionScale(level, star);
+            var hero = new TeamHero
+            {
+                HeroId = reader.GetString(0),
+                Name = reader.GetString(1),
+                HpMax = (int)Math.Round(hp * scale),
+                Atk = (int)Math.Round((atkPhys + atkMag) * scale),
+                Speed = speed,
+                CritRate = reader.GetDouble(10),
+                Power = ComputePower(hp, atkPhys, atkMag, defPhys, defMag, speed, level, star)
+            };
+            hero.Hp = hero.HpMax;
+            heroes.Add(hero);
+        }
+        await reader.CloseAsync();
+
+        var byId = heroes.ToDictionary(h => h.HeroId);
+        var team = new List<TeamHero>();
+        foreach (var heroId in formationIds)
+        {
+            if (byId.TryGetValue(heroId, out var hero) && !team.Contains(hero))
+            {
+                team.Add(hero);
+            }
+        }
+        foreach (var hero in heroes.OrderByDescending(h => h.Power))
+        {
+            if (team.Count >= 5) break;
+            if (!team.Contains(hero)) team.Add(hero);
+        }
+        return team.Take(5).ToList();
+    }
+
+    private async Task<List<TeamHero>> LoadNpcTeamAsync(
+        NpgsqlConnection connection,
+        Random random,
+        long attackerTeamPower,
+        CancellationToken cancellationToken)
+    {
+        var team = new List<TeamHero>();
+        await using var command = new NpgsqlCommand(
+            "SELECT hero_id, hero_name, base_stats::text FROM hero_definitions WHERE hero_id <> 'default_hero' ORDER BY random() LIMIT 5;",
+            connection);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        var rows = new List<(string Id, string Name, string Stats)>();
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            rows.Add((reader.GetString(0), reader.GetString(1), reader.GetString(2)));
+        }
+        await reader.CloseAsync();
+
+        var perHeroTarget = Math.Max(300, attackerTeamPower / Math.Max(1, rows.Count));
+        foreach (var (heroId, name, statsJson) in rows)
+        {
+            using var doc = JsonDocument.Parse(statsJson);
+            var stats = doc.RootElement;
+            int GetInt(string key) => stats.TryGetProperty(key, out var v) ? v.GetInt32() : 0;
+            double GetDouble(string key) => stats.TryGetProperty(key, out var v) ? v.GetDouble() : 0;
+            var level = 1 + random.Next(0, 5);
+            var star = 1 + random.Next(0, 3);
+            var power = ComputePower(GetInt("hp_max"), GetInt("atk_phys"), GetInt("atk_mag"),
+                GetInt("def_phys"), GetInt("def_mag"), GetInt("speed"), level, star);
+            var adjust = Math.Clamp(perHeroTarget / (double)Math.Max(1, power), 0.5, 2.0);
+            var scale = ProgressionScale(level, star) * adjust;
+            var hero = new TeamHero
+            {
+                HeroId = heroId,
+                Name = name,
+                HpMax = (int)Math.Round(GetInt("hp_max") * scale),
+                Atk = (int)Math.Round((GetInt("atk_phys") + GetInt("atk_mag")) * scale),
+                Speed = GetInt("speed"),
+                CritRate = GetDouble("crit_rate"),
+                Power = (long)Math.Round(power * adjust)
+            };
+            hero.Hp = hero.HpMax;
+            team.Add(hero);
+        }
+        return team;
+    }
+
+    private static (bool AttackerWon, int Rounds, List<string> Log) SimulateTeams(
+        List<TeamHero> attackers,
+        List<TeamHero> defenders,
+        Random random)
+    {
+        var log = new List<string>();
+        var order = attackers.Select(h => (Hero: h, Side: 0))
+            .Concat(defenders.Select(h => (Hero: h, Side: 1)))
+            .OrderByDescending(x => x.Hero.Speed)
+            .ToList();
+
+        var round = 0;
+        while (round < 20 && attackers.Any(h => h.Hp > 0) && defenders.Any(h => h.Hp > 0))
+        {
+            round++;
+            log.Add($"=== Hiệp {round} ===");
+            foreach (var (hero, side) in order)
+            {
+                if (hero.Hp <= 0) continue;
+                var enemies = side == 0 ? defenders : attackers;
+                var alive = enemies.Where(e => e.Hp > 0).ToList();
+                if (alive.Count == 0) break;
+                var target = alive[random.Next(alive.Count)];
+                var damage = Math.Max(1, (int)(hero.Atk * (0.85 + random.NextDouble() * 0.4)));
+                var critical = random.NextDouble() < hero.CritRate;
+                if (critical) damage = (int)(damage * 1.5);
+                target.Hp = Math.Max(0, target.Hp - damage);
+                log.Add($"⚔️ {hero.Name} đánh {target.Name}: -{damage} HP{(critical ? " (BẠO KÍCH! 🔥)" : string.Empty)}{(target.Hp <= 0 ? $" — {target.Name} gục ngã! 💀" : string.Empty)}");
+            }
+        }
+
+        var defenderWiped = defenders.All(h => h.Hp <= 0);
+        var attackerWiped = attackers.All(h => h.Hp <= 0);
+        bool attackerWon;
+        if (defenderWiped && !attackerWiped)
+        {
+            attackerWon = true;
+        }
+        else if (attackerWiped)
+        {
+            attackerWon = false;
+        }
+        else
+        {
+            var atkFraction = (double)attackers.Sum(h => h.Hp) / Math.Max(1, attackers.Sum(h => h.HpMax));
+            var defFraction = (double)defenders.Sum(h => h.Hp) / Math.Max(1, defenders.Sum(h => h.HpMax));
+            attackerWon = atkFraction >= defFraction;
+        }
+        log.Add(attackerWon ? "=== Kết Quả: CHIẾN THẮNG! 🏆 ===" : "=== Kết Quả: THẤT BẠI! ===");
+        return (attackerWon, Math.Max(1, round), log);
+    }
+
+    private static async Task<string?> GetDisplayNameAsync(
+        NpgsqlConnection connection,
+        Guid userId,
+        CancellationToken cancellationToken)
+    {
+        await using var command = new NpgsqlCommand(
+            "SELECT display_name FROM user_profiles WHERE user_id = @u;", connection);
+        command.Parameters.AddWithValue("u", userId);
+        return await command.ExecuteScalarAsync(cancellationToken) as string;
+    }
+
+    private static Task EnsureArenaProfileAsync(
+        NpgsqlConnection connection,
+        NpgsqlTransaction? transaction,
+        Guid userId,
+        CancellationToken cancellationToken) =>
+        ExecAsync(connection, transaction,
+            "INSERT INTO arena_profiles (user_id) VALUES (@u) ON CONFLICT (user_id) DO NOTHING;",
+            cancellationToken, ("u", userId));
+
+    private static Task ApplyArenaResultAsync(
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
+        Guid userId,
+        bool won,
+        CancellationToken cancellationToken)
+    {
+        var delta = won ? 25 : -15;
+        return ExecAsync(connection, transaction, """
+            UPDATE arena_profiles SET
+                mmr = GREATEST(0, mmr + @delta),
+                win_count = win_count + @win,
+                loss_count = loss_count + @loss,
+                current_winning_streak = CASE WHEN @win = 1 THEN current_winning_streak + 1 ELSE 0 END,
+                rank_tier = CASE
+                    WHEN GREATEST(0, mmr + @delta) >= 2000 THEN 'DIAMOND'
+                    WHEN GREATEST(0, mmr + @delta) >= 1600 THEN 'PLATINUM'
+                    WHEN GREATEST(0, mmr + @delta) >= 1300 THEN 'GOLD'
+                    WHEN GREATEST(0, mmr + @delta) >= 1100 THEN 'SILVER'
+                    ELSE 'BRONZE' END,
+                updated_at = NOW()
+            WHERE user_id = @u;
+            """, cancellationToken,
+            ("delta", delta), ("win", won ? 1 : 0), ("loss", won ? 0 : 1), ("u", userId));
+    }
+
+    // ---------- Shop ----------
+
+    public Task<IReadOnlyList<object>> GetShopItemsAsync(CancellationToken cancellationToken) =>
+        QueryListAsync("""
+            SELECT item_id, name, description, currency, price, grant_type, grant_amount, grant_item_id
+            FROM shop_items WHERE is_active = TRUE ORDER BY price ASC;
+            """, cancellationToken);
+
+    public async Task<object> BuyShopItemAsync(
+        Guid userId,
+        ShopBuyRequest request,
+        CancellationToken cancellationToken)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+
+        string currency;
+        string grantType;
+        int price;
+        int grantAmount;
+        string? grantItemId;
+        await using (var itemCommand = new NpgsqlCommand(
+            "SELECT currency, price, grant_type, grant_amount, grant_item_id FROM shop_items WHERE item_id = @item AND is_active = TRUE;",
+            connection, transaction))
+        {
+            itemCommand.Parameters.AddWithValue("item", request.ItemId);
+            await using var itemReader = await itemCommand.ExecuteReaderAsync(cancellationToken);
+            if (!await itemReader.ReadAsync(cancellationToken))
+            {
+                throw new InvalidGameRequestException("Shop item does not exist.");
+            }
+            currency = itemReader.GetString(0);
+            price = itemReader.GetInt32(1);
+            grantType = itemReader.GetString(2);
+            grantAmount = itemReader.GetInt32(3);
+            grantItemId = itemReader.IsDBNull(4) ? null : itemReader.GetString(4);
+        }
+
+        var totalCost = price * request.Quantity;
+        long balance;
+        await using (var walletCommand = new NpgsqlCommand(
+            $"SELECT {currency} FROM user_wallets WHERE user_id = @u FOR UPDATE;", connection, transaction))
+        {
+            walletCommand.Parameters.AddWithValue("u", userId);
+            var value = await walletCommand.ExecuteScalarAsync(cancellationToken);
+            if (value is null or DBNull)
+            {
+                throw new InvalidGameRequestException("Wallet not found.");
+            }
+            balance = Convert.ToInt64(value);
+        }
+        if (balance < totalCost)
+        {
+            throw new InvalidGameRequestException(currency == "gold"
+                ? "Không đủ Kim Cương!"
+                : "Không đủ Bạc!");
+        }
+
+        await ExecAsync(connection, transaction,
+            $"UPDATE user_wallets SET {currency} = {currency} - @cost, updated_at = NOW() WHERE user_id = @u;",
+            cancellationToken, ("cost", totalCost), ("u", userId));
+
+        switch (grantType)
+        {
+            case "STAMINA":
+                await ExecAsync(connection, transaction,
+                    "UPDATE user_wallets SET stamina = LEAST(max_stamina, stamina + @amount), updated_at = NOW() WHERE user_id = @u;",
+                    cancellationToken, ("amount", grantAmount * request.Quantity), ("u", userId));
+                break;
+            case "SILVER":
+                await ExecAsync(connection, transaction,
+                    "UPDATE user_wallets SET silver = silver + @amount, updated_at = NOW() WHERE user_id = @u;",
+                    cancellationToken, ("amount", grantAmount * request.Quantity), ("u", userId));
+                break;
+            case "ITEM":
+                if (string.IsNullOrWhiteSpace(grantItemId))
+                {
+                    throw new InvalidGameRequestException("Shop item grant is misconfigured.");
+                }
+                await ExecAsync(connection, transaction, """
+                    INSERT INTO user_inventories (user_id, item_id, quantity)
+                    VALUES (@u, @item, @qty)
+                    ON CONFLICT (user_id, item_id)
+                    DO UPDATE SET quantity = user_inventories.quantity + EXCLUDED.quantity, updated_at = NOW();
+                    """, cancellationToken,
+                    ("u", userId), ("item", grantItemId), ("qty", grantAmount * request.Quantity));
+                break;
+            default:
+                throw new InvalidGameRequestException("Unsupported shop grant type.");
+        }
+
+        await transaction.CommitAsync(cancellationToken);
+        return new
+        {
+            item_id = request.ItemId,
+            quantity = request.Quantity,
+            total_cost = totalCost,
+            currency,
+            grant_type = grantType,
+            grant_amount = grantAmount * request.Quantity,
+            grant_item_id = grantItemId
+        };
+    }
+
+    // ---------- Inventory ----------
+
+    public Task<IReadOnlyList<object>> GetInventoryAsync(Guid userId, CancellationToken cancellationToken) =>
+        QueryListAsync("""
+            SELECT item_id, quantity, updated_at
+            FROM user_inventories WHERE user_id = @user_id AND quantity > 0 ORDER BY item_id ASC;
+            """, cancellationToken, ("user_id", userId));
+
+    public async Task<object> UseItemAsync(
+        Guid userId,
+        UseItemRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (request.ItemId != "sach_exp")
+        {
+            throw new InvalidGameRequestException("Item cannot be used this way.");
+        }
+
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+
+        await using (var itemCommand = new NpgsqlCommand(
+            "SELECT quantity FROM user_inventories WHERE user_id = @u AND item_id = @item FOR UPDATE;",
+            connection, transaction))
+        {
+            itemCommand.Parameters.AddWithValue("u", userId);
+            itemCommand.Parameters.AddWithValue("item", request.ItemId);
+            var quantity = await itemCommand.ExecuteScalarAsync(cancellationToken);
+            if (quantity is null or DBNull || Convert.ToInt64(quantity) <= 0)
+            {
+                throw new InvalidGameRequestException("Item not in inventory.");
+            }
+        }
+
+        long newExp;
+        await using (var heroCommand = new NpgsqlCommand(
+            "SELECT exp FROM user_heroes WHERE user_id = @u AND hero_id = @hero FOR UPDATE;",
+            connection, transaction))
+        {
+            heroCommand.Parameters.AddWithValue("u", userId);
+            heroCommand.Parameters.AddWithValue("hero", request.HeroId);
+            var exp = await heroCommand.ExecuteScalarAsync(cancellationToken);
+            if (exp is null or DBNull)
+            {
+                throw new InvalidGameRequestException("Hero is not owned by this player.");
+            }
+            newExp = Convert.ToInt64(exp) + 300;
+        }
+
+        await ExecAsync(connection, transaction,
+            "UPDATE user_inventories SET quantity = quantity - 1, updated_at = NOW() WHERE user_id = @u AND item_id = @item;",
+            cancellationToken, ("u", userId), ("item", request.ItemId));
+        await ExecAsync(connection, transaction,
+            "UPDATE user_heroes SET exp = @exp, level = @level, updated_at = NOW() WHERE user_id = @u AND hero_id = @hero;",
+            cancellationToken, ("exp", newExp), ("level", LevelFromExp(newExp)), ("u", userId), ("hero", request.HeroId));
+
+        await transaction.CommitAsync(cancellationToken);
+        return new { hero_id = request.HeroId, exp = newExp, level = LevelFromExp(newExp), exp_granted = 300 };
+    }
+
+    // ---------- Arena ----------
+
+    public async Task<object> GetArenaProfileAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        await EnsureArenaProfileAsync(connection, null, userId, cancellationToken);
+        var team = await LoadTeamAsync(connection, userId, cancellationToken);
+        var profile = await QuerySingleAsync("""
+            SELECT a.user_id::text AS user_id, p.display_name, a.rank_tier, a.mmr,
+                   a.win_count, a.loss_count, a.current_winning_streak
+            FROM arena_profiles a
+            JOIN user_profiles p ON p.user_id = a.user_id
+            WHERE a.user_id = @user_id;
+            """, cancellationToken, ("user_id", userId)) as Dictionary<string, object?>;
+        return new
+        {
+            user_id = profile?["user_id"],
+            display_name = profile?["display_name"],
+            rank_tier = profile?["rank_tier"],
+            mmr = profile?["mmr"],
+            win_count = profile?["win_count"],
+            loss_count = profile?["loss_count"],
+            current_winning_streak = profile?["current_winning_streak"],
+            combat_power = team.Sum(h => h.Power)
+        };
+    }
+
+    public async Task<IReadOnlyList<object>> GetArenaOpponentsAsync(
+        Guid userId,
+        CancellationToken cancellationToken)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        await EnsureArenaProfileAsync(connection, null, userId, cancellationToken);
+        int myMmr;
+        await using (var mmrCommand = new NpgsqlCommand(
+            "SELECT mmr FROM arena_profiles WHERE user_id = @u;", connection))
+        {
+            mmrCommand.Parameters.AddWithValue("u", userId);
+            myMmr = Convert.ToInt32(await mmrCommand.ExecuteScalarAsync(cancellationToken));
+        }
+
+        var rows = await QueryListAsync("""
+            SELECT user_id::text AS user_id, mmr, win_count, loss_count
+            FROM arena_profiles WHERE user_id <> @user_id
+            ORDER BY ABS(mmr - @my_mmr) ASC LIMIT 10;
+            """, cancellationToken, ("user_id", userId), ("my_mmr", myMmr));
+
+        var opponents = new List<object>();
+        foreach (var row in rows.Cast<Dictionary<string, object?>>())
+        {
+            var opponentId = Guid.Parse((string)row["user_id"]!);
+            var team = await LoadTeamAsync(connection, opponentId, cancellationToken);
+            opponents.Add(new
+            {
+                user_id = row["user_id"],
+                display_name = await GetDisplayNameAsync(connection, opponentId, cancellationToken) ?? "Đối thủ",
+                mmr = row["mmr"],
+                win_count = row["win_count"],
+                loss_count = row["loss_count"],
+                combat_power = team.Sum(h => h.Power),
+                hero_ids = team.Select(h => h.HeroId).ToList()
+            });
+        }
+        return opponents;
+    }
+
+    // ---------- Tower ----------
+
+    public async Task<object> GetTowerProgressAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        await QuerySingleAsync("""
+            INSERT INTO tower_progress (user_id) VALUES (@user_id)
+            ON CONFLICT (user_id) DO NOTHING
+            RETURNING user_id;
+            """, cancellationToken, ("user_id", userId));
+        var row = await QuerySingleAsync(
+            "SELECT highest_floor FROM tower_progress WHERE user_id = @user_id;",
+            cancellationToken, ("user_id", userId)) as Dictionary<string, object?>;
+        return new { highest_floor = row?["highest_floor"] ?? 0 };
+    }
+
+    public async Task<object> ClearTowerFloorAsync(
+        Guid userId,
+        TowerClearRequest request,
+        CancellationToken cancellationToken)
+    {
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+
+        await ExecAsync(connection, transaction,
+            "INSERT INTO tower_progress (user_id) VALUES (@u) ON CONFLICT (user_id) DO NOTHING;",
+            cancellationToken, ("u", userId));
+
+        int highest;
+        await using (var progressCommand = new NpgsqlCommand(
+            "SELECT highest_floor FROM tower_progress WHERE user_id = @u FOR UPDATE;",
+            connection, transaction))
+        {
+            progressCommand.Parameters.AddWithValue("u", userId);
+            highest = Convert.ToInt32(await progressCommand.ExecuteScalarAsync(cancellationToken));
+        }
+
+        if (request.Floor <= highest)
+        {
+            await transaction.CommitAsync(cancellationToken);
+            return new
+            {
+                status = "already_cleared",
+                floor = request.Floor,
+                highest_floor = highest,
+                reward_silver = 0,
+                reward_gold = 0
+            };
+        }
+        if (request.Floor != highest + 1)
+        {
+            throw new InvalidGameRequestException(
+                $"Must clear floor {highest + 1} before floor {request.Floor}.");
+        }
+
+        var rewardSilver = 100 * request.Floor;
+        var rewardGold = request.Floor % 5 == 0 ? 20 : 0;
+        await ExecAsync(connection, transaction,
+            "UPDATE user_wallets SET silver = silver + @s, gold = gold + @g, updated_at = NOW() WHERE user_id = @u;",
+            cancellationToken, ("s", rewardSilver), ("g", rewardGold), ("u", userId));
+        await ExecAsync(connection, transaction,
+            "UPDATE tower_progress SET highest_floor = @floor, updated_at = NOW() WHERE user_id = @u;",
+            cancellationToken, ("floor", request.Floor), ("u", userId));
+
+        await transaction.CommitAsync(cancellationToken);
+        return new
+        {
+            status = "cleared",
+            floor = request.Floor,
+            highest_floor = request.Floor,
+            reward_silver = rewardSilver,
+            reward_gold = rewardGold
         };
     }
 

@@ -623,6 +623,86 @@ public partial class NetworkManager : Node
         }
     }
 
+    // ==================== Phase 4: Shop / Inventory / Arena / Tower ====================
+
+    private async Task<T> GetDtoAsync<T>(string path) where T : class
+    {
+        if (!IsServerOnline || !IsAuthenticated) return null;
+        try
+        {
+            var res = await _http.GetAsync($"{BaseUrl}{path}");
+            if (!res.IsSuccessStatusCode) return null;
+            string json = await res.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<T>(json, _jsonOptions);
+        }
+        catch (Exception ex)
+        {
+            GD.PrintErr($"[NetworkManager] GET {path} failed: {ex.Message}");
+            return null;
+        }
+    }
+
+    private async Task<T> PostDtoAsync<T>(string path, object payload) where T : class
+    {
+        if (!IsServerOnline || !IsAuthenticated) return null;
+        try
+        {
+            string json = JsonSerializer.Serialize(payload, _jsonOptions);
+            var content = new NetStringContent(json, Encoding.UTF8, "application/json");
+            var res = await _http.PostAsync($"{BaseUrl}{path}", content);
+            if (!res.IsSuccessStatusCode)
+            {
+                GD.PrintErr($"[NetworkManager] POST {path} failed: {res.StatusCode} {await res.Content.ReadAsStringAsync()}");
+                return null;
+            }
+            string resJson = await res.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<T>(resJson, _jsonOptions);
+        }
+        catch (Exception ex)
+        {
+            GD.PrintErr($"[NetworkManager] POST {path} failed: {ex.Message}");
+            return null;
+        }
+    }
+
+    public async Task<List<ShopItemDto>> FetchShopItemsAsync() =>
+        await GetDtoAsync<List<ShopItemDto>>("/api/shop/items") ?? new List<ShopItemDto>();
+
+    public async Task<ShopBuyResultDto> BuyShopItemAsync(string itemId, int quantity = 1)
+    {
+        var result = await PostDtoAsync<ShopBuyResultDto>("/api/shop/buy",
+            new { item_id = itemId, quantity });
+        if (result != null) await FetchWalletAsync();
+        return result;
+    }
+
+    public async Task<List<InventoryItemDto>> FetchInventoryAsync() =>
+        await GetDtoAsync<List<InventoryItemDto>>("/api/inventory") ?? new List<InventoryItemDto>();
+
+    public async Task<UseItemResultDto> UseItemAsync(string itemId, string heroId)
+    {
+        var result = await PostDtoAsync<UseItemResultDto>("/api/inventory/use",
+            new { item_id = itemId, hero_id = heroId });
+        if (result != null) await RefreshHeroProgressAsync();
+        return result;
+    }
+
+    public async Task<ArenaProfileDto> FetchArenaProfileAsync() =>
+        await GetDtoAsync<ArenaProfileDto>("/api/arena/profile");
+
+    public async Task<List<ArenaOpponentDto>> FetchArenaOpponentsAsync() =>
+        await GetDtoAsync<List<ArenaOpponentDto>>("/api/arena/opponents") ?? new List<ArenaOpponentDto>();
+
+    public async Task<TowerProgressDto> FetchTowerProgressAsync() =>
+        await GetDtoAsync<TowerProgressDto>("/api/tower/progress");
+
+    public async Task<TowerClearResultDto> ClearTowerFloorAsync(int floor)
+    {
+        var result = await PostDtoAsync<TowerClearResultDto>("/api/tower/clear", new { floor });
+        if (result != null) await FetchWalletAsync();
+        return result;
+    }
+
     public async Task<List<CampaignProgressDto>> FetchCampaignProgressAsync()
     {
         try
@@ -920,5 +1000,90 @@ public partial class NetworkManager : Node
         public bool AttackerWin { get; set; }
         public int Rounds { get; set; }
         public List<string> Log { get; set; }
+        public string DefenderName { get; set; }
+        public long AttackerPower { get; set; }
+        public long DefenderPower { get; set; }
+        public BattleRewardsDto Rewards { get; set; }
+        public int? MmrAfter { get; set; }
+    }
+
+    public class BattleRewardsDto
+    {
+        public int Silver { get; set; }
+        public int ArenaTokens { get; set; }
+    }
+
+    public class ShopItemDto
+    {
+        public string ItemId { get; set; }
+        public string Name { get; set; }
+        public string Description { get; set; }
+        public string Currency { get; set; }
+        public int Price { get; set; }
+        public string GrantType { get; set; }
+        public int GrantAmount { get; set; }
+        public string GrantItemId { get; set; }
+    }
+
+    public class ShopBuyResultDto
+    {
+        public string ItemId { get; set; }
+        public int Quantity { get; set; }
+        public int TotalCost { get; set; }
+        public string Currency { get; set; }
+        public string GrantType { get; set; }
+        public int GrantAmount { get; set; }
+        public string GrantItemId { get; set; }
+    }
+
+    public class InventoryItemDto
+    {
+        public string ItemId { get; set; }
+        public long Quantity { get; set; }
+    }
+
+    public class UseItemResultDto
+    {
+        public string HeroId { get; set; }
+        public long Exp { get; set; }
+        public int Level { get; set; }
+        public int ExpGranted { get; set; }
+    }
+
+    public class ArenaProfileDto
+    {
+        public string UserId { get; set; }
+        public string DisplayName { get; set; }
+        public string RankTier { get; set; }
+        public int Mmr { get; set; }
+        public int WinCount { get; set; }
+        public int LossCount { get; set; }
+        public int CurrentWinningStreak { get; set; }
+        public long CombatPower { get; set; }
+    }
+
+    public class ArenaOpponentDto
+    {
+        public string UserId { get; set; }
+        public string DisplayName { get; set; }
+        public int Mmr { get; set; }
+        public int WinCount { get; set; }
+        public int LossCount { get; set; }
+        public long CombatPower { get; set; }
+        public List<string> HeroIds { get; set; }
+    }
+
+    public class TowerProgressDto
+    {
+        public int HighestFloor { get; set; }
+    }
+
+    public class TowerClearResultDto
+    {
+        public string Status { get; set; }
+        public int Floor { get; set; }
+        public int HighestFloor { get; set; }
+        public int RewardSilver { get; set; }
+        public int RewardGold { get; set; }
     }
 }

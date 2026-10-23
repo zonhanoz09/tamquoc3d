@@ -97,6 +97,16 @@ public partial class GameManager : Node
     public Godot.Collections.Array<FormationEntry> CurrentFormation { get; set; } = [];
     public Godot.Collections.Array<FormationPreset> SavedPresets { get; set; } = [];
     public string BattleContext { get; set; } = "campaign";
+
+    /// <summary>Tang thap dang thach dau (BattleContext == "tower"), set boi TowerScene.</summary>
+    public int CurrentTowerFloor { get; set; } = 0;
+
+    /// <summary>Tang thap cao nhat da qua (che do offline; online lay tu server).</summary>
+    public int TowerHighestFloor { get; set; } = 0;
+
+    /// <summary>Tui do local cho che do offline (online dung user_inventories tren server).</summary>
+    public System.Collections.Generic.Dictionary<string, int> LocalInventory { get; } = new();
+
     public string PreviousScenePath { get; set; } = string.Empty;
 
     /// <summary>

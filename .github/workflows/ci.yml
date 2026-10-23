@@ -53,7 +53,7 @@ jobs:
       #   server + PostgreSQL running (docker compose up) - run it locally.
       - name: Run test scenes
         run: |
-          for scene in tests/TestFormationSelector.tscn tests/TestFormationToBattle.tscn tests/TestCampaignMap.tscn tests/TestHubScreen.tscn tests/TestManualBattle.tscn tests/TestHeroCollection.tscn; do
+          for scene in tests/TestFormationSelector.tscn tests/TestFormationToBattle.tscn tests/TestCampaignMap.tscn tests/TestHubScreen.tscn tests/TestManualBattle.tscn tests/TestHeroCollection.tscn tests/TestPhase4Scenes.tscn; do
             echo "== $scene =="
             timeout 120 "$GODOT" --headless --path . "res://$scene" || exit 1
           done
