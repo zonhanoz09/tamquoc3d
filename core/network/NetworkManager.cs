@@ -209,6 +209,12 @@ public partial class NetworkManager : Node
                     HeroDatabase.Instance?.Register(ownedHero);
                     manager.OwnedHeroes.Add(ownedHero);
                 }
+                manager.HeroProgressById[heroDto.HeroId] = new GameManager.HeroProgress
+                {
+                    Level = heroDto.Level,
+                    Star = heroDto.Star,
+                    Exp = heroDto.Exp
+                };
             }
 
             manager.Gold = walletDto.Silver;
@@ -562,6 +568,61 @@ public partial class NetworkManager : Node
         }
     }
 
+    /// <summary>Đồng bộ lại level/sao/EXP của mọi tướng từ server vào GameManager.HeroProgressById.</summary>
+    public async Task RefreshHeroProgressAsync()
+    {
+        var heroes = await FetchHeroesAsync();
+        var manager = GameManager.Instance;
+        if (manager == null) return;
+        foreach (var heroDto in heroes)
+        {
+            manager.HeroProgressById[heroDto.HeroId] = new GameManager.HeroProgress
+            {
+                Level = heroDto.Level,
+                Star = heroDto.Star,
+                Exp = heroDto.Exp
+            };
+        }
+    }
+
+    public class StarUpResultDto
+    {
+        public string HeroId { get; set; }
+        public int Star { get; set; }
+        public int GoldSpent { get; set; }
+    }
+
+    /// <summary>Lên sao tướng: server tự tính giá (50 KC x sao hiện tại) và trừ ví.</summary>
+    public async Task<StarUpResultDto> StarUpHeroAsync(string heroId)
+    {
+        if (!IsServerOnline || !IsAuthenticated) return null;
+        try
+        {
+            var payload = new { hero_id = heroId };
+            string json = JsonSerializer.Serialize(payload, _jsonOptions);
+            var content = new NetStringContent(json, Encoding.UTF8, "application/json");
+            var res = await _http.PostAsync($"{BaseUrl}/api/heroes/star-up", content);
+            if (!res.IsSuccessStatusCode)
+            {
+                GD.PrintErr($"[NetworkManager] StarUp failed: {res.StatusCode} {await res.Content.ReadAsStringAsync()}");
+                return null;
+            }
+            string resJson = await res.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<StarUpResultDto>(resJson, _jsonOptions);
+            if (result != null)
+            {
+                await FetchWalletAsync();
+                await RefreshHeroProgressAsync();
+            }
+            return result;
+        }
+        catch (Exception ex)
+        {
+            GD.PrintErr($"[NetworkManager] StarUpHero error: {ex.Message}");
+            return null;
+        }
+    }
+
     public async Task<List<CampaignProgressDto>> FetchCampaignProgressAsync()
     {
         try
@@ -605,6 +666,9 @@ public partial class NetworkManager : Node
 
             string resJson = await res.Content.ReadAsStringAsync();
             var dto = JsonSerializer.Deserialize<CampaignClearResultDto>(resJson, _jsonOptions);
+
+            // Server vua cong EXP cho tuong trong doi hinh -> cap nhat level/sao local
+            await RefreshHeroProgressAsync();
 
             // Re-sync wallet: server la nguon chuan cho Bac/Kim cuong/The luc
             var wallet = await FetchWalletAsync();
@@ -821,6 +885,7 @@ public partial class NetworkManager : Node
         public int RewardSilver { get; set; }
         public int RewardGold { get; set; }
         public int StaminaCost { get; set; }
+        public int ExpGranted { get; set; }
     }
 
     public class CampaignProgressDto

@@ -44,6 +44,13 @@ public sealed record FormationUpdateRequest
     public required Dictionary<string, List<string?>> GridLayout { get; init; }
 }
 
+/// <summary>Hero star-up request. Cost is derived server-side: 50 gold x current star.</summary>
+public sealed record HeroStarUpRequest
+{
+    [Required, StringLength(50, MinimumLength = 1)]
+    public required string HeroId { get; init; }
+}
+
 /// <summary>Requested gacha banner and number of pulls.</summary>
 public sealed record GachaPullRequest
 {

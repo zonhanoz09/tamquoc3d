@@ -120,6 +120,7 @@ public partial class BattleManager : Node
 
             var bh = new BattleHero(heroData, 0, entry.Row, entry.Col);
             bh.Died += OnHeroDied;
+            ApplyProgressionScale(bh);
             Team0.Add(bh);
         }
 
@@ -184,8 +185,27 @@ public partial class BattleManager : Node
 
             var bh = new BattleHero(data, teamId, row, col);
             bh.Died += OnHeroDied;
+            if (teamId == 0) ApplyProgressionScale(bh);
             teamList.Add(bh);
         }
+    }
+
+    /// <summary>
+    /// Ap scale chi so theo level/sao cho tuong phe nguoi choi (GameManager.HeroProgressById).
+    /// Khop cong thuc GameManager.HeroStatScale: +5%/level, +10%/sao.
+    /// </summary>
+    private static void ApplyProgressionScale(BattleHero bh)
+    {
+        var manager = GameManager.Instance;
+        if (manager == null || bh?.Data == null) return;
+        float scale = GameManager.HeroStatScale(manager.GetHeroProgress(bh.Data.HeroId));
+        if (scale <= 1.001f) return;
+        bh.Stats.HpMax = (int)(bh.Stats.HpMax * scale);
+        bh.Stats.HpCurrent = bh.Stats.HpMax;
+        bh.Stats.AtkPhys = (int)(bh.Stats.AtkPhys * scale);
+        bh.Stats.AtkMag = (int)(bh.Stats.AtkMag * scale);
+        bh.Stats.DefPhys = (int)(bh.Stats.DefPhys * scale);
+        bh.Stats.DefMag = (int)(bh.Stats.DefMag * scale);
     }
 
     public async void StartBattle()

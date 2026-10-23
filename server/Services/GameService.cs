@@ -12,6 +12,9 @@ public sealed class GameService(
     IConfiguration configuration,
     ILogger<GameService> logger) : IGameService
 {
+    /// <summary>Hero level is derived from total EXP: +1 level per 300 EXP, capped at 60.</summary>
+    internal static int LevelFromExp(long exp) => (int)Math.Min(60, 1 + Math.Max(0, exp) / 300);
+
     private static readonly string[][] HeroPool =
     [
         ["lu_bo", "quan_vu"],
@@ -193,8 +196,11 @@ public sealed class GameService(
         int firstClearSilver;
         int firstClearGold;
         int normalSilver;
+        int firstClearExp;
+        int normalExp;
         await using (var rewardCommand = new NpgsqlCommand("""
-            SELECT stamina_cost, first_clear_silver, first_clear_gold, normal_silver
+            SELECT stamina_cost, first_clear_silver, first_clear_gold, normal_silver,
+                   first_clear_exp, normal_exp
             FROM stage_rewards WHERE stage_id = @stage_id;
             """, connection, transaction))
         {
@@ -208,6 +214,8 @@ public sealed class GameService(
             firstClearSilver = reader.GetInt32(1);
             firstClearGold = reader.GetInt32(2);
             normalSilver = reader.GetInt32(3);
+            firstClearExp = reader.GetInt32(4);
+            normalExp = reader.GetInt32(5);
         }
 
         bool firstClear;
@@ -273,6 +281,31 @@ public sealed class GameService(
                 ?? throw new InvalidOperationException("Campaign progress save did not return a record.");
         }
 
+        // Grant stage EXP to the heroes in the player's saved PvE formation.
+        // Hero level is derived from EXP (see LevelFromExp) and stored denormalized.
+        var stageExp = firstClear ? firstClearExp : normalExp;
+        if (stageExp > 0)
+        {
+            await using var expCommand = new NpgsqlCommand("""
+                WITH formation_heroes AS (
+                    SELECT DISTINCT cell.hero_id
+                    FROM user_formations f,
+                         LATERAL jsonb_each(f.grid_layout) AS rows(row_key, cells),
+                         LATERAL jsonb_array_elements_text(rows.cells) AS cell(hero_id)
+                    WHERE f.user_id = @user_id AND f.formation_type = 'PVE_DEFAULT'
+                )
+                UPDATE user_heroes uh
+                SET exp = uh.exp + @exp,
+                    level = LEAST(60, 1 + ((uh.exp + @exp) / 300)),
+                    updated_at = NOW()
+                FROM formation_heroes fh
+                WHERE uh.user_id = @user_id AND uh.hero_id = fh.hero_id;
+                """, connection, transaction);
+            expCommand.Parameters.AddWithValue("user_id", userId);
+            expCommand.Parameters.AddWithValue("exp", stageExp);
+            await expCommand.ExecuteNonQueryAsync(cancellationToken);
+        }
+
         await transaction.CommitAsync(cancellationToken);
         return new
         {
@@ -281,8 +314,77 @@ public sealed class GameService(
             stage,
             reward_silver = rewardSilver,
             reward_gold = rewardGold,
-            stamina_cost = staminaCost
+            stamina_cost = staminaCost,
+            exp_granted = firstClear ? firstClearExp : normalExp
         };
+    }
+
+    public async Task<object> StarUpHeroAsync(
+        Guid userId,
+        HeroStarUpRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(request.HeroId) || request.HeroId.Length > 50)
+        {
+            throw new InvalidGameRequestException("Hero ID is invalid.");
+        }
+
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+
+        int star;
+        await using (var heroCommand = new NpgsqlCommand(
+            "SELECT star FROM user_heroes WHERE user_id = @user_id AND hero_id = @hero_id FOR UPDATE;",
+            connection, transaction))
+        {
+            heroCommand.Parameters.AddWithValue("user_id", userId);
+            heroCommand.Parameters.AddWithValue("hero_id", request.HeroId);
+            var value = await heroCommand.ExecuteScalarAsync(cancellationToken);
+            if (value is null or DBNull)
+            {
+                throw new InvalidGameRequestException("Hero is not owned by this player.");
+            }
+            star = Convert.ToInt32(value);
+        }
+
+        if (star >= 6)
+        {
+            throw new InvalidGameRequestException("Hero is already at maximum star (6).");
+        }
+
+        var cost = 50 * star;
+        await using (var walletCommand = new NpgsqlCommand(
+            "SELECT gold FROM user_wallets WHERE user_id = @user_id FOR UPDATE;",
+            connection, transaction))
+        {
+            walletCommand.Parameters.AddWithValue("user_id", userId);
+            var gold = await walletCommand.ExecuteScalarAsync(cancellationToken);
+            if (gold is null or DBNull || Convert.ToInt32(gold) < cost)
+            {
+                throw new InvalidGameRequestException("Không đủ Kim Cương để lên sao!");
+            }
+        }
+
+        await using (var deductCommand = new NpgsqlCommand(
+            "UPDATE user_wallets SET gold = gold - @cost, updated_at = NOW() WHERE user_id = @user_id;",
+            connection, transaction))
+        {
+            deductCommand.Parameters.AddWithValue("cost", cost);
+            deductCommand.Parameters.AddWithValue("user_id", userId);
+            await deductCommand.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        await using (var starCommand = new NpgsqlCommand(
+            "UPDATE user_heroes SET star = star + 1, updated_at = NOW() WHERE user_id = @user_id AND hero_id = @hero_id;",
+            connection, transaction))
+        {
+            starCommand.Parameters.AddWithValue("user_id", userId);
+            starCommand.Parameters.AddWithValue("hero_id", request.HeroId);
+            await starCommand.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        await transaction.CommitAsync(cancellationToken);
+        return new { hero_id = request.HeroId, star = star + 1, gold_spent = cost };
     }
 
     public async Task<object> PullGachaAsync(

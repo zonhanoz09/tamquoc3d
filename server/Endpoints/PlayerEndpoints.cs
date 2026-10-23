@@ -39,6 +39,17 @@ public static class PlayerEndpoints
             .WithSummary("List heroes owned by the authenticated player.")
             .ProducesProblem(StatusCodes.Status401Unauthorized);
 
+        player.MapPost("/heroes/star-up", async (
+                HeroStarUpRequest request,
+                ClaimsPrincipal principal,
+                IGameService service,
+                CancellationToken ct) =>
+                TypedResults.Ok(await service.StarUpHeroAsync(AuthEndpoints.GetUserId(principal), request, ct)))
+            .WithName("StarUpHero")
+            .WithSummary("Raise an owned hero's star, paying the server-side gold cost.")
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status401Unauthorized);
+
         player.MapGet("/formations", async (ClaimsPrincipal principal, IGameService service, CancellationToken ct) =>
                 TypedResults.Ok(await service.GetFormationsAsync(AuthEndpoints.GetUserId(principal), ct)))
             .WithName("GetFormations")

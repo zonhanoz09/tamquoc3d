@@ -64,6 +64,36 @@ public partial class GameManager : Node
     private int _legacyStamina = 100;
 
     public Godot.Collections.Array<HeroData> OwnedHeroes { get; set; } = [];
+
+    /// <summary>Tien trinh nang cap cua mot tuong (dong bo tu server user_heroes).</summary>
+    public sealed class HeroProgress
+    {
+        public int Level { get; set; } = 1;
+        public int Star { get; set; } = 1;
+        public long Exp { get; set; } = 0;
+    }
+
+    /// <summary>Level/sao/EXP cua tung tuong theo hero_id (nguon: server hoac che do offline).</summary>
+    public System.Collections.Generic.Dictionary<string, HeroProgress> HeroProgressById { get; } = new();
+
+    public HeroProgress GetHeroProgress(string heroId)
+    {
+        if (!string.IsNullOrEmpty(heroId) && HeroProgressById.TryGetValue(heroId, out var progress))
+        {
+            return progress;
+        }
+        return new HeroProgress();
+    }
+
+    /// <summary>EXP moi level: 300 EXP = 1 level (khop server LevelFromExp).</summary>
+    public static int ExpPerLevel => 300;
+
+    /// <summary>He so scale chi so theo level + sao: +5%/level, +10%/sao.</summary>
+    public static float HeroStatScale(HeroProgress progress)
+    {
+        if (progress == null) return 1.0f;
+        return (1.0f + 0.05f * (progress.Level - 1)) * (1.0f + 0.10f * (progress.Star - 1));
+    }
     public Godot.Collections.Array<FormationEntry> CurrentFormation { get; set; } = [];
     public Godot.Collections.Array<FormationPreset> SavedPresets { get; set; } = [];
     public string BattleContext { get; set; } = "campaign";
