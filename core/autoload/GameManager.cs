@@ -69,6 +69,34 @@ public partial class GameManager : Node
     public string BattleContext { get; set; } = "campaign";
     public string PreviousScenePath { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Ai PvE dang duoc thach dau tu man hinh Campaign (set boi CampaignController).
+    /// BattleScene doc CurrentStage de dung doi hinh dich + tinh sao/thuong khi thang.
+    /// Null khi khong phai tran chien dich (dau thu / arena).
+    /// </summary>
+    public StageData CurrentStage { get; set; }
+
+    /// <summary>
+    /// So sao tung ai da vuot trong phien choi (key = StageData.StageId dang so).
+    /// CampaignController doc ghi de de tien trinh khong mat khi chuyen scene;
+    /// khi online, so lieu server (campaign_progress) van la nguon chuan.
+    /// </summary>
+    public Godot.Collections.Dictionary<int, int> StageStars { get; set; } = [];
+
+    /// <summary>
+    /// Ghi nhan ket qua vuot ai (chi giu so sao cao nhat). Tra ve true neu day la
+    /// lan dau vuot ai nay trong phien (dung de tinh thuong First Clear khi offline).
+    /// </summary>
+    public bool RecordStageResult(int stageId, int stars)
+    {
+        bool firstClear = !StageStars.TryGetValue(stageId, out int previous);
+        if (firstClear || stars > previous)
+        {
+            StageStars[stageId] = stars;
+        }
+        return firstClear;
+    }
+
     public static GameManager Instance { get; private set; }
 
     public override void _EnterTree()

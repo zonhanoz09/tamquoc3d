@@ -58,14 +58,45 @@ public partial class BattleManager : Node
         Team0.Clear();
         Team1.Clear();
 
+        BuildPlayerTeam(playerFormation);
+        SetupTeam(party1, 1, Team1);
+
+        TurnManager = new TurnManager();
+        TurnManager.Setup(Team0, Team1);
+    }
+
+    /// <summary>
+    /// Dung tran PvE theo ai chien dich: doi nguoi choi theo FormationEntry da bo tri,
+    /// doi dich theo EnemyEntry cua StageData (dung vi tri Row/Col khai bao trong .tres).
+    /// </summary>
+    public void SetupBattleWithFormations(IList<FormationEntry> playerFormation, IList<EnemyEntry> enemyFormation)
+    {
+        Team0.Clear();
+        Team1.Clear();
+
+        BuildPlayerTeam(playerFormation);
+
+        foreach (var entry in enemyFormation)
+        {
+            var heroData = ResolveHero(entry.HeroId);
+            if (heroData == null) continue;
+
+            var bh = new BattleHero(heroData, 1,
+                Mathf.Clamp(entry.Row, 0, GameConstants.GridRows - 1),
+                Mathf.Clamp(entry.Col, 0, GameConstants.GridCols - 1));
+            bh.Died += OnHeroDied;
+            Team1.Add(bh);
+        }
+
+        TurnManager = new TurnManager();
+        TurnManager.Setup(Team0, Team1);
+    }
+
+    private void BuildPlayerTeam(IList<FormationEntry> playerFormation)
+    {
         foreach (var entry in playerFormation)
         {
-            var heroData = HeroDatabase.Instance?.GetHero(entry.HeroId);
-            if (heroData == null)
-            {
-                var dbNode = ((SceneTree)Engine.GetMainLoop()).Root.GetNodeOrNull<HeroDatabase>("HeroDatabase");
-                heroData = dbNode?.GetHero(entry.HeroId);
-            }
+            var heroData = ResolveHero(entry.HeroId);
             if (heroData == null) continue;
 
             var bh = new BattleHero(heroData, 0, entry.Row, entry.Col);
@@ -77,19 +108,23 @@ public partial class BattleManager : Node
         {
             var defaultParty = new List<HeroData>
             {
-                HeroDatabase.Instance?.GetHero("trieu_van"),
-                HeroDatabase.Instance?.GetHero("quan_vu"),
-                HeroDatabase.Instance?.GetHero("ma_sieu"),
-                HeroDatabase.Instance?.GetHero("gia_cat_luong"),
-                HeroDatabase.Instance?.GetHero("tieu_kieu")
+                ResolveHero("trieu_van"),
+                ResolveHero("quan_vu"),
+                ResolveHero("ma_sieu"),
+                ResolveHero("gia_cat_luong"),
+                ResolveHero("tieu_kieu")
             };
             SetupTeam(defaultParty, 0, Team0);
         }
+    }
 
-        SetupTeam(party1, 1, Team1);
+    private static HeroData ResolveHero(string heroId)
+    {
+        var heroData = HeroDatabase.Instance?.GetHero(heroId);
+        if (heroData != null) return heroData;
 
-        TurnManager = new TurnManager();
-        TurnManager.Setup(Team0, Team1);
+        var dbNode = ((SceneTree)Engine.GetMainLoop())?.Root.GetNodeOrNull<HeroDatabase>("HeroDatabase");
+        return dbNode?.GetHero(heroId);
     }
 
     private void SetupTeam(IList<HeroData> party, int teamId, List<BattleHero> teamList)

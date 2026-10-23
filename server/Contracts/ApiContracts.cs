@@ -59,7 +59,13 @@ public sealed record BattleSimulationRequest
     public string? DefenderId { get; init; } = "b1ffcd88-8b1c-3df7-aa5c-5aa8ac270b22";
 }
 
-/// <summary>Campaign completion and reward values submitted by the game client.</summary>
+/// <summary>
+/// Campaign completion submitted by the game client. Rewards and stamina cost are
+/// deliberately NOT part of this contract: the server derives them from the
+/// stage_rewards table so a tampered client cannot mint currency.
+/// (Stars/turns are still client-reported until deterministic server-side
+/// battle simulation lands - see Phase 5 of the project plan.)
+/// </summary>
 public sealed record CampaignClearRequest
 {
     public string StageId { get; init; } = "1-1";
@@ -67,12 +73,6 @@ public sealed record CampaignClearRequest
     public int Stars { get; init; } = 3;
     [Range(1, int.MaxValue)]
     public int Turns { get; init; } = 4;
-    [Range(0, int.MaxValue)]
-    public int GoldReward { get; init; } = 500;
-    [Range(0, int.MaxValue)]
-    public int DiamondReward { get; init; } = 50;
-    [Range(0, int.MaxValue)]
-    public int StaminaCost { get; init; } = 3;
 }
 
 /// <summary>Database and Redis connectivity returned by the health endpoint.</summary>

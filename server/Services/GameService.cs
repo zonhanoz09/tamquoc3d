@@ -175,26 +175,62 @@ public sealed class GameService(
         CampaignClearRequest request,
         CancellationToken cancellationToken)
     {
+        // NOTE: rewards and stamina cost come ONLY from the stage_rewards table.
+        // The client reports stage_id/stars/turns; it can no longer mint currency
+        // by sending inflated reward values (previous behaviour).
         if (string.IsNullOrWhiteSpace(request.StageId) ||
             request.StageId.Length > 50 ||
             request.Stars is < 0 or > 3 ||
-            request.Turns < 1 ||
-            request.GoldReward < 0 ||
-            request.DiamondReward < 0 ||
-            request.StaminaCost < 0)
+            request.Turns < 1)
         {
             throw new InvalidGameRequestException("Campaign clear request contains invalid values.");
         }
 
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+
+        int staminaCost;
+        int firstClearSilver;
+        int firstClearGold;
+        int normalSilver;
+        await using (var rewardCommand = new NpgsqlCommand("""
+            SELECT stamina_cost, first_clear_silver, first_clear_gold, normal_silver
+            FROM stage_rewards WHERE stage_id = @stage_id;
+            """, connection, transaction))
+        {
+            rewardCommand.Parameters.AddWithValue("stage_id", request.StageId);
+            await using var reader = await rewardCommand.ExecuteReaderAsync(cancellationToken);
+            if (!await reader.ReadAsync(cancellationToken))
+            {
+                throw new InvalidGameRequestException("Unknown campaign stage.");
+            }
+            staminaCost = reader.GetInt32(0);
+            firstClearSilver = reader.GetInt32(1);
+            firstClearGold = reader.GetInt32(2);
+            normalSilver = reader.GetInt32(3);
+        }
+
+        bool firstClear;
+        await using (var progressCommand = new NpgsqlCommand(
+            "SELECT first_clear_claimed FROM campaign_progress WHERE user_id = @user_id AND stage_id = @stage_id FOR UPDATE;",
+            connection, transaction))
+        {
+            progressCommand.Parameters.AddWithValue("user_id", userId);
+            progressCommand.Parameters.AddWithValue("stage_id", request.StageId);
+            var claimed = await progressCommand.ExecuteScalarAsync(cancellationToken);
+            firstClear = claimed is null or DBNull || !Convert.ToBoolean(claimed);
+        }
+
+        var rewardSilver = firstClear ? firstClearSilver : normalSilver;
+        var rewardGold = firstClear ? firstClearGold : 0;
+
         await using (var lockWallet = new NpgsqlCommand(
             "SELECT stamina FROM user_wallets WHERE user_id = @user_id FOR UPDATE;",
             connection, transaction))
         {
             lockWallet.Parameters.AddWithValue("user_id", userId);
             var stamina = await lockWallet.ExecuteScalarAsync(cancellationToken);
-            if (stamina is null || Convert.ToInt32(stamina) < request.StaminaCost)
+            if (stamina is null || Convert.ToInt32(stamina) < staminaCost)
             {
                 throw new InvalidGameRequestException("Không đủ Thể Lực để vượt ải!");
             }
@@ -209,9 +245,9 @@ public sealed class GameService(
             WHERE user_id = @user_id;
             """, connection, transaction))
         {
-            updateWallet.Parameters.AddWithValue("stamina_cost", request.StaminaCost);
-            updateWallet.Parameters.AddWithValue("gold_reward", request.GoldReward);
-            updateWallet.Parameters.AddWithValue("diamond_reward", request.DiamondReward);
+            updateWallet.Parameters.AddWithValue("stamina_cost", staminaCost);
+            updateWallet.Parameters.AddWithValue("gold_reward", rewardSilver);
+            updateWallet.Parameters.AddWithValue("diamond_reward", rewardGold);
             updateWallet.Parameters.AddWithValue("user_id", userId);
             await updateWallet.ExecuteNonQueryAsync(cancellationToken);
         }
@@ -241,9 +277,11 @@ public sealed class GameService(
         return new
         {
             status = "cleared",
+            first_clear = firstClear,
             stage,
-            reward_silver = request.GoldReward,
-            reward_gold = request.DiamondReward
+            reward_silver = rewardSilver,
+            reward_gold = rewardGold,
+            stamina_cost = staminaCost
         };
     }
 

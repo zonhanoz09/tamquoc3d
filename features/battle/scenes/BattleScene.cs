@@ -5,6 +5,7 @@ using TamQuoc3D.Core.Constants;
 using TamQuoc3D.Core.Audio;
 using TamQuoc3D.Core.Autoload;
 using TamQuoc3D.Core.Navigation;
+using TamQuoc3D.Core.Network;
 using TamQuoc3D.Data.Database;
 using TamQuoc3D.Data.Resources;
 using TamQuoc3D.Features.Battle.Entities;
@@ -43,6 +44,9 @@ public partial class BattleScene : Node2D
     private PanelContainer _logPanel;
     private HBoxContainer _timelineContainer;
     private Control _resultBanner;
+    private Label _resultDetailLabel;
+    private Button _campaignBtn;
+    private bool _campaignResultRecorded = false;
 
     private readonly List<string> _logLines = [];
     private const int MaxLogLines = 100;
@@ -335,6 +339,28 @@ public partial class BattleScene : Node2D
         resLbl.AddThemeFontSizeOverride("font_size", 48);
         _resultBanner.AddChild(resLbl);
 
+        _resultDetailLabel = new Label
+        {
+            Name = "ResultDetail",
+            Position = new Vector2(0, 338),
+            Size = new Vector2(GameConstants.ViewportWidth, 36),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Text = ""
+        };
+        _resultDetailLabel.AddThemeFontSizeOverride("font_size", 20);
+        _resultDetailLabel.AddThemeColorOverride("font_color", new Color(0.95f, 0.9f, 0.7f));
+        _resultBanner.AddChild(_resultDetailLabel);
+
+        _campaignBtn = new Button
+        {
+            Text = "🏰 CHIẾN DỊCH",
+            Position = new Vector2(260, 380),
+            Size = new Vector2(160, 48),
+            Visible = false
+        };
+        _campaignBtn.Pressed += () => SceneNavigator.GoToCampaign();
+        _resultBanner.AddChild(_campaignBtn);
+
         _restartBtn = new Button
         {
             Text = "🔄 ĐẤU LẠI",
@@ -402,9 +428,20 @@ public partial class BattleScene : Node2D
             GetHero("sai_van_co")
         };
 
-        if (GameManager.Instance != null && GameManager.Instance.CurrentFormation.Count > 0)
+        var gm = GameManager.Instance;
+        var stage = gm?.CurrentStage;
+        bool isCampaignStage = stage != null && gm.BattleContext == "campaign" && stage.EnemyFormation.Count > 0;
+
+        if (isCampaignStage)
         {
-            _battleManager.SetupBattleWithFormation(GameManager.Instance.CurrentFormation, enemyParty);
+            // Tran chien dich: dich lay dung EnemyFormation cua ai dang thach dau,
+            // khong con dung doi dich hardcode cho moi ai.
+            var formation = gm.CurrentFormation ?? new Godot.Collections.Array<FormationEntry>();
+            _battleManager.SetupBattleWithFormations(formation, stage.EnemyFormation);
+        }
+        else if (gm != null && gm.CurrentFormation.Count > 0)
+        {
+            _battleManager.SetupBattleWithFormation(gm.CurrentFormation, enemyParty);
         }
         else
         {
@@ -736,6 +773,96 @@ public partial class BattleScene : Node2D
         var lbl = _resultBanner.GetNode<Label>("ResultText");
         lbl.Text = title;
         lbl.AddThemeColorOverride("font_color", col);
+
+        // Dong vong lap Campaign: thang tran phai ghi sao + thuong + mo ai tiep,
+        // khong chi dung lai o banner (truoc day khong noi nao emit StageCompleted).
+        var gm = GameManager.Instance;
+        bool isCampaignStage = gm?.CurrentStage != null && gm.BattleContext == "campaign";
+        if (isCampaignStage)
+        {
+            _campaignBtn.Visible = true;
+            if (winner == 0)
+            {
+                _ = RecordCampaignResultAsync();
+            }
+            else
+            {
+                _resultDetailLabel.Text = "Thất bại — không tốn Thể Lực. Bố trí lại đội hình rồi thử lại!";
+            }
+        }
+    }
+
+    /// <summary>
+    /// Tinh sao bang StarRatingSystem, trao thuong va dong bo tien trinh vuot ai.
+    /// Online: server tu tinh thuong theo stage_rewards va la nguon chuan cho vi tien.
+    /// Offline: ap dung dung gia tri trong StageData (.tres) cho phien choi local.
+    /// </summary>
+    private async System.Threading.Tasks.Task RecordCampaignResultAsync()
+    {
+        if (_campaignResultRecorded) return;
+        _campaignResultRecorded = true;
+
+        try
+        {
+            var gm = GameManager.Instance;
+            var stage = gm?.CurrentStage;
+            if (gm == null || stage == null) return;
+
+            int surviving = 0;
+            foreach (var h in _battleManager.Team0)
+            {
+                if (h.IsAlive) surviving++;
+            }
+
+            var result = new BattleResult
+            {
+                Won = true,
+                SurvivingHeroes = surviving,
+                TurnCount = _battleManager.TurnManager.CurrentRound
+            };
+            int stars = StarRatingSystem.CalculateStars(result, stage);
+            bool firstClear = gm.RecordStageResult(stage.StageId, stars);
+
+            int silver;
+            int gold;
+            int exp;
+            NetworkManager.CampaignClearResultDto dto = null;
+            var network = NetworkManager.Instance;
+            if (network != null && network.IsServerOnline && network.IsAuthenticated)
+            {
+                dto = await network.ClearStageAsync(stage.StageKey, stars, result.TurnCount);
+            }
+
+            if (dto != null)
+            {
+                silver = dto.RewardSilver;
+                gold = dto.RewardGold;
+                exp = dto.FirstClear ? stage.FirstClearExp : stage.NormalExp;
+                gm.ConsumeStamina(dto.StaminaCost);
+            }
+            else
+            {
+                silver = firstClear ? stage.FirstClearGold : stage.NormalGold;
+                gold = firstClear ? stage.FirstClearDiamond : 0;
+                exp = firstClear ? stage.FirstClearExp : stage.NormalExp;
+                gm.ConsumeStamina(stage.StaminaCost);
+                if (silver > 0) gm.AddGold(silver);
+                if (gold > 0) gm.AddGems(gold);
+            }
+
+            EventBus.Instance?.EmitSignal(EventBus.SignalName.StageCompleted, stage.ChapterId, stage.StageId, stars);
+            if (firstClear)
+            {
+                EventBus.Instance?.EmitSignal(EventBus.SignalName.FirstClearReward, stage.StageId, silver, gold);
+            }
+
+            string starText = new string('★', stars) + new string('☆', 3 - stars);
+            _resultDetailLabel.Text = $"{starText}   •   +{silver} Bạc   •   +{gold} Kim Cương   •   +{exp} EXP";
+        }
+        catch (Exception ex)
+        {
+            GD.PrintErr($"[BattleScene] RecordCampaignResult failed: {ex.Message}");
+        }
     }
 
     private void OnSpeedToggle()
@@ -767,6 +894,9 @@ public partial class BattleScene : Node2D
     {
         Engine.TimeScale = 1.0f;
         _resultBanner.Visible = false;
+        _campaignResultRecorded = false;
+        if (_resultDetailLabel != null) _resultDetailLabel.Text = "";
+        if (_campaignBtn != null) _campaignBtn.Visible = false;
         _battleManager.IsBattleActive = false;
         StartBattleWithRoster();
     }

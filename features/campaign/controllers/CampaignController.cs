@@ -74,6 +74,18 @@ public partial class CampaignController : Control
         _stageStars[3] = 3;
         _stageStars[4] = 3;
         HighestUnlockedStageId = 5; // Stage 1-5 unlocked
+
+        // Merge ket qua vuot ai da ghi trong phien (BattleScene ghi vao GameManager)
+        // de tien trinh khong bi reset khi roi Campaign roi quay lai.
+        if (GameManager.Instance != null)
+        {
+            foreach (var kv in GameManager.Instance.StageStars)
+            {
+                int existing = _stageStars.TryGetValue(kv.Key, out int cur) ? cur : 0;
+                _stageStars[kv.Key] = Mathf.Max(existing, kv.Value);
+                HighestUnlockedStageId = Mathf.Max(HighestUnlockedStageId, kv.Key + 1);
+            }
+        }
         RecalculateChapterStars();
     }
 
@@ -295,10 +307,13 @@ public partial class CampaignController : Control
 
         _stagePopup.HidePopup();
 
-        // Configure battle context and navigate to Formation Selector
+        // Configure battle context and navigate to Formation Selector.
+        // CurrentStage la cau noi Campaign -> Formation -> Battle: BattleScene
+        // dung no de spawn dung doi dich cua ai va tinh sao/thuong khi thang.
         if (GameManager.Instance != null)
         {
             GameManager.Instance.BattleContext = "campaign";
+            GameManager.Instance.CurrentStage = stage;
         }
         SceneNavigator.GoToFormationSelector("campaign");
     }
@@ -317,17 +332,11 @@ public partial class CampaignController : Control
         GameManager.Instance?.AddGold(stage.NormalGold);
         EventBus.Instance?.EmitSignal(EventBus.SignalName.SystemNotification, "Quét Nhanh", $"Vượt nhanh thành công! Nhận {stage.NormalGold} Bạc.", "reward");
 
-        // Sync to server
+        // Sync to server (server tu tra thuong + tru the luc theo bang stage_rewards,
+        // client khong con gui so thuong len nua)
         if (NetworkManager.Instance != null && NetworkManager.Instance.IsServerOnline)
         {
-            await NetworkManager.Instance.ClearStageAsync(
-                stage.StageKey,
-                3,
-                1,
-                stage.NormalGold,
-                0,
-                stage.StaminaCost
-            );
+            await NetworkManager.Instance.ClearStageAsync(stage.StageKey, 3, 1);
         }
 
         _stagePopup.HidePopup();
@@ -336,6 +345,7 @@ public partial class CampaignController : Control
 
     private void OnStageCompleted(int chapterId, int stageId, int stars)
     {
+        GameManager.Instance?.RecordStageResult(stageId, stars);
         int prevStars = _stageStars.TryGetValue(stageId, out int s) ? s : 0;
         _stageStars[stageId] = Mathf.Max(prevStars, stars);
         HighestUnlockedStageId = Mathf.Max(HighestUnlockedStageId, stageId + 1);

@@ -579,9 +579,14 @@ public partial class NetworkManager : Node
         }
     }
 
-    public async Task<bool> ClearStageAsync(string stageId, int stars, int turns, int goldReward, int diamondReward, int staminaCost)
+    /// <summary>
+    /// Bao server da vuot ai. Client chi gui stage/stars/turns - thuong va the luc
+    /// do server tu tinh theo bang stage_rewards (chong gian lan). Tra ve null khi
+    /// offline hoac server tu choi. Sau khi clear, vi tien duoc dong bo lai tu server.
+    /// </summary>
+    public async Task<CampaignClearResultDto> ClearStageAsync(string stageId, int stars, int turns)
     {
-        if (!IsServerOnline) return false;
+        if (!IsServerOnline) return null;
 
         try
         {
@@ -589,37 +594,33 @@ public partial class NetworkManager : Node
             {
                 stage_id = stageId,
                 stars = stars,
-                turns = turns,
-                gold_reward = goldReward,
-                diamond_reward = diamondReward,
-                stamina_cost = staminaCost
+                turns = turns
             };
 
             string json = JsonSerializer.Serialize(payload, _jsonOptions);
             var content = new NetStringContent(json, Encoding.UTF8, "application/json");
 
             var res = await _http.PostAsync($"{BaseUrl}/api/campaign/clear", content);
-            if (res.IsSuccessStatusCode)
+            if (!res.IsSuccessStatusCode) return null;
+
+            string resJson = await res.Content.ReadAsStringAsync();
+            var dto = JsonSerializer.Deserialize<CampaignClearResultDto>(resJson, _jsonOptions);
+
+            // Re-sync wallet: server la nguon chuan cho Bac/Kim cuong/The luc
+            var wallet = await FetchWalletAsync();
+            if (wallet != null && GameManager.Instance != null)
             {
-                // Re-sync wallet
-                _ = FetchWalletAsync().ContinueWith(t =>
-                {
-                    if (t.Result != null && GameManager.Instance != null)
-                    {
-                        GameManager.Instance.Gold = t.Result.Gold;
-                        GameManager.Instance.Stamina = t.Result.Stamina;
-                        SafeEmitEventBus(EventBus.SignalName.GoldChanged, 0, (int)t.Result.Gold);
-                        SafeEmitEventBus(EventBus.SignalName.StaminaChanged, t.Result.Stamina, t.Result.MaxStamina);
-                    }
-                });
-                return true;
+                GameManager.Instance.Gold = wallet.Gold;
+                GameManager.Instance.Stamina = wallet.Stamina;
+                SafeEmitEventBus(EventBus.SignalName.GoldChanged, 0, (int)wallet.Gold);
+                SafeEmitEventBus(EventBus.SignalName.StaminaChanged, wallet.Stamina, wallet.MaxStamina);
             }
-            return false;
+            return dto;
         }
         catch (Exception ex)
         {
             GD.PrintErr($"[NetworkManager] ClearStage failed: {ex.Message}");
-            return false;
+            return null;
         }
     }
 
@@ -811,6 +812,15 @@ public partial class NetworkManager : Node
         public int Level { get; set; }
         public long Exp { get; set; }
         public bool IsCommander { get; set; }
+    }
+
+    public class CampaignClearResultDto
+    {
+        public string Status { get; set; }
+        public bool FirstClear { get; set; }
+        public int RewardSilver { get; set; }
+        public int RewardGold { get; set; }
+        public int StaminaCost { get; set; }
     }
 
     public class CampaignProgressDto

@@ -106,6 +106,7 @@ public static class PlayerEndpoints
 
         endpoints.MapGet("/api/db-overview", async (IGameService service, CancellationToken ct) =>
                 TypedResults.Ok(await service.GetDatabaseOverviewAsync(ct)))
+            .RequireAuthorization()
             .WithName("GetDatabaseOverview")
             .WithSummary("Return counts for known game database tables.")
             .WithTags("Operations");
