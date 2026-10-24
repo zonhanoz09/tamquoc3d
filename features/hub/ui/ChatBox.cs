@@ -126,9 +126,9 @@ public partial class ChatBox : PanelContainer
 
     private void SeedInitialMessages()
     {
+        // Chi tin he thong that - khong gia lap tin nhan nguoi choi khac.
         AddMessage("Hệ Thống", "Chào mừng Chúa Công bước vào đại nghiệp phân tranh Tam Quốc!", "sys");
-        AddMessage("Tào Tháo", "Thà ta phụ người trong thiên hạ, chứ không để thiên hạ phụ ta!", "world");
-        AddMessage("Triệu Tử Long", "Thường Sơn Triệu Tử Long bái kiến Chúa Công!", "guild");
+        AddMessage("Hệ Thống", "Kênh Hệ Thống hiển thị thông báo trong game. Chat Thế Giới sắp ra mắt.", "sys");
     }
 
     private void ConnectSignals()
@@ -185,11 +185,10 @@ public partial class ChatBox : PanelContainer
         string text = _inputField.Text.Trim();
         if (string.IsNullOrEmpty(text)) return;
 
-        string playerName = GameManager.Instance?.Profile?.PlayerName ?? "Chúa Công";
-        string channel = _channelSelector.GetItemText(_channelSelector.Selected);
-
-        AddMessage(playerName, text, channel);
-        EventBus.Instance?.EmitSignal(EventBus.SignalName.ChatMessageReceived, playerName, text, channel);
+        // Chua co server chat realtime: khong gia lap gui thanh cong.
         _inputField.Clear();
+        AddMessage("Hệ Thống", "Chat thế giới sắp ra mắt — tin nhắn chưa được gửi.", "sys");
+        EventBus.Instance?.EmitSignal(EventBus.SignalName.SystemNotification,
+            "Chat", "Chat thế giới sắp ra mắt.", "info");
     }
 }
