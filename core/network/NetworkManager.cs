@@ -749,6 +749,9 @@ public partial class NetworkManager : Node
         return result;
     }
 
+    public async Task<List<MailDto>> FetchMailAsync() =>
+        await GetDtoAsync<List<MailDto>>("/api/mail") ?? new List<MailDto>();
+
     public async Task<ArenaProfileDto> FetchArenaProfileAsync() =>
         await GetDtoAsync<ArenaProfileDto>("/api/arena/profile");
 
@@ -1112,6 +1115,16 @@ public partial class NetworkManager : Node
         public long Exp { get; set; }
         public int Level { get; set; }
         public int ExpGranted { get; set; }
+    }
+
+    public class MailDto
+    {
+        public string Id { get; set; }
+        public string Title { get; set; }
+        public string Body { get; set; }
+        public bool IsRead { get; set; }
+        public bool IsClaimed { get; set; }
+        public string CreatedAt { get; set; }
     }
 
     public class ArenaProfileDto

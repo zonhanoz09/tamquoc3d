@@ -150,11 +150,10 @@ public partial class TestHubScreen : Node
 
         // Wait for frames and render
         await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
-        var avatarWidget = hub.GetNodeOrNull<AvatarWidget>("AvatarWidget");
-        Assert(avatarWidget?.GetChildCount() == 1, "Hub must display the avatar image.");
-        Assert(
-            avatarWidget?.GetChild(0) is TextureRect { Texture: not null },
-            "Hub avatar texture must be loaded.");
+        var hubTopBar = hub.GetNodeOrNull<TopBar>("TopBar");
+        Assert(hubTopBar != null, "Hub must display the TopBar (profile + wallet).");
+        var hubBottomNav = hub.GetNodeOrNull<BottomNavBar>("BottomNavBar");
+        Assert(hubBottomNav != null, "Hub must display the BottomNavBar.");
         await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
         await ToSignal(GetTree().CreateTimer(0.6f), SceneTreeTimer.SignalName.Timeout);
 

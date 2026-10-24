@@ -16,6 +16,9 @@ public partial class TopBar : PanelContainer
     [Signal] public delegate void AvatarClickedEventHandler();
     [Signal] public delegate void SettingsClickedEventHandler();
     [Signal] public delegate void MailClickedEventHandler();
+    [Signal] public delegate void DiamondPlusClickedEventHandler();
+
+    private Label _mailBadgeLabel;
 
     private TextureButton _avatarBtn;
     private TextureRect _avatarRect;
@@ -79,6 +82,7 @@ public partial class TopBar : PanelContainer
         // TopBar background texture
         var styleBox = new StyleBoxTexture
         {
+            Texture = GD.Load<Texture2D>("res://assets/ui/hub/topbar_bg.png"),
             ExpandMarginTop = 0,
             ExpandMarginBottom = 0
         };
@@ -178,20 +182,134 @@ public partial class TopBar : PanelContainer
         _levelLabel.AddThemeFontSizeOverride("font_size", 12);
         row2.AddChild(_levelLabel);
 
-       
+        _titleLabel = new Label
+        {
+            Text = string.Empty,
+            Modulate = new Color(1f, 0.8f, 0.35f)
+        };
+        _titleLabel.AddThemeFontSizeOverride("font_size", 12);
+        row2.AddChild(_titleLabel);
+
         // Spacer to right
         var spacer2 = new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill };
         hBox.AddChild(spacer2);
 
-        // --- 3. RIGHT SECTION: QUICK SHORTCUTS & SERVER BADGE ---
+        // --- 2. CURRENCY SECTION: stamina / silver (gold) / diamond ---
+        var currencyBox = new HBoxContainer();
+        currencyBox.AddThemeConstantOverride("separation", 14);
+        currencyBox.Alignment = BoxContainer.AlignmentMode.Center;
+        hBox.AddChild(currencyBox);
+
+        // Stamina: icon + bar + value + refill timer
+        var staminaBox = new HBoxContainer();
+        staminaBox.AddThemeConstantOverride("separation", 4);
+        currencyBox.AddChild(staminaBox);
+        staminaBox.AddChild(CreateCurrencyIcon("res://assets/ui/hub/currency_icon_stamina.png"));
+        var staminaVBox = new VBoxContainer();
+        staminaVBox.AddThemeConstantOverride("separation", 0);
+        staminaBox.AddChild(staminaVBox);
+        var staminaRow = new HBoxContainer();
+        staminaRow.AddThemeConstantOverride("separation", 6);
+        staminaVBox.AddChild(staminaRow);
+        _staminaLabel = new Label { Text = "0/0" };
+        _staminaLabel.AddThemeFontSizeOverride("font_size", 12);
+        staminaRow.AddChild(_staminaLabel);
+        _staminaTimerLabel = new Label
+        {
+            Text = string.Empty,
+            Modulate = new Color(0.75f, 0.75f, 0.75f)
+        };
+        _staminaTimerLabel.AddThemeFontSizeOverride("font_size", 10);
+        staminaRow.AddChild(_staminaTimerLabel);
+        _staminaBar = new ProgressBar
+        {
+            CustomMinimumSize = new Vector2(90, 6),
+            Size = new Vector2(90, 6),
+            ShowPercentage = false,
+            MaxValue = 100,
+            Value = 0
+        };
+        staminaVBox.AddChild(_staminaBar);
+
+        // Silver (Gold)
+        var goldBox = new HBoxContainer();
+        goldBox.AddThemeConstantOverride("separation", 4);
+        currencyBox.AddChild(goldBox);
+        goldBox.AddChild(CreateCurrencyIcon("res://assets/ui/hub/currency_icon_gold.png"));
+        _goldLabel = new Label { Text = "0" };
+        _goldLabel.AddThemeFontSizeOverride("font_size", 13);
+        goldBox.AddChild(_goldLabel);
+
+        // Diamond (Gems) + plus button -> shop
+        var diamondBox = new HBoxContainer();
+        diamondBox.AddThemeConstantOverride("separation", 4);
+        currencyBox.AddChild(diamondBox);
+        diamondBox.AddChild(CreateCurrencyIcon("res://assets/ui/hub/currency_icon_diamond.png"));
+        _diamondLabel = new Label { Text = "0" };
+        _diamondLabel.AddThemeFontSizeOverride("font_size", 13);
+        diamondBox.AddChild(_diamondLabel);
+        var plusBtn = new Button
+        {
+            Text = "+",
+            TooltipText = "Tới Cửa Hàng",
+            CustomMinimumSize = new Vector2(20, 20)
+        };
+        plusBtn.Pressed += () => EmitSignal(SignalName.DiamondPlusClicked);
+        diamondBox.AddChild(plusBtn);
+
+        // --- 3. RIGHT SECTION: MAIL, SETTINGS & SERVER BADGE ---
         var rightBox = new HBoxContainer();
         rightBox.AddThemeConstantOverride("separation", 10);
         rightBox.Alignment = BoxContainer.AlignmentMode.End;
         hBox.AddChild(rightBox);
 
+        // Mail button with unread badge
+        var mailContainer = new Control { CustomMinimumSize = new Vector2(34, 34) };
+        var mailBtn = CreateIconButton("✉", "Hòm Thư");
+        mailBtn.Pressed += () => EmitSignal(SignalName.MailClicked);
+        mailContainer.AddChild(mailBtn);
+        _mailBadgeLabel = new Label
+        {
+            Text = string.Empty,
+            Position = new Vector2(20, -4),
+            Modulate = new Color(1f, 0.35f, 0.3f),
+            Visible = false
+        };
+        _mailBadgeLabel.AddThemeFontSizeOverride("font_size", 11);
+        mailContainer.AddChild(_mailBadgeLabel);
+        rightBox.AddChild(mailContainer);
+
         var settingsBtn = CreateIconButton("⚙", "Cài Đặt");
         settingsBtn.Pressed += () => EmitSignal(SignalName.SettingsClicked);
         rightBox.AddChild(settingsBtn);
+
+        _serverBadge = new Label
+        {
+            Text = string.Empty,
+            Modulate = new Color(0.6f, 0.6f, 0.6f)
+        };
+        _serverBadge.AddThemeFontSizeOverride("font_size", 10);
+        rightBox.AddChild(_serverBadge);
+    }
+
+    private static TextureRect CreateCurrencyIcon(string path)
+    {
+        return new TextureRect
+        {
+            Texture = GD.Load<Texture2D>(path),
+            CustomMinimumSize = new Vector2(20, 20),
+            Size = new Vector2(20, 20),
+            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+            StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered
+        };
+    }
+
+    /// <summary>So thu chua doc hien tren nut Hom Thu (0 = an badge).</summary>
+    public void SetMailBadge(int unreadCount)
+    {
+        if (_mailBadgeLabel == null) return;
+        _mailBadgeLabel.Visible = unreadCount > 0;
+        _mailBadgeLabel.Text = unreadCount > 9 ? "9+" : unreadCount.ToString();
     }
 
     private Button CreateIconButton(string text, string tooltip)
