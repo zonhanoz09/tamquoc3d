@@ -190,6 +190,7 @@ public partial class NetworkManager : Node
             manager.Profile.PlayerName = profileDto.DisplayName;
             manager.Profile.AvatarHeroId = profileDto.AvatarId;
             manager.Profile.Level = profileDto.Level;
+            manager.Profile.Exp = profileDto.Exp;
             manager.Profile.VipLevel = profileDto.VipLevel;
             manager.Profile.CombatPower = profileDto.CombatPower;
             manager.Profile.OwnedHeroIds.Clear();
@@ -993,6 +994,7 @@ public partial class NetworkManager : Node
         public string DisplayName { get; set; }
         public string AvatarId { get; set; }
         public int Level { get; set; }
+        public long Exp { get; set; }
         public int VipLevel { get; set; }
         public long CombatPower { get; set; }
     }

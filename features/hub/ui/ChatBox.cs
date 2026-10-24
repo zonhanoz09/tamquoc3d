@@ -5,8 +5,10 @@ using TamQuoc3D.Core.Autoload;
 namespace TamQuoc3D.Features.Hub.Ui;
 
 /// <summary>
-/// ChatBox - Khung chat thu nhỏ phong cách MMO chiến thuật góc dưới bên trái,
-/// hỗ trợ các kênh Thế Giới, Bang Hội, Hệ Thống, và nhắn tin tương tác.
+/// ChatBox - Khung chat góc dưới bên trái hub (§6): DỒN TRÁI, FIX CỨNG, đáy
+/// khung trùng y = 700 với đáy BottomNavBar (ô nhập ngang hàng với thanh nav).
+/// Tab kênh nằm ở ĐÁY khung chat (dưới danh sách tin), kênh Hệ Thống là thật,
+/// gửi tin báo "sắp ra mắt" thay vì giả lập gửi.
 /// </summary>
 [GlobalClass]
 public partial class ChatBox : PanelContainer
@@ -26,8 +28,8 @@ public partial class ChatBox : PanelContainer
 
     private void BuildLayout()
     {
-        CustomMinimumSize = new Vector2(360, 130);
-        Size = new Vector2(360, 130);
+        CustomMinimumSize = new Vector2(420, 150);
+        Size = new Vector2(420, 150);
 
         var styleBox = new StyleBoxTexture
         {
@@ -46,7 +48,22 @@ public partial class ChatBox : PanelContainer
         vBox.AddThemeConstantOverride("separation", 4);
         margin.AddChild(vBox);
 
-        // Header / Channel selector row
+        // Scrollable message list (len tren cung)
+        _scroll = new ScrollContainer
+        {
+            CustomMinimumSize = new Vector2(404, 64),
+            HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
+            VerticalScrollMode = ScrollContainer.ScrollMode.Auto,
+            SizeFlagsVertical = SizeFlags.ExpandFill
+        };
+        vBox.AddChild(_scroll);
+
+        _messageList = new VBoxContainer();
+        _messageList.AddThemeConstantOverride("separation", 2);
+        _messageList.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        _scroll.AddChild(_messageList);
+
+        // Tab kenh o DAY khung chat (duoi danh sach tin, tren o nhap)
         var header = new HBoxContainer();
         header.AddThemeConstantOverride("separation", 6);
         vBox.AddChild(header);
@@ -70,22 +87,7 @@ public partial class ChatBox : PanelContainer
         _channelSelector.Select(0);
         header.AddChild(_channelSelector);
 
-        // Scrollable message list
-        _scroll = new ScrollContainer
-        {
-            CustomMinimumSize = new Vector2(344, 64),
-            HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
-            VerticalScrollMode = ScrollContainer.ScrollMode.Auto,
-            SizeFlagsVertical = SizeFlags.ExpandFill
-        };
-        vBox.AddChild(_scroll);
-
-        _messageList = new VBoxContainer();
-        _messageList.AddThemeConstantOverride("separation", 2);
-        _messageList.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-        _scroll.AddChild(_messageList);
-
-        // Input & Send row
+        // Input & Send row (ngang hang voi thanh nav duoi)
         var inputRow = new HBoxContainer();
         inputRow.AddThemeConstantOverride("separation", 4);
         vBox.AddChild(inputRow);
@@ -93,7 +95,7 @@ public partial class ChatBox : PanelContainer
         _inputField = new LineEdit
         {
             PlaceholderText = "Nhập nội dung chat...",
-            CustomMinimumSize = new Vector2(275, 24),
+            CustomMinimumSize = new Vector2(335, 24),
             SizeFlagsHorizontal = SizeFlags.ExpandFill
         };
         _inputField.AddThemeFontSizeOverride("font_size", 11);

@@ -5,7 +5,9 @@ using TamQuoc3D.Core.Navigation;
 namespace TamQuoc3D.Features.Hub.Ui;
 
 /// <summary>
-/// BottomNavBar - Thanh điều hướng dưới đáy màn hình gồm 11 danh mục chính phong cách MMO chiến thuật.
+/// BottomNavBar - Thanh điều hướng dưới đáy hub (§6): 5 tab thật, DỒN PHẢI,
+/// FIX CỨNG góc phải dưới (HubController đặt ở (0, 648), đáy trùng y = 700 với
+/// đáy ChatBox; dưới nữa là thanh kinh nghiệm). Thu Gọn không ẩn thanh này.
 /// </summary>
 [GlobalClass]
 public partial class BottomNavBar : PanelContainer
@@ -31,8 +33,8 @@ public partial class BottomNavBar : PanelContainer
 
     private void BuildLayout()
     {
-        CustomMinimumSize = new Vector2(1280, 68);
-        Size = new Vector2(1280, 68);
+        CustomMinimumSize = new Vector2(1280, 52);
+        Size = new Vector2(1280, 52);
 
         var styleBox = new StyleBoxTexture
         {
@@ -43,13 +45,13 @@ public partial class BottomNavBar : PanelContainer
         var margin = new MarginContainer();
         margin.AddThemeConstantOverride("margin_left", 12);
         margin.AddThemeConstantOverride("margin_right", 12);
-        margin.AddThemeConstantOverride("margin_top", 4);
-        margin.AddThemeConstantOverride("margin_bottom", 4);
+        margin.AddThemeConstantOverride("margin_top", 2);
+        margin.AddThemeConstantOverride("margin_bottom", 2);
         AddChild(margin);
 
         var hBox = new HBoxContainer
         {
-            Alignment = BoxContainer.AlignmentMode.Center
+            Alignment = BoxContainer.AlignmentMode.End
         };
         hBox.AddThemeConstantOverride("separation", 10);
         margin.AddChild(hBox);
@@ -76,7 +78,7 @@ public partial class BottomNavBar : PanelContainer
     {
         var tabContainer = new VBoxContainer
         {
-            CustomMinimumSize = new Vector2(98, 60),
+            CustomMinimumSize = new Vector2(98, 48),
             Alignment = BoxContainer.AlignmentMode.Center
         };
         tabContainer.AddThemeConstantOverride("separation", 2);
@@ -95,7 +97,7 @@ public partial class BottomNavBar : PanelContainer
         // Button wrapper with Icon & Label
         var btn = new Button
         {
-            CustomMinimumSize = new Vector2(94, 50),
+            CustomMinimumSize = new Vector2(94, 42),
             Flat = true
         };
         var normalStyle = new StyleBoxEmpty();
@@ -105,7 +107,7 @@ public partial class BottomNavBar : PanelContainer
         var innerVBox = new VBoxContainer
         {
             Position = new Vector2(0, 0),
-            Size = new Vector2(94, 50),
+            Size = new Vector2(94, 42),
             Alignment = BoxContainer.AlignmentMode.Center,
             MouseFilter = MouseFilterEnum.Ignore
         };
@@ -115,15 +117,15 @@ public partial class BottomNavBar : PanelContainer
         // Icon container with badge overlay
         var iconWrapper = new Control
         {
-            CustomMinimumSize = new Vector2(32, 28),
+            CustomMinimumSize = new Vector2(32, 24),
             MouseFilter = MouseFilterEnum.Ignore
         };
         innerVBox.AddChild(iconWrapper);
 
         var iconRect = new TextureRect
         {
-            Position = new Vector2(31, 0),
-            Size = new Vector2(32, 28),
+            Position = new Vector2(33, 0),
+            Size = new Vector2(28, 24),
             Texture = GD.Load<Texture2D>(cfg.IconPath),
             ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
             StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,

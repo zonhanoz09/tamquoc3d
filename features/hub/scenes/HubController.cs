@@ -24,6 +24,7 @@ public partial class HubController : Control
     private QuestTrackerPanel _questPanel;
     private ChatBox _chatBox;
     private BottomNavBar _bottomNavBar;
+    private ExpBar _expBar;
     private EventNotification _eventNotification;
     private Control _modalRoot;
 
@@ -71,23 +72,32 @@ public partial class HubController : Control
         AddChild(_questPanel);
         PositionQuestPanel();
 
-        // 4. ChatBox kenh he thong (goc trai duoi, tren BottomNav)
+        // 4. ChatBox: don trai, fix cung, day khung y = 700 (ngang hang nav)
         _chatBox = new ChatBox
         {
             Name = "ChatBox",
-            Position = new Vector2(16, 508),
+            Position = new Vector2(16, 550),
             ZIndex = 12
         };
         AddChild(_chatBox);
 
-        // 5. BottomNavBar (dieu huong chinh, tu xu ly chuyen scene)
+        // 5. BottomNavBar: don phai, fix cung (0, 648), day y = 700
         _bottomNavBar = new BottomNavBar
         {
             Name = "BottomNavBar",
-            Position = new Vector2(0, 652),
+            Position = new Vector2(0, 648),
             ZIndex = 10
         };
         AddChild(_bottomNavBar);
+
+        // 6. Thanh kinh nghiem: full-width, sat day man hinh (y 704-720)
+        _expBar = new ExpBar
+        {
+            Name = "ExpBar",
+            Position = new Vector2(0, 704),
+            ZIndex = 10
+        };
+        AddChild(_expBar);
 
         // 6. Thong bao toast + banner su kien (nhan EventBus.SystemNotification)
         _eventNotification = new EventNotification();

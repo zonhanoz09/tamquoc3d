@@ -171,6 +171,11 @@ public partial class TestHubScreen : Node
         Assert(hubQuestPanel != null, "Hub must display the main-quest tracker panel.");
         var hubChat = hub.GetNodeOrNull<ChatBox>("ChatBox");
         Assert(hubChat != null, "Hub must display the system-channel ChatBox.");
+        Assert(hubChat.Position == new Vector2(16, 550), "ChatBox must be fixed bottom-left (day y = 700).");
+        Assert(hubBottomNav.Position == new Vector2(0, 648), "BottomNavBar must be fixed at y = 648 (day y = 700).");
+        var hubExpBar = hub.GetNodeOrNull<ExpBar>("ExpBar");
+        Assert(hubExpBar != null && hubExpBar.Position == new Vector2(0, 704),
+            "Hub must display the full-width ExpBar at the very bottom (y = 704).");
 
         // Courtyard (§6): 1 nhan vat nguoi choi (duy nhat di chuyen duoc) + 3 NPC
         // dung yen; khong con doi hinh 5 tuong di dao, khong khach online di dao.

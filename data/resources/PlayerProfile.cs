@@ -17,6 +17,7 @@ public partial class PlayerProfile : Resource
     [Export] public string PlayerId { get; set; } = "user_8888";
     [Export] public string PlayerName { get; set; } = "Chúa Công";
     [Export] public int Level { get; set; } = 80;
+    [Export] public long Exp { get; set; } = 0;
     [Export] public int VipLevel { get; set; } = 11;
     [Export] public long CombatPower { get; set; }
     [Export] public string CurrentTitle { get; set; } = "[Địa Chủ]";
@@ -74,6 +75,7 @@ public partial class PlayerProfile : Resource
                 PlayerId = PlayerId,
                 PlayerName = PlayerName,
                 Level = Level,
+                Exp = Exp,
                 VipLevel = VipLevel,
                 CombatPower = CombatPower,
                 CurrentTitle = CurrentTitle,
@@ -125,6 +127,7 @@ public partial class PlayerProfile : Resource
                 PlayerId = dto.PlayerId,
                 PlayerName = dto.PlayerName,
                 Level = dto.Level,
+                Exp = dto.Exp,
                 VipLevel = dto.VipLevel,
                 CombatPower = dto.CombatPower,
                 CurrentTitle = dto.CurrentTitle,
@@ -163,6 +166,7 @@ public partial class PlayerProfile : Resource
         public string PlayerId { get; set; }
         public string PlayerName { get; set; }
         public int Level { get; set; }
+        public long Exp { get; set; }
         public int VipLevel { get; set; }
         public long CombatPower { get; set; }
         public string CurrentTitle { get; set; }
