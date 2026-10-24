@@ -54,19 +54,16 @@ public partial class BottomNavBar : PanelContainer
         hBox.AddThemeConstantOverride("separation", 10);
         margin.AddChild(hBox);
 
+        // Chi giu tab mo duoc tinh nang that. Bang Hoi chua co he thong ->
+        // tab khoa (khong dieu huong, HubController hien thong bao "Sap mo").
+        // Badge mac dinh 0 - chi SetBadge() tu du lieu that moi hien.
         var tabConfigs = new List<TabConfig>
         {
             new() { Id = "hero", Label = "Võ Tướng", IconPath = "res://assets/ui/hub/icon_hero.png", BadgeCount = 0 },
-            new() { Id = "item", Label = "Bảo Vật", IconPath = "res://assets/ui/hub/icon_item.png", BadgeCount = 0 },
-            new() { Id = "arena", Label = "Thí Đấu", IconPath = "res://assets/ui/hub/icon_arena.png", BadgeCount = 3 },
-            new() { Id = "campaign", Label = "Địa Chỉ", IconPath = "res://assets/ui/hub/icon_map.png", BadgeCount = 0 },
-            new() { Id = "bag", Label = "Túi", IconPath = "res://assets/ui/hub/icon_bag.png", BadgeCount = 0 },
-            new() { Id = "guild", Label = "Bang Hội", IconPath = "res://assets/ui/hub/icon_guild.png", BadgeCount = 1 },
-            new() { Id = "pvp", Label = "Võ Thành", IconPath = "res://assets/ui/hub/icon_pvp.png", BadgeCount = 0 },
-            new() { Id = "pet", Label = "Linh Thú", IconPath = "res://assets/ui/hub/icon_pet.png", BadgeCount = 0 },
-            new() { Id = "upgrade", Label = "Cường Hóa", IconPath = "res://assets/ui/hub/icon_upgrade.png", BadgeCount = 2 },
-            new() { Id = "formation", Label = "Quân Đoàn", IconPath = "res://assets/ui/hub/icon_formation.png", BadgeCount = 0 },
-            new() { Id = "mount", Label = "Thú Cưỡi", IconPath = "res://assets/ui/hub/icon_wedding.png", BadgeCount = 0 }
+            new() { Id = "formation", Label = "Đội Hình", IconPath = "res://assets/ui/hub/icon_formation.png", BadgeCount = 0 },
+            new() { Id = "campaign", Label = "Chiến Dịch", IconPath = "res://assets/ui/hub/icon_map.png", BadgeCount = 0 },
+            new() { Id = "arena", Label = "Đấu Trường", IconPath = "res://assets/ui/hub/icon_arena.png", BadgeCount = 0 },
+            new() { Id = "guild", Label = "🔒 Bang Hội", IconPath = "res://assets/ui/hub/icon_bang_hoi_locked.png", BadgeCount = 0 }
         };
 
         foreach (var cfg in tabConfigs)
@@ -221,7 +218,8 @@ public partial class BottomNavBar : PanelContainer
                 SceneNavigator.GoToHeroCollection();
                 break;
             case "guild":
-                SceneNavigator.GoToGuild();
+                // Khoa: chua co he thong bang hoi. HubController nghe TabSelected
+                // va hien thong bao "Sap mo" - khong vao scene stub.
                 break;
         }
     }

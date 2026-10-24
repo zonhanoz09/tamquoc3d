@@ -19,8 +19,10 @@ public partial class HubController : Control
 {
     private HubBackground _background;
     private TopBar _topBar;
+    private ShortcutBar _shortcutBar;
     private BottomNavBar _bottomNavBar;
     private EventNotification _eventNotification;
+    private Control _modalRoot;
 
     public override void _Ready()
     {
@@ -46,7 +48,16 @@ public partial class HubController : Control
         };
         AddChild(_topBar);
 
-        // 3. BottomNavBar (dieu huong chinh, tu xu ly chuyen scene)
+        // 3. Cot icon chuc nang ben phai (tinh nang that + khoa tinh nang chua co)
+        _shortcutBar = new ShortcutBar
+        {
+            Name = "ShortcutBar",
+            Position = new Vector2(1146, 72),
+            ZIndex = 15
+        };
+        AddChild(_shortcutBar);
+
+        // 4. BottomNavBar (dieu huong chinh, tu xu ly chuyen scene)
         _bottomNavBar = new BottomNavBar
         {
             Name = "BottomNavBar",
@@ -55,7 +66,7 @@ public partial class HubController : Control
         };
         AddChild(_bottomNavBar);
 
-        // 4. Thong bao toast + banner su kien (nhan EventBus.SystemNotification)
+        // 5. Thong bao toast + banner su kien (nhan EventBus.SystemNotification)
         _eventNotification = new EventNotification();
         AddChild(_eventNotification);
     }
@@ -70,9 +81,65 @@ public partial class HubController : Control
             _topBar.DiamondPlusClicked += () => SceneNavigator.GoToShop();
         }
 
+        if (_shortcutBar != null)
+        {
+            _shortcutBar.ShortcutClicked += OnShortcutClicked;
+        }
+
         if (_bottomNavBar != null)
         {
             _bottomNavBar.TabSelected += OnBottomTabSelected;
+        }
+    }
+
+    private void OnShortcutClicked(string shortcutId)
+    {
+        switch (shortcutId)
+        {
+            case "chieu_mo":
+                SceneNavigator.GoToGacha();
+                break;
+            case "cua_hang":
+                SceneNavigator.GoToShop();
+                break;
+            case "thap":
+                SceneNavigator.GoToTower();
+                break;
+            case "hom_thu":
+                _ = OpenMailPanelAsync();
+                break;
+            case "su_kien":
+                // Su kien dang chay chinh la banner Chieu Mo gioi han
+                SceneNavigator.GoToGacha();
+                break;
+            case "cai_dat":
+                OpenSettingsPanel();
+                break;
+            case "me_cung":
+                _eventNotification?.ShowToast("Mê Cung", "Tính năng sắp mở.", 2.0f);
+                break;
+            case "bang_hoi":
+                _eventNotification?.ShowToast("Bang Hội", "Tính năng sắp mở.", 2.0f);
+                break;
+            default:
+                GD.Print($"[HubController] Shortcut chua duoc gan: {shortcutId}");
+                break;
+        }
+    }
+
+    /// <summary>Badge cho cot icon: dot Chieu Mo khi du KC, tang thap ke tiep, dot thu chua doc.</summary>
+    private async System.Threading.Tasks.Task RefreshShortcutBadgesAsync()
+    {
+        if (_shortcutBar == null) return;
+        _shortcutBar.SetNotification("chieu_mo", (GameManager.Instance?.Gems ?? 0) >= 100);
+
+        var network = NetworkManager.Instance;
+        if (network == null || string.IsNullOrEmpty(network.CurrentUserId)) return;
+        var tower = await network.FetchTowerProgressAsync();
+        if (tower != null)
+        {
+            GameManager.Instance.TowerHighestFloor = tower.HighestFloor;
+            _shortcutBar.SetSubLabel("thap", tower.HighestFloor >= 50 ? "MAX" : $"Tầng {tower.HighestFloor + 1}");
         }
     }
 
@@ -89,6 +156,7 @@ public partial class HubController : Control
         {
             await network.SyncPlayerDataAsync();
             await RefreshMailBadgeAsync();
+            await RefreshShortcutBadgesAsync();
         }
         catch (Exception ex)
         {
@@ -102,7 +170,9 @@ public partial class HubController : Control
         if (network == null || string.IsNullOrEmpty(network.CurrentUserId) || _topBar == null) return;
 
         var mails = await network.FetchMailAsync();
-        _topBar.SetMailBadge(mails.Count(m => !m.IsRead));
+        int unread = mails.Count(m => !m.IsRead);
+        _topBar.SetMailBadge(unread);
+        _shortcutBar?.SetNotification("hom_thu", unread > 0);
     }
 
     private void ShowWelcomeExperience()
@@ -139,14 +209,95 @@ public partial class HubController : Control
 
     private void OnSettingsClicked()
     {
-        bool online = NetworkManager.Instance?.IsDatabaseConnected ?? false;
-        _eventNotification?.ShowToast(
-            "Cài Đặt Hệ Thống",
-            $"Máy chủ: {(online ? "Đã kết nối" : "Offline")} | Phiên bản 1.0.0",
-            3.0f);
+        OpenSettingsPanel();
     }
 
-    private async void OnMailClicked()
+    private void OnMailClicked()
+    {
+        _ = OpenMailPanelAsync();
+    }
+
+    // ---------- Modal panels (mail / settings) ----------
+
+    private VBoxContainer OpenModal(string title)
+    {
+        CloseModal();
+        _modalRoot = new Control
+        {
+            Name = "HubModal",
+            Position = Vector2.Zero,
+            Size = new Vector2(1280, 720),
+            ZIndex = 40
+        };
+        AddChild(_modalRoot);
+
+        var dim = new ColorRect
+        {
+            Color = new Color(0, 0, 0, 0.55f),
+            Size = new Vector2(1280, 720)
+        };
+        _modalRoot.AddChild(dim);
+
+        var panel = new PanelContainer
+        {
+            Position = new Vector2(390, 130),
+            Size = new Vector2(500, 460),
+            CustomMinimumSize = new Vector2(500, 460)
+        };
+        var panelStyle = new StyleBoxFlat
+        {
+            BgColor = new Color(0.13f, 0.1f, 0.17f, 0.98f),
+            BorderColor = new Color(0.85f, 0.7f, 0.3f),
+            BorderWidthBottom = 2,
+            BorderWidthTop = 2,
+            BorderWidthLeft = 2,
+            BorderWidthRight = 2,
+            CornerRadiusBottomLeft = 8,
+            CornerRadiusBottomRight = 8,
+            CornerRadiusTopLeft = 8,
+            CornerRadiusTopRight = 8
+        };
+        panel.AddThemeStyleboxOverride("panel", panelStyle);
+        _modalRoot.AddChild(panel);
+
+        var margin = new MarginContainer();
+        margin.AddThemeConstantOverride("margin_left", 16);
+        margin.AddThemeConstantOverride("margin_right", 16);
+        margin.AddThemeConstantOverride("margin_top", 12);
+        margin.AddThemeConstantOverride("margin_bottom", 12);
+        panel.AddChild(margin);
+
+        var vbox = new VBoxContainer();
+        vbox.AddThemeConstantOverride("separation", 8);
+        margin.AddChild(vbox);
+
+        var header = new HBoxContainer();
+        vbox.AddChild(header);
+        var titleLabel = new Label
+        {
+            Text = title,
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            Modulate = new Color(1f, 0.85f, 0.3f)
+        };
+        titleLabel.AddThemeFontSizeOverride("font_size", 16);
+        header.AddChild(titleLabel);
+        var closeBtn = new Button { Text = "✕", CustomMinimumSize = new Vector2(30, 26) };
+        closeBtn.Pressed += CloseModal;
+        header.AddChild(closeBtn);
+
+        return vbox;
+    }
+
+    private void CloseModal()
+    {
+        if (_modalRoot != null && IsInstanceValid(_modalRoot))
+        {
+            _modalRoot.QueueFree();
+        }
+        _modalRoot = null;
+    }
+
+    private async System.Threading.Tasks.Task OpenMailPanelAsync()
     {
         var network = NetworkManager.Instance;
         if (network == null || string.IsNullOrEmpty(network.CurrentUserId))
@@ -155,20 +306,102 @@ public partial class HubController : Control
             return;
         }
 
+        var content = OpenModal("✉ HÒM THƯ");
+        var loading = new Label { Text = "Đang tải thư..." };
+        content.AddChild(loading);
+
         var mails = await network.FetchMailAsync();
+        if (_modalRoot == null || !IsInstanceValid(_modalRoot)) return;
+        loading.QueueFree();
+
         int unread = mails.Count(m => !m.IsRead);
         _topBar?.SetMailBadge(unread);
-        _eventNotification?.ShowToast(
-            "Hòm Thư",
-            mails.Count == 0
-                ? "Chưa có thư nào."
-                : $"{mails.Count} thư, {unread} chưa đọc. Mới nhất: {mails[0].Title}",
-            3.5f);
+        _shortcutBar?.SetNotification("hom_thu", unread > 0);
+
+        if (mails.Count == 0)
+        {
+            content.AddChild(new Label { Text = "Chưa có thư nào." });
+            return;
+        }
+
+        foreach (var mail in mails.Take(10))
+        {
+            var row = new Label
+            {
+                Text = $"{(mail.IsRead ? "·" : "●")} {mail.Title}",
+                Modulate = mail.IsRead ? new Color(0.8f, 0.8f, 0.8f) : new Color(1f, 0.95f, 0.8f),
+                AutowrapMode = TextServer.AutowrapMode.WordSmart
+            };
+            row.AddThemeFontSizeOverride("font_size", 13);
+            content.AddChild(row);
+            if (!string.IsNullOrWhiteSpace(mail.Body))
+            {
+                var body = new Label
+                {
+                    Text = mail.Body,
+                    Modulate = new Color(0.75f, 0.75f, 0.75f),
+                    AutowrapMode = TextServer.AutowrapMode.WordSmart
+                };
+                body.AddThemeFontSizeOverride("font_size", 11);
+                content.AddChild(body);
+            }
+        }
+    }
+
+    private void OpenSettingsPanel()
+    {
+        var content = OpenModal("⚙ CÀI ĐẶT");
+
+        var volumeRow = new HBoxContainer();
+        volumeRow.AddThemeConstantOverride("separation", 10);
+        content.AddChild(volumeRow);
+        volumeRow.AddChild(new Label { Text = "Âm lượng tổng" });
+        int masterBus = AudioServer.GetBusIndex("Master");
+        var slider = new HSlider
+        {
+            MinValue = 0,
+            MaxValue = 1,
+            Step = 0.05,
+            Value = Mathf.DbToLinear(AudioServer.GetBusVolumeDb(masterBus)),
+            CustomMinimumSize = new Vector2(220, 24),
+            SizeFlagsHorizontal = SizeFlags.ExpandFill
+        };
+        slider.ValueChanged += (value) =>
+        {
+            AudioServer.SetBusVolumeDb(masterBus, Mathf.LinearToDb((float)value));
+            AudioServer.SetBusMute(masterBus, value <= 0.01);
+        };
+        volumeRow.AddChild(slider);
+
+        bool online = NetworkManager.Instance?.IsDatabaseConnected ?? false;
+        var status = new Label
+        {
+            Text = $"Máy chủ: {(online ? "Đã kết nối" : "Offline")} | Phiên bản 1.0.0"
+        };
+        status.AddThemeFontSizeOverride("font_size", 12);
+        content.AddChild(status);
+
+        var logoutBtn = new Button
+        {
+            Text = "Đăng Xuất",
+            CustomMinimumSize = new Vector2(140, 32)
+        };
+        logoutBtn.Pressed += async () =>
+        {
+            CloseModal();
+            await NetworkManager.Instance.LogoutAsync();
+            GetTree().ChangeSceneToFile(SceneNavigator.LoginScenePath);
+        };
+        content.AddChild(logoutBtn);
     }
 
     private void OnBottomTabSelected(string tabId)
     {
         GD.Print($"[HubController] Tab selected: {tabId}");
-        // BottomNavBar handles direct navigation for formation, campaign, arena, hero, guild
+        if (tabId == "guild")
+        {
+            _eventNotification?.ShowToast("Bang Hội", "Tính năng sắp mở.", 2.0f);
+        }
+        // BottomNavBar handles direct navigation for formation, campaign, arena, hero
     }
 }
