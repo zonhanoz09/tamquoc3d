@@ -172,33 +172,37 @@ public partial class TestHubScreen : Node
         var hubChat = hub.GetNodeOrNull<ChatBox>("ChatBox");
         Assert(hubChat != null, "Hub must display the system-channel ChatBox.");
 
-        // Courtyard characters: real formation (fallback starter team = 5), main hero present,
-        // no guests while offline, and wander movement actually changes positions inside the zone.
+        // Courtyard (§6): 1 nhan vat nguoi choi (duy nhat di chuyen duoc) + 3 NPC
+        // dung yen; khong con doi hinh 5 tuong di dao, khong khach online di dao.
         HubBackground hubBg = null;
         foreach (var child in hub.GetChildren())
         {
             if (child is HubBackground bg) hubBg = bg;
         }
         Assert(hubBg != null, "Hub must have a HubBackground.");
-        Assert(hubBg.Characters.Count == 5, $"Courtyard must show 5 team heroes, got {hubBg.Characters.Count}");
+        Assert(hubBg.Characters.Count == 4, $"Courtyard must show 1 player + 3 static NPCs, got {hubBg.Characters.Count}");
         Assert(hubBg.MainCharacter != null, "Courtyard must have a main character.");
+        Assert(HubBackground.WalkZone == new Rect2(200, 340, 840, 300), "Walk zone must be x200-1040 / y340-640.");
         var startPositions = new System.Collections.Generic.Dictionary<HubCharacter, Vector2>();
         foreach (var c in hubBg.Characters)
         {
             Assert(!c.IsGuest, "No guest characters may appear while offline.");
             startPositions[c] = c.Position;
         }
+        // Vung di chi rang buoc nhan vat nguoi choi; NPC dung co dinh o me san
+        // (chan Dao y=330 nam ngay tren mep vung di y=340) nen khong ap dung zone cho NPC.
+        Assert(HubBackground.WalkZone.Grow(2).HasPoint(hubBg.MainCharacter.Position),
+            "Player character must start inside the walk zone.");
         await ToSignal(GetTree().CreateTimer(3.5f), SceneTreeTimer.SignalName.Timeout);
-        bool anyMoved = false;
         foreach (var c in hubBg.Characters)
         {
-            if (c.Position.DistanceTo(startPositions[c]) > 1.0f || c.CurrentTarget.HasValue) anyMoved = true;
-            Assert(HubBackground.WalkZone.Grow(2).HasPoint(c.Position), "Characters must stay inside the walk zone.");
+            if (c == hubBg.MainCharacter) continue;
+            Assert(c.Position.DistanceTo(startPositions[c]) < 1.0f && !c.CurrentTarget.HasValue,
+                "NPCs must stand still (no wander, no target).");
         }
-        Assert(anyMoved, "Non-main characters must wander (position changed or target set).");
         hubBg.MainCharacter.SetMoveTarget(new Vector2(300, 420));
-        Assert(hubBg.MainCharacter.CurrentTarget.HasValue, "Main character must accept click-to-move targets.");
-        GD.Print("✅ Test 9b: Courtyard characters, movement & offline guests passed.");
+        Assert(hubBg.MainCharacter.CurrentTarget.HasValue, "Player character must accept click-to-move targets.");
+        GD.Print("✅ Test 9b: Courtyard player + static NPCs & click-to-move passed.");
         await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
         await ToSignal(GetTree().CreateTimer(0.6f), SceneTreeTimer.SignalName.Timeout);
 

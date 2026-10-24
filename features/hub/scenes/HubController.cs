@@ -27,8 +27,6 @@ public partial class HubController : Control
     private EventNotification _eventNotification;
     private Control _modalRoot;
 
-    private readonly System.Collections.Generic.Dictionary<HubCharacter, NetworkManager.ArenaOpponentDto> _guestData = new();
-    private bool _guestsSpawned;
     private EventBus.SystemNotificationEventHandler _onSystemNotification;
 
     public override void _Ready()
@@ -204,61 +202,6 @@ public partial class HubController : Control
         }
     }
 
-    /// <summary>
-    /// Khach online: 2 nguoi choi that tu danh sach doi thu arena, dung tuong
-    /// dai dien di dao tren san. Du lieu dang snapshot (khong phai realtime);
-    /// offline/khong co doi thu thi khong hien gi ca.
-    /// </summary>
-    private async System.Threading.Tasks.Task SpawnGuestsAsync()
-    {
-        if (_guestsSpawned || _background == null) return;
-        var network = NetworkManager.Instance;
-        if (network == null || string.IsNullOrEmpty(network.CurrentUserId)) return;
-
-        var opponents = await network.FetchArenaOpponentsAsync();
-        var spots = new[] { new Vector2(215, 470), new Vector2(1015, 465) };
-        int spawned = 0;
-        foreach (var opp in opponents)
-        {
-            if (spawned >= spots.Length) break;
-            if (opp.HeroIds == null || opp.HeroIds.Count == 0) continue;
-
-            var guest = _background.CreateCharacter(
-                opp.HeroIds[0],
-                opp.DisplayName,
-                $"LC {opp.CombatPower:N0}",
-                isMain: false, isGuest: true,
-                position: spots[spawned],
-                wander: true);
-            _guestData[guest] = opp;
-            guest.CharacterClicked += OnGuestClicked;
-            spawned++;
-        }
-        _guestsSpawned = spawned > 0;
-    }
-
-    private void OnGuestClicked(HubCharacter guest)
-    {
-        if (!_guestData.TryGetValue(guest, out var opp)) return;
-
-        var content = OpenModal($"⚔ {opp.DisplayName}");
-        content.AddChild(new Label { Text = $"Hạng MMR: {opp.Mmr}" });
-        content.AddChild(new Label { Text = $"Thắng / Thua: {opp.WinCount} / {opp.LossCount}" });
-        content.AddChild(new Label { Text = $"Lực chiến đội hình: {opp.CombatPower:N0}" });
-
-        var challengeBtn = new Button
-        {
-            Text = "Tới Đấu Trường Thách Đấu",
-            CustomMinimumSize = new Vector2(220, 34)
-        };
-        challengeBtn.Pressed += () =>
-        {
-            CloseModal();
-            SceneNavigator.GoToArena();
-        };
-        content.AddChild(challengeBtn);
-    }
-
     /// <summary>Badge cho dock icon: dot Chieu Mo khi du KC, tang thap ke tiep, dot thu chua doc.</summary>
     private async System.Threading.Tasks.Task RefreshShortcutBadgesAsync()
     {
@@ -347,7 +290,6 @@ public partial class HubController : Control
             await RefreshMailBadgeAsync();
             await RefreshShortcutBadgesAsync();
             await BuildQuestEntriesAsync();
-            await SpawnGuestsAsync();
         }
         catch (Exception ex)
         {

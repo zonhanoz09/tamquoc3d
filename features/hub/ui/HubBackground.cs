@@ -8,16 +8,17 @@ using TamQuoc3D.Data.Database;
 namespace TamQuoc3D.Features.Hub.Ui;
 
 /// <summary>
-/// HubBackground - San dien hoang cung voi parallax, hat lua ambient va
-/// cac nhan vat di lai tren san: doi hinh that cua nguoi choi (toi da 5 tuong,
-/// nameplate ten + cap + sao) cong khach online (nguoi choi khac) o H4.
-/// Tuong chinh nhan lenh click-to-move khi bam xuong nen san.
+/// HubBackground - San dai ban doanh voi parallax, hat canh hoa ambient va
+/// cac nhan vat tren san theo anh mau (§6): 3 NPC DUNG YEN (Dieu Thuyen canh
+/// cay dao, Gia Cat Luong canh hang rao, Thuong Nhan) + DUY NHAT nhan vat
+/// nguoi choi di chuyen duoc (click-to-move trong vung di).
+/// Buc vang / cay lon / den da / hang rao la hinh nen ve san, khong phai node.
 /// </summary>
 [GlobalClass]
 public partial class HubBackground : Node2D
 {
-    /// <summary>Vung di lai tren nen san (tranh TopBar, cot icon phai, BottomNav).</summary>
-    public static readonly Rect2 WalkZone = new(90, 350, 970, 285);
+    /// <summary>Vung di lai cua nhan vat nguoi choi (§6): x 200-1040, y 340-640.</summary>
+    public static readonly Rect2 WalkZone = new(200, 340, 840, 300);
 
     private Sprite2D _bgSprite;
     private Node2D _characterContainer;
@@ -32,7 +33,7 @@ public partial class HubBackground : Node2D
     public override void _Ready()
     {
         BuildCourtyardVisuals();
-        SpawnTeamCharacters();
+        SpawnCourtyard();
         SetupAmbientParticles();
     }
 
@@ -85,67 +86,59 @@ public partial class HubBackground : Node2D
         AddChild(_characterContainer);
     }
 
-    /// <summary>Doi hinh that tu CurrentFormation; chua co thi dung doi khoi dau mau.</summary>
-    private List<string> ResolveTeamHeroIds()
+    /// <summary>
+    /// San theo anh mau (§6): 1 nhan vat nguoi choi (tuong dai dien trong ho so,
+    /// xuat phat (627, 576), duy nhat di chuyen duoc) + 3 NPC dung yen.
+    /// Toa do NPC do tu anh mau (tam sprite): Dao (404, 297), Lam (900, 305);
+    /// Position dat o chan nhan vat nen cong them chieu cao sprite (~33px).
+    /// </summary>
+    private void SpawnCourtyard()
     {
         var gm = GameManager.Instance;
-        var ids = new List<string>();
-        if (gm?.CurrentFormation != null)
-        {
-            foreach (var entry in gm.CurrentFormation)
-            {
-                if (!string.IsNullOrEmpty(entry.HeroId) && !ids.Contains(entry.HeroId))
-                {
-                    ids.Add(entry.HeroId);
-                }
-            }
-        }
-        if (ids.Count == 0)
-        {
-            ids.AddRange(new[] { "quan_vu", "trieu_van", "ma_sieu", "gia_cat_luong", "tieu_kieu" });
-        }
-        return ids.Take(5).ToList();
-    }
+        var profile = gm?.Profile;
+        var avatarId = !string.IsNullOrEmpty(profile?.AvatarHeroId) ? profile.AvatarHeroId : "quan_vu";
+        var playerName = !string.IsNullOrEmpty(profile?.PlayerName) ? profile.PlayerName : "Chúa Công";
+        var playerSub = profile != null ? $"Lv.{profile.Level}" : string.Empty;
 
-    private void SpawnTeamCharacters()
-    {
-        var gm = GameManager.Instance;
-        var heroIds = ResolveTeamHeroIds();
-        string mainId = gm?.Profile?.AvatarHeroId;
-        if (string.IsNullOrEmpty(mainId) || !heroIds.Contains(mainId))
-        {
-            mainId = heroIds[0];
-        }
+        MainCharacter = CreateCharacter(
+            avatarId, playerName, playerSub,
+            isMain: true, isGuest: false,
+            position: new Vector2(627, 576),
+            wander: false);
+        MainCharacter.CharacterClicked += OnPlayerCharacterClicked;
 
-        var spots = new List<Vector2>
+        var npcs = new[]
         {
-            new(640, 575), new(430, 520), new(850, 520), new(310, 585), new(970, 585)
+            ("dieu_thuyen", "Điêu Thuyền", "Cây Đào", new Vector2(404, 330),
+             "Hoa đào năm nay nở sớm, Chúa Công có muốn ngắm cùng thiếp không?"),
+            ("gia_cat_luong", "Gia Cát Lượng", "Quân Sư", new Vector2(900, 340),
+             "Thiên thời, địa lợi, nhân hòa — ba thứ đã đủ, chỉ chờ Chúa Công xuất chinh."),
+            ("tao_nhan", "Thương Nhân", "Cửa Hàng", new Vector2(760, 340),
+             "Hàng mới về mỗi ngày, Chúa Công ghé xem có gì hợp ý không?"),
         };
-
-        // Tuong chinh dung giua, cac tuong con lai xep hai ben
-        var ordered = new List<string> { mainId };
-        ordered.AddRange(heroIds.Where(id => id != mainId));
-
-        for (int i = 0; i < ordered.Count; i++)
+        foreach (var (heroId, name, sub, position, dialogue) in npcs)
         {
-            string heroId = ordered[i];
-            bool isMain = heroId == mainId;
-            var heroData = HeroDatabase.Instance?.GetHero(heroId);
-            string displayName = heroData?.HeroName ?? heroId;
-            var progress = gm?.GetHeroProgress(heroId);
-            string subText = progress != null ? $"Lv.{progress.Level}  ★{progress.Star}" : string.Empty;
-
-            var character = CreateCharacter(
-                heroId, displayName, subText,
-                isMain: isMain, isGuest: false,
-                position: spots[i % spots.Count],
-                wander: !isMain);
-            if (isMain) MainCharacter = character;
-            character.CharacterClicked += OnTeamCharacterClicked;
+            var npc = CreateCharacter(
+                heroId, name, sub,
+                isMain: false, isGuest: false,
+                position: position,
+                wander: false);
+            var capturedDialogue = dialogue;
+            var capturedName = name;
+            npc.CharacterClicked += _ =>
+            {
+                if (heroId == "tao_nhan")
+                {
+                    SceneNavigator.GoToShop();
+                    return;
+                }
+                EventBus.Instance?.EmitSignal(
+                    EventBus.SignalName.SystemNotification, capturedName, capturedDialogue, "npc");
+            };
         }
     }
 
-    private void OnTeamCharacterClicked(HubCharacter character)
+    private void OnPlayerCharacterClicked(HubCharacter character)
     {
         if (GameManager.Instance != null)
         {
@@ -154,7 +147,7 @@ public partial class HubBackground : Node2D
         SceneNavigator.GoToHeroCollection();
     }
 
-    /// <summary>Tao mot nhan vat tren san (dung cho ca doi hinh lan khach online).</summary>
+    /// <summary>Tao mot nhan vat tren san (nhan vat nguoi choi hoac NPC tinh).</summary>
     public HubCharacter CreateCharacter(
         string heroId, string displayName, string subText,
         bool isMain, bool isGuest, Vector2 position, bool wander)
