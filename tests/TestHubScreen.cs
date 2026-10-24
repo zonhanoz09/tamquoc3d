@@ -84,7 +84,31 @@ public partial class TestHubScreen : Node
         Assert(iconDock.Expanded, "IconDock must expand on toggle.");
         iconDock.SetExpanded(false);
         Assert(!iconDock.Expanded, "IconDock must collapse on toggle.");
-        GD.Print("✅ Test 3: IconDock rows, expand/collapse & notification dots passed.");
+        // Mo rong cho hang moi: them 1 nhom 12 icon -> tu tran thanh 2 hang,
+        // tong 5 hang / 24 icon, chieu rong dock khong doi (mep phai bat bien).
+        var groups = IconDock.DefaultGroups();
+        var extraIcons = new System.Collections.Generic.List<IconDock.DockIcon>();
+        for (int i = 0; i < 12; i++)
+        {
+            extraIcons.Add(new IconDock.DockIcon
+            {
+                Id = $"evt_{i}",
+                Name = $"Event {i}",
+                IconPath = "res://assets/ui/hub/icon_su_kien.png"
+            });
+        }
+        groups.Add(new IconDock.DockRowGroupConfig
+        {
+            Group = IconDock.RowGroup.Event,
+            GroupLabel = "Sự kiện mới",
+            IconSize = 40,
+            Icons = extraIcons
+        });
+        iconDock.RebuildRows(groups);
+        Assert(iconDock.RowCount == 5, $"Dock must flow 12 extra icons into 2 rows (total 5), got {iconDock.RowCount}");
+        Assert(iconDock.ButtonCount == 24, $"Dock must expose 24 icons after adding a group, got {iconDock.ButtonCount}");
+        Assert(iconDock.CustomMinimumSize.X == IconDock.DockWidth, "Dock width must stay fixed when rows are added.");
+        GD.Print("✅ Test 3: IconDock rows, expand/collapse, row overflow & notification dots passed.");
         iconDock.QueueFree();
 
         // --- 4. Test BottomNavBar UI Component ---
@@ -207,7 +231,42 @@ public partial class TestHubScreen : Node
         }
         hubBg.MainCharacter.SetMoveTarget(new Vector2(300, 420));
         Assert(hubBg.MainCharacter.CurrentTarget.HasValue, "Player character must accept click-to-move targets.");
+        // NPC dung dung vi tri theo anh mau (§6).
+        var npcSpots = new System.Collections.Generic.List<Vector2>
+        {
+            new(404, 330), new(900, 340), new(760, 340)
+        };
+        foreach (var c in hubBg.Characters)
+        {
+            if (c == hubBg.MainCharacter) continue;
+            bool onSpot = false;
+            foreach (var spot in npcSpots)
+            {
+                if (c.Position.DistanceTo(spot) < 1.0f) onSpot = true;
+            }
+            Assert(onSpot, $"NPC must stand on a planned spot, got {c.Position}");
+        }
         GD.Print("✅ Test 9b: Courtyard player + static NPCs & click-to-move passed.");
+
+        // --- 9c. Quest panel contents + collapse toggle moves it (U5) ---
+        hubQuestPanel.SetEntries(new System.Collections.Generic.List<QuestTrackerPanel.QuestEntry>
+        {
+            new() { Id = "campaign_next", Title = "Vượt ải 1-1", Sub = "Chiến dịch · 0/18 ải đã qua",
+                    Detail = "Ải chiến dịch tiếp theo chưa qua là ải 1-1.", ActionId = "campaign" },
+            new() { Id = "tower_next", Title = "Lên tầng tháp 1", Sub = "Tháp · tầng cao nhất 0",
+                    Detail = "Tầng tháp tiếp theo là tầng 1.", ActionId = "tower" },
+        });
+        Assert(hubQuestPanel.EntryCount == 2, "Quest panel must show exactly the 2 main-progress entries.");
+        Assert(hubQuestPanel.SelectedActionId == "campaign", "First quest entry must be auto-selected.");
+        var questYBefore = hubQuestPanel.Position.Y;
+        hubDock.SetExpanded(true);
+        await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        Assert(hubQuestPanel.Position.Y > questYBefore,
+            "Quest panel must move down when the icon dock expands.");
+        Assert(hubQuestPanel.Position.Y < 648,
+            "Quest panel must stay above the bottom nav even when the dock is expanded.");
+        hubDock.SetExpanded(false);
+        GD.Print("✅ Test 9c: Quest panel contents & dock collapse interaction passed.");
         await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
         await ToSignal(GetTree().CreateTimer(0.6f), SceneTreeTimer.SignalName.Timeout);
 
