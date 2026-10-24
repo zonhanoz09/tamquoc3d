@@ -69,11 +69,14 @@ public partial class TestHubScreen : Node
         shortcutBar.ShortcutClicked += (id) =>
         {
             shortcutEventTriggered = true;
-            Assert(id == "hoat_dong", "Shortcut ID must be hoat_dong");
+            Assert(id == "chieu_mo", "Shortcut ID must be chieu_mo");
         };
-        shortcutBar.SetNotification("hoat_dong", true);
-        shortcutBar.SetNotification("su_kien", false);
-        shortcutBar.EmitSignal(ShortcutBar.SignalName.ShortcutClicked, "hoat_dong");
+        Assert(shortcutBar.ButtonCount == 8, "ShortcutBar must expose 8 function icons");
+        shortcutBar.SetNotification("chieu_mo", true);
+        shortcutBar.SetNotification("hom_thu", false);
+        shortcutBar.SetSubLabel("thap", "Tầng 3");
+        shortcutBar.SetNotification("khong_ton_tai", true); // unknown id must be ignored safely
+        shortcutBar.EmitSignal(ShortcutBar.SignalName.ShortcutClicked, "chieu_mo");
         Assert(shortcutEventTriggered, "Shortcut click signal must fire");
         GD.Print("✅ Test 3: ShortcutBar & notification dots passed.");
         shortcutBar.QueueFree();
@@ -154,6 +157,38 @@ public partial class TestHubScreen : Node
         Assert(hubTopBar != null, "Hub must display the TopBar (profile + wallet).");
         var hubBottomNav = hub.GetNodeOrNull<BottomNavBar>("BottomNavBar");
         Assert(hubBottomNav != null, "Hub must display the BottomNavBar.");
+        var hubShortcuts = hub.GetNodeOrNull<ShortcutBar>("ShortcutBar");
+        Assert(hubShortcuts != null && hubShortcuts.ButtonCount == 8, "Hub must display the 8-icon function column.");
+        var hubChat = hub.GetNodeOrNull<ChatBox>("ChatBox");
+        Assert(hubChat != null, "Hub must display the system-channel ChatBox.");
+
+        // Courtyard characters: real formation (fallback starter team = 5), main hero present,
+        // no guests while offline, and wander movement actually changes positions inside the zone.
+        HubBackground hubBg = null;
+        foreach (var child in hub.GetChildren())
+        {
+            if (child is HubBackground bg) hubBg = bg;
+        }
+        Assert(hubBg != null, "Hub must have a HubBackground.");
+        Assert(hubBg.Characters.Count == 5, $"Courtyard must show 5 team heroes, got {hubBg.Characters.Count}");
+        Assert(hubBg.MainCharacter != null, "Courtyard must have a main character.");
+        var startPositions = new System.Collections.Generic.Dictionary<HubCharacter, Vector2>();
+        foreach (var c in hubBg.Characters)
+        {
+            Assert(!c.IsGuest, "No guest characters may appear while offline.");
+            startPositions[c] = c.Position;
+        }
+        await ToSignal(GetTree().CreateTimer(3.5f), SceneTreeTimer.SignalName.Timeout);
+        bool anyMoved = false;
+        foreach (var c in hubBg.Characters)
+        {
+            if (c.Position.DistanceTo(startPositions[c]) > 1.0f || c.CurrentTarget.HasValue) anyMoved = true;
+            Assert(HubBackground.WalkZone.Grow(2).HasPoint(c.Position), "Characters must stay inside the walk zone.");
+        }
+        Assert(anyMoved, "Non-main characters must wander (position changed or target set).");
+        hubBg.MainCharacter.SetMoveTarget(new Vector2(300, 420));
+        Assert(hubBg.MainCharacter.CurrentTarget.HasValue, "Main character must accept click-to-move targets.");
+        GD.Print("✅ Test 9b: Courtyard characters, movement & offline guests passed.");
         await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
         await ToSignal(GetTree().CreateTimer(0.6f), SceneTreeTimer.SignalName.Timeout);
 
