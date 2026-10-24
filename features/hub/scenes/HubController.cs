@@ -10,16 +10,18 @@ namespace TamQuoc3D.Features.Hub;
 
 /// <summary>
 /// HubController - Dieu khien man hinh chinh (Hub) cua Project Pixel Tactics.
-/// Ket noi HubBackground (san dien + nhan vat), TopBar (ho so + vi tien),
-/// ShortcutBar (icon chuc nang), BottomNavBar va EventNotification (toast/banner).
+/// Ket noi HubBackground (san dien + nhan vat), PlayerCard (the nguoi choi trai
+/// tren, fix cung), IconDock (cum icon phai, don phai, mo rong duoc), panel
+/// Nhiem Vu Chinh, BottomNavBar va EventNotification (toast/banner).
 /// Du lieu hien thi luon lay that tu GameManager/NetworkManager - khong so lieu gia.
 /// </summary>
 [GlobalClass]
 public partial class HubController : Control
 {
     private HubBackground _background;
-    private TopBar _topBar;
-    private ShortcutBar _shortcutBar;
+    private PlayerCard _playerCard;
+    private IconDock _iconDock;
+    private QuestTrackerPanel _questPanel;
     private ChatBox _chatBox;
     private BottomNavBar _bottomNavBar;
     private EventNotification _eventNotification;
@@ -44,23 +46,32 @@ public partial class HubController : Control
         _background = new HubBackground();
         AddChild(_background);
 
-        // 2. TopBar: avatar, ten/cap/VIP, the luc, Bac, Kim Cuong, thu, cai dat
-        _topBar = new TopBar
+        // 2. PlayerCard: the nguoi choi don trai, fix cung (0, 0, 365, 135)
+        _playerCard = new PlayerCard
         {
-            Name = "TopBar",
+            Name = "PlayerCard",
             Position = new Vector2(0, 0),
             ZIndex = 20
         };
-        AddChild(_topBar);
+        AddChild(_playerCard);
 
-        // 3. Cot icon chuc nang ben phai (tinh nang that + khoa tinh nang chua co)
-        _shortcutBar = new ShortcutBar
+        // 3. IconDock: cum icon phai don phai, mep phai neo o x = 1272.
+        // Ben duoi dock la panel Nhiem Vu Chinh (vi tri Y chay theo chieu cao dock).
+        _iconDock = new IconDock
         {
-            Name = "ShortcutBar",
-            Position = new Vector2(1146, 72),
+            Name = "IconDock",
+            Position = new Vector2(1272 - IconDock.DockWidth, 0),
             ZIndex = 15
         };
-        AddChild(_shortcutBar);
+        AddChild(_iconDock);
+
+        _questPanel = new QuestTrackerPanel
+        {
+            Name = "QuestPanel",
+            ZIndex = 15
+        };
+        AddChild(_questPanel);
+        PositionQuestPanel();
 
         // 4. ChatBox kenh he thong (goc trai duoi, tren BottomNav)
         _chatBox = new ChatBox
@@ -93,19 +104,42 @@ public partial class HubController : Control
         }
     }
 
+    private void PositionQuestPanel()
+    {
+        if (_questPanel == null || _iconDock == null) return;
+        _questPanel.Position = new Vector2(1272 - 272, _iconDock.Position.Y + _iconDock.DockHeight + 8);
+    }
+
     private void ConnectEvents()
     {
-        if (_topBar != null)
+        if (_playerCard != null)
         {
-            _topBar.AvatarClicked += OnAvatarClicked;
-            _topBar.SettingsClicked += OnSettingsClicked;
-            _topBar.MailClicked += OnMailClicked;
-            _topBar.DiamondPlusClicked += () => SceneNavigator.GoToShop();
+            _playerCard.AvatarClicked += OnAvatarClicked;
+            _playerCard.DiamondPlusClicked += () => SceneNavigator.GoToShop();
         }
 
-        if (_shortcutBar != null)
+        if (_iconDock != null)
         {
-            _shortcutBar.ShortcutClicked += OnShortcutClicked;
+            _iconDock.IconClicked += OnDockIconClicked;
+            _iconDock.MapClicked += () => SceneNavigator.GoToCampaign();
+            _iconDock.SettingsClicked += OnSettingsClicked;
+            _iconDock.HeightChanged += _ => PositionQuestPanel();
+        }
+
+        if (_questPanel != null)
+        {
+            _questPanel.QuestGoRequested += actionId =>
+            {
+                switch (actionId)
+                {
+                    case "campaign":
+                        SceneNavigator.GoToCampaign();
+                        break;
+                    case "tower":
+                        SceneNavigator.GoToTower();
+                        break;
+                }
+            };
         }
 
         if (_bottomNavBar != null)
@@ -127,25 +161,33 @@ public partial class HubController : Control
         }
     }
 
-    private void OnShortcutClicked(string shortcutId)
+    private void OnDockIconClicked(string iconId)
     {
-        switch (shortcutId)
+        switch (iconId)
         {
             case "chieu_mo":
+            case "su_kien":
+                // Su kien dang chay chinh la banner Chieu Mo gioi han
                 SceneNavigator.GoToGacha();
                 break;
             case "cua_hang":
+            case "qua":
                 SceneNavigator.GoToShop();
                 break;
             case "thap":
                 SceneNavigator.GoToTower();
                 break;
+            case "arena":
+                SceneNavigator.GoToArena();
+                break;
+            case "formation":
+                SceneNavigator.GoToFormationSelector();
+                break;
+            case "hero":
+                SceneNavigator.GoToHeroCollection();
+                break;
             case "hom_thu":
                 _ = OpenMailPanelAsync();
-                break;
-            case "su_kien":
-                // Su kien dang chay chinh la banner Chieu Mo gioi han
-                SceneNavigator.GoToGacha();
                 break;
             case "cai_dat":
                 OpenSettingsPanel();
@@ -157,7 +199,7 @@ public partial class HubController : Control
                 _eventNotification?.ShowToast("Bang Hội", "Tính năng sắp mở.", 2.0f);
                 break;
             default:
-                GD.Print($"[HubController] Shortcut chua duoc gan: {shortcutId}");
+                GD.Print($"[HubController] Icon chua duoc gan: {iconId}");
                 break;
         }
     }
@@ -217,11 +259,11 @@ public partial class HubController : Control
         content.AddChild(challengeBtn);
     }
 
-    /// <summary>Badge cho cot icon: dot Chieu Mo khi du KC, tang thap ke tiep, dot thu chua doc.</summary>
+    /// <summary>Badge cho dock icon: dot Chieu Mo khi du KC, tang thap ke tiep, dot thu chua doc.</summary>
     private async System.Threading.Tasks.Task RefreshShortcutBadgesAsync()
     {
-        if (_shortcutBar == null) return;
-        _shortcutBar.SetNotification("chieu_mo", (GameManager.Instance?.Gems ?? 0) >= 100);
+        if (_iconDock == null) return;
+        _iconDock.SetNotification("chieu_mo", (GameManager.Instance?.Gems ?? 0) >= 100);
 
         var network = NetworkManager.Instance;
         if (network == null || string.IsNullOrEmpty(network.CurrentUserId)) return;
@@ -229,13 +271,70 @@ public partial class HubController : Control
         if (tower != null)
         {
             GameManager.Instance.TowerHighestFloor = tower.HighestFloor;
-            _shortcutBar.SetSubLabel("thap", tower.HighestFloor >= 50 ? "MAX" : $"Tầng {tower.HighestFloor + 1}");
+            _iconDock.SetSubLabel("thap", tower.HighestFloor >= 50 ? "MAX" : $"Tầng {tower.HighestFloor + 1}");
         }
     }
 
     /// <summary>
+    /// Panel Nhiem Vu Chinh: chi tien trinh chinh tu du lieu that — ai chien dich
+    /// ke tiep (theo thu tu 1-1..3-6, lay tu campaign progress) + tang thap ke tiep.
+    /// Khong phai nhiem vu hang ngay (lam sau).
+    /// </summary>
+    private async System.Threading.Tasks.Task BuildQuestEntriesAsync()
+    {
+        if (_questPanel == null) return;
+        var entries = new System.Collections.Generic.List<QuestTrackerPanel.QuestEntry>();
+        var network = NetworkManager.Instance;
+
+        if (network != null && !string.IsNullOrEmpty(network.CurrentUserId))
+        {
+            var progress = await network.FetchCampaignProgressAsync();
+            var cleared = new System.Collections.Generic.HashSet<string>();
+            if (progress != null)
+            {
+                foreach (var row in progress)
+                {
+                    if (row.ClearCount > 0) cleared.Add(row.StageId);
+                }
+            }
+            var orderedKeys = new[]
+            {
+                "1-1", "1-2", "1-3", "1-4", "1-5", "1-6",
+                "2-1", "2-2", "2-3", "2-4", "2-5", "2-6",
+                "3-1", "3-2", "3-3", "3-4", "3-5", "3-6"
+            };
+            var next = System.Array.Find(orderedKeys, k => !cleared.Contains(k));
+            entries.Add(new QuestTrackerPanel.QuestEntry
+            {
+                Id = "campaign_next",
+                Title = next == null ? "Đã qua hết ải chiến dịch" : $"Vượt ải {next}",
+                Sub = $"Chiến dịch · {cleared.Count}/18 ải đã qua",
+                Detail = next == null
+                    ? "Chúa công đã chinh phục toàn bộ 3 chương chiến dịch."
+                    : $"Ải chiến dịch tiếp theo chưa qua là ải {next}. Vào Chiến Dịch để khiêu chiến.",
+                ActionId = "campaign"
+            });
+
+            var tower = await network.FetchTowerProgressAsync();
+            var floor = tower?.HighestFloor ?? GameManager.Instance.TowerHighestFloor;
+            entries.Add(new QuestTrackerPanel.QuestEntry
+            {
+                Id = "tower_next",
+                Title = floor >= 50 ? "Tháp đã chinh phục tối đa" : $"Lên tầng tháp {floor + 1}",
+                Sub = $"Tháp Thí Luyện · tầng cao nhất {floor}",
+                Detail = floor >= 50
+                    ? "Chúa công đã leo tới đỉnh Tháp Thí Luyện."
+                    : $"Tầng tháp tiếp theo là tầng {floor + 1}. Vào Tháp để khiêu chiến.",
+                ActionId = "tower"
+            });
+        }
+
+        _questPanel.SetEntries(entries);
+    }
+
+    /// <summary>
     /// Vao hub thi dong bo lai du lieu tu server (vi, ho so, tuong) -
-    /// TopBar tu cap nhat qua signal DataSynced, them badge thu chua doc.
+    /// PlayerCard tu cap nhat qua signal DataSynced, them badge thu chua doc.
     /// </summary>
     private async System.Threading.Tasks.Task SyncOnEnterAsync()
     {
@@ -247,6 +346,7 @@ public partial class HubController : Control
             await network.SyncPlayerDataAsync();
             await RefreshMailBadgeAsync();
             await RefreshShortcutBadgesAsync();
+            await BuildQuestEntriesAsync();
             await SpawnGuestsAsync();
         }
         catch (Exception ex)
@@ -258,12 +358,11 @@ public partial class HubController : Control
     public async System.Threading.Tasks.Task RefreshMailBadgeAsync()
     {
         var network = NetworkManager.Instance;
-        if (network == null || string.IsNullOrEmpty(network.CurrentUserId) || _topBar == null) return;
+        if (network == null || string.IsNullOrEmpty(network.CurrentUserId)) return;
 
         var mails = await network.FetchMailAsync();
         int unread = mails.Count(m => !m.IsRead);
-        _topBar.SetMailBadge(unread);
-        _shortcutBar?.SetNotification("hom_thu", unread > 0);
+        _iconDock?.SetNotification("hom_thu", unread > 0);
     }
 
     private void ShowWelcomeExperience()
@@ -301,11 +400,6 @@ public partial class HubController : Control
     private void OnSettingsClicked()
     {
         OpenSettingsPanel();
-    }
-
-    private void OnMailClicked()
-    {
-        _ = OpenMailPanelAsync();
     }
 
     // ---------- Modal panels (mail / settings) ----------
@@ -406,8 +500,7 @@ public partial class HubController : Control
         loading.QueueFree();
 
         int unread = mails.Count(m => !m.IsRead);
-        _topBar?.SetMailBadge(unread);
-        _shortcutBar?.SetNotification("hom_thu", unread > 0);
+        _iconDock?.SetNotification("hom_thu", unread > 0);
 
         if (mails.Count == 0)
         {

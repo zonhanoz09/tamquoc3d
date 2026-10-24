@@ -46,40 +46,46 @@ public partial class TestHubScreen : Node
         Assert(loaded.Gold == 3000000, "Loaded gold should be 3000000");
         GD.Print("✅ Test 1: PlayerProfile data model passed.");
 
-        // --- 2. Test TopBar UI Component ---
-        GD.Print("[2/9] Testing TopBar UI...");
-        var topBar = new TopBar();
-        AddChild(topBar);
+        // --- 2. Test PlayerCard UI Component (§6: the nguoi choi don trai, fix cung) ---
+        GD.Print("[2/9] Testing PlayerCard UI...");
+        var playerCard = new PlayerCard();
+        AddChild(playerCard);
         await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
 
-        topBar.UpdateGold(5000000);
-        topBar.UpdateDiamond(200000);
-        topBar.UpdateStamina(120, 145);
-        topBar.UpdateVipBadge(12);
-        GD.Print("✅ Test 2: TopBar rendering & dynamic updates passed.");
-        topBar.QueueFree();
+        playerCard.UpdateGold(5000000);
+        playerCard.UpdateDiamond(200000);
+        playerCard.UpdateStamina(120, 145);
+        playerCard.UpdateVipBadge(12);
+        Assert(playerCard.Size.X == 365, "PlayerCard must be fixed 365px wide (left dock).");
+        GD.Print("✅ Test 2: PlayerCard rendering & dynamic updates passed.");
+        playerCard.QueueFree();
 
-        // --- 3. Test ShortcutBar UI Component ---
-        GD.Print("[3/9] Testing ShortcutBar UI...");
-        var shortcutBar = new ShortcutBar();
-        AddChild(shortcutBar);
+        // --- 3. Test IconDock UI Component (§6: cum icon phai, don phai, mo rong duoc) ---
+        GD.Print("[3/9] Testing IconDock UI...");
+        var iconDock = new IconDock();
+        AddChild(iconDock);
         await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
 
-        bool shortcutEventTriggered = false;
-        shortcutBar.ShortcutClicked += (id) =>
+        bool dockEventTriggered = false;
+        iconDock.IconClicked += (id) =>
         {
-            shortcutEventTriggered = true;
-            Assert(id == "chieu_mo", "Shortcut ID must be chieu_mo");
+            dockEventTriggered = true;
+            Assert(id == "chieu_mo", "Dock icon ID must be chieu_mo");
         };
-        Assert(shortcutBar.ButtonCount == 8, "ShortcutBar must expose 8 function icons");
-        shortcutBar.SetNotification("chieu_mo", true);
-        shortcutBar.SetNotification("hom_thu", false);
-        shortcutBar.SetSubLabel("thap", "Tầng 3");
-        shortcutBar.SetNotification("khong_ton_tai", true); // unknown id must be ignored safely
-        shortcutBar.EmitSignal(ShortcutBar.SignalName.ShortcutClicked, "chieu_mo");
-        Assert(shortcutEventTriggered, "Shortcut click signal must fire");
-        GD.Print("✅ Test 3: ShortcutBar & notification dots passed.");
-        shortcutBar.QueueFree();
+        Assert(iconDock.ButtonCount == 12, "IconDock must expose 12 icons (4 event + 6 feature + 2 locked)");
+        Assert(iconDock.RowCount == 3, "IconDock must build 3 rows (event, feature, locked)");
+        iconDock.SetNotification("chieu_mo", true);
+        iconDock.SetNotification("hom_thu", false);
+        iconDock.SetSubLabel("thap", "Tầng 3");
+        iconDock.SetNotification("khong_ton_tai", true); // unknown id must be ignored safely
+        iconDock.EmitSignal(IconDock.SignalName.IconClicked, "chieu_mo");
+        Assert(dockEventTriggered, "Dock icon click signal must fire");
+        iconDock.SetExpanded(true);
+        Assert(iconDock.Expanded, "IconDock must expand on toggle.");
+        iconDock.SetExpanded(false);
+        Assert(!iconDock.Expanded, "IconDock must collapse on toggle.");
+        GD.Print("✅ Test 3: IconDock rows, expand/collapse & notification dots passed.");
+        iconDock.QueueFree();
 
         // --- 4. Test BottomNavBar UI Component ---
         GD.Print("[4/9] Testing BottomNavBar UI...");
@@ -153,12 +159,16 @@ public partial class TestHubScreen : Node
 
         // Wait for frames and render
         await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
-        var hubTopBar = hub.GetNodeOrNull<TopBar>("TopBar");
-        Assert(hubTopBar != null, "Hub must display the TopBar (profile + wallet).");
+        var hubPlayerCard = hub.GetNodeOrNull<PlayerCard>("PlayerCard");
+        Assert(hubPlayerCard != null, "Hub must display the PlayerCard (left, fixed).");
+        Assert(hubPlayerCard.Position == Vector2.Zero, "PlayerCard must be fixed at the top-left corner.");
         var hubBottomNav = hub.GetNodeOrNull<BottomNavBar>("BottomNavBar");
         Assert(hubBottomNav != null, "Hub must display the BottomNavBar.");
-        var hubShortcuts = hub.GetNodeOrNull<ShortcutBar>("ShortcutBar");
-        Assert(hubShortcuts != null && hubShortcuts.ButtonCount == 8, "Hub must display the 8-icon function column.");
+        var hubDock = hub.GetNodeOrNull<IconDock>("IconDock");
+        Assert(hubDock != null && hubDock.ButtonCount == 12, "Hub must display the 12-icon right dock.");
+        Assert(hubDock.Position.X == 1272 - IconDock.DockWidth, "IconDock right edge must be fixed at x = 1272.");
+        var hubQuestPanel = hub.GetNodeOrNull<QuestTrackerPanel>("QuestPanel");
+        Assert(hubQuestPanel != null, "Hub must display the main-quest tracker panel.");
         var hubChat = hub.GetNodeOrNull<ChatBox>("ChatBox");
         Assert(hubChat != null, "Hub must display the system-channel ChatBox.");
 
