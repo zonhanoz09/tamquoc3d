@@ -95,6 +95,9 @@ public partial class GameManager : Node
         return (1.0f + 0.05f * (progress.Level - 1)) * (1.0f + 0.10f * (progress.Star - 1));
     }
     public Godot.Collections.Array<FormationEntry> CurrentFormation { get; set; } = [];
+
+    /// <summary>Tuong can mo san trong Tuong Phu (dat boi hub khi bam vao tuong tren san). Doc xong tu xoa.</summary>
+    public string FocusHeroId { get; set; }
     public Godot.Collections.Array<FormationPreset> SavedPresets { get; set; } = [];
     public string BattleContext { get; set; } = "campaign";
 

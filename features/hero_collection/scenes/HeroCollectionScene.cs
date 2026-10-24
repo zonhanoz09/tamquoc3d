@@ -256,7 +256,13 @@ public partial class HeroCollectionScene : Control
         }
         else if (_heroes.Count > 0)
         {
-            SelectHero(_heroes[0]);
+            // Tu hub bam vao mot tuong tren san -> mo thang chi tiet tuong do
+            var focusId = GameManager.Instance?.FocusHeroId;
+            var focused = !string.IsNullOrEmpty(focusId)
+                ? _heroes.Find(h => h.HeroId == focusId)
+                : null;
+            if (GameManager.Instance != null) GameManager.Instance.FocusHeroId = null;
+            SelectHero(focused ?? _heroes[0]);
         }
     }
 
