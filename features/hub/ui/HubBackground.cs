@@ -175,24 +175,28 @@ public partial class HubBackground : Node2D
         return true;
     }
 
+    /// <summary>Hat canh hoa dao roi (§6/U4): hong, roi cham, xoay nhe khi roi.</summary>
     private void SetupAmbientParticles()
     {
         _ambientParticles = new CpuParticles2D
         {
             Position = new Vector2(640, -20),
-            Amount = 35,
-            Lifetime = 6.0f,
+            Texture = GD.Load<Texture2D>("res://assets/ui/hub/petal.png"),
+            Amount = 40,
+            Lifetime = 7.0f,
             Preprocess = 4.0f,
             EmissionShape = CpuParticles2D.EmissionShapeEnum.Rectangle,
             EmissionRectExtents = new Vector2(680, 20),
-            Direction = new Vector2(0.4f, 1.0f),
-            Spread = 25.0f,
-            Gravity = new Vector2(15, 25),
-            InitialVelocityMin = 20.0f,
-            InitialVelocityMax = 50.0f,
-            ScaleAmountMin = 2.0f,
-            ScaleAmountMax = 4.5f,
-            Color = new Color(1f, 0.75f, 0.35f, 0.7f),
+            Direction = new Vector2(0.2f, 1.0f),
+            Spread = 35.0f,
+            Gravity = new Vector2(20, 15),
+            InitialVelocityMin = 12.0f,
+            InitialVelocityMax = 32.0f,
+            ScaleAmountMin = 1.0f,
+            ScaleAmountMax = 2.0f,
+            AngularVelocityMin = -60.0f,
+            AngularVelocityMax = 60.0f,
+            Color = new Color(1f, 0.55f, 0.65f, 0.85f),
             ZIndex = 8
         };
         AddChild(_ambientParticles);
